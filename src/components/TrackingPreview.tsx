@@ -1,12 +1,56 @@
+import { useState } from 'react'
+
 interface TrackingPreviewProps {
   tracking: any
+  onDelete?: (id: string) => void // Callback per aggiornare la lista padre
 }
 
-export default function TrackingPreview({ tracking }: TrackingPreviewProps) {
+export default function TrackingPreview({ tracking, onDelete }: TrackingPreviewProps) {
+  const [deleting, setDeleting] = useState(false)
+  
   if (!tracking) return null
 
   const isDelayed = tracking.eta && new Date(tracking.eta) < new Date() && 
     !['ARRIVED', 'DELIVERED'].includes(tracking.status)
+
+  const handleDelete = async () => {
+    if (!confirm(`Sei sicuro di voler eliminare il tracking ${tracking.tracking_number}?`)) {
+      return
+    }
+
+    setDeleting(true)
+    try {
+      const response = await fetch(`/api/trackings?id=${tracking.id}`, {
+        method: 'DELETE'
+      })
+      
+      const result = await response.json()
+      
+      if (result.success) {
+        // Chiama il callback per aggiornare la lista padre
+        if (onDelete) {
+          onDelete(tracking.id)
+        } else {
+          // Se non c'è callback, ricarica la pagina
+          window.location.reload()
+        }
+        
+        alert('Tracking eliminato con successo!')
+      } else {
+        alert(`Errore: ${result.error}`)
+      }
+    } catch (error) {
+      console.error('Errore eliminazione:', error)
+      alert('Errore di connessione')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  const handleEdit = () => {
+    // TODO: Implementa la modifica
+    alert('Funzione modifica non ancora implementata')
+  }
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
@@ -64,11 +108,18 @@ export default function TrackingPreview({ tracking }: TrackingPreviewProps) {
         
         <div className="pt-4 border-t border-gray-200">
           <div className="flex space-x-3">
-            <button className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">
-              Modifica
+            <button 
+              onClick={handleEdit}
+              className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
+            >
+              ✏️ Modifica
             </button>
-            <button className="flex-1 bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">
-              Elimina
+            <button 
+              onClick={handleDelete}
+              disabled={deleting}
+              className="flex-1 bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {deleting ? '⏳ Eliminando...' : '🗑️ Elimina'}
             </button>
           </div>
         </div>
