@@ -1,73 +1,63 @@
 import { createClient } from '@supabase/supabase-js'
 
+// Debug variabili ambiente
+console.log('🔍 process.env keys:', Object.keys(process.env).filter(k => k.includes('SUPABASE')))
+console.log('🔍 NODE_ENV:', process.env.NODE_ENV)
+
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-let supabase: any
-let supabaseAdmin: any = null
+console.log('🔍 Supabase URL:', supabaseUrl)
+console.log('🔍 Supabase Key presente:', !!supabaseKey)
+console.log('🔍 Supabase Key lunghezza:', supabaseKey?.length || 0)
+console.log('🔍 Supabase Key primi 20 char:', supabaseKey?.substring(0, 20))
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn('⚠️  Supabase non configurato - usando mock client per sviluppo')
+// ✅ EXPORT UNICO - Fuori dall'if/else
+let finalUrl: string
+let finalKey: string
+
+if (!supabaseUrl || !supabaseKey) {
+  console.error('❌ Variabili ambiente Supabase mancanti:')
+  console.error('❌ NEXT_PUBLIC_SUPABASE_URL:', !!supabaseUrl)
+  console.error('❌ NEXT_PUBLIC_SUPABASE_ANON_KEY:', !!supabaseKey)
   
-  // Mock client che simula Supabase
-  supabase = {
-    from: (table: string) => ({
-      select: (columns: string) => ({
-        eq: (column: string, value: any) => ({
-          is: (column: string, value: any) => ({
-            order: (column: string, options: any) => Promise.resolve({ 
-              data: [], 
-              error: null 
-            }),
-            single: () => Promise.resolve({ 
-              data: null, 
-              error: { code: 'PGRST116' } 
-            })
-          }),
-          single: () => Promise.resolve({ 
-            data: null, 
-            error: { code: 'PGRST116' } 
-          })
-        })
-      }),
-      insert: (data: any) => ({
-        select: () => ({
-          single: () => Promise.resolve({ 
-            data: { 
-              id: `mock-${Date.now()}`, 
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-              ...data[0] 
-            }, 
-            error: null 
-          })
-        })
-      }),
-      update: (data: any) => ({
-        eq: (column: string, value: any) => ({
-          select: () => ({
-            single: () => Promise.resolve({ 
-              data: { 
-                id: value,
-                updated_at: new Date().toISOString(),
-                ...data 
-              }, 
-              error: null 
-            })
-          })
-        })
-      })
-    })
-  }
+  // Fallback temporaneo per debug
+  console.log('⚠️ Usando fallback hardcoded per debug...')
+  
+  finalUrl = 'https://gnlrmnsdmpjzitsysowq.supabase.co'
+  finalKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdubHJtbnNkbXBqeml0c3lzb3dxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk0NjMxMzQsImV4cCI6MjA2NTAzOTEzNH0.UoJJoDUoDXGbiWnKNN48qb9PVQWOW_X_MXqAfzTHSaA'
 } else {
-  // Client Supabase reale
-  supabase = createClient(supabaseUrl, supabaseAnonKey)
-  
-  // Per operazioni server-side
-  const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-  supabaseAdmin = supabaseServiceRoleKey 
-    ? createClient(supabaseUrl, supabaseServiceRoleKey)
-    : null
+  finalUrl = supabaseUrl
+  finalKey = supabaseKey
 }
 
-export { supabase, supabaseAdmin }
+// ✅ Export unico del client Supabase
+export const supabase = createClient(finalUrl, finalKey)
+
+// Test connessione - CORRETTO
+console.log('🔍 Testing Supabase connection...')
+supabase.auth.getSession().then(({ data, error }: any) => {
+  console.log('🔍 Supabase connection test - session:', !!data)
+  console.log('🔍 Supabase connection test - error:', error)
+}).catch((err: any) => {
+  console.error('❌ Supabase connection test failed:', err)
+})
+
+// Test tabella - CORRETTO con async/await
+async function testTable() {
+  try {
+    console.log('🔍 Testing Supabase table access...')
+    const { data, error } = await supabase
+      .from('trackings')
+      .select('id')
+      .limit(1)
+    
+    console.log('🔍 Supabase table test - data:', data)
+    console.log('🔍 Supabase table test - error:', error)
+  } catch (err: any) {
+    console.error('❌ Supabase table test failed:', err)
+  }
+}
+
+// Esegui test tabella
+testTable()

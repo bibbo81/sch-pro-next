@@ -104,6 +104,13 @@ export default function TrackingPage() {
       setSelectedTracking(null)
     }
   }
+  // 🔧 NUOVO - Callback per update tracking
+  const handleTrackingUpdated = (updatedId: string, updatedData: any) => {
+    // Aggiorna la lista locale
+    setTrackings(prev => prev.map(t => 
+      t.id === updatedId ? { ...t, ...updatedData } : t
+    ))
+  }
 
   // Aggiorna tracking selezionato quando la lista cambia
   useEffect(() => {
@@ -145,30 +152,29 @@ export default function TrackingPage() {
         <StatusCounts trackings={trackings} />
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
-          {/* Form */}
-          <div className="lg:col-span-1">
-            <TrackingForm 
-              onAdd={handleAddTracking} 
-              onBatchAdd={handleBatchAdd}
-            />
-          </div>
-          
-          {/* List + Preview */}
-          <div className="lg:col-span-2 space-y-6">
-            <TrackingList 
-              trackings={trackings}
-              onSelect={setSelectedTracking}
-              selected={selectedTracking}
-            />
-            
-            {selectedTracking && (
-              <TrackingPreview 
-                tracking={selectedTracking}
-                onDelete={handleTrackingDeleted}
-              />
-            )}
-          </div>
+        <div className="lg:col-span-1">
+          <TrackingForm 
+            onAdd={handleAddTracking} 
+            onBatchAdd={handleBatchAdd}
+          />
         </div>
+        
+        <div className="lg:col-span-2 space-y-6">
+          <TrackingList 
+            trackings={trackings}
+            onSelect={setSelectedTracking}
+            selected={selectedTracking}
+          />
+          
+          {selectedTracking && (
+            <TrackingPreview 
+              tracking={selectedTracking}
+              onDelete={handleTrackingDeleted}
+              onUpdate={handleTrackingUpdated} // 🔧 NUOVO callback
+            />
+          )}
+        </div>
+      </div>
         
         {/* Footer con statistiche */}
         <div className="mt-8 bg-white rounded-lg shadow-md p-4">

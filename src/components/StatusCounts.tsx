@@ -1,19 +1,30 @@
+import { formatStatus } from '@/lib/statusMapping'
+
 interface StatusCountsProps {
   trackings: any[]
 }
 
 export default function StatusCounts({ trackings }: StatusCountsProps) {
-  const inTransit = trackings.filter(t => 
-    ['SAILING', 'IN_TRANSIT', 'SHIPPED'].includes(t.status)
-  ).length
+  // 🔧 USA IL MAPPING UNIFICATO
+  const statusCounts: Record<string, number> = {}
   
-  const arrived = trackings.filter(t => 
-    ['ARRIVED', 'DELIVERED', 'DISCHARGED'].includes(t.status)
-  ).length
+  trackings.forEach(tracking => {
+    const rawStatus = tracking.status || tracking.current_status || 'registered'
+    const { normalized } = formatStatus(rawStatus)
+    statusCounts[normalized] = (statusCounts[normalized] || 0) + 1
+  })
+
+  const inTransit = statusCounts.in_transit || 0
+  const arrived = statusCounts.arrived || 0
+  const delivered = statusCounts.delivered || 0
   
+  // 🔧 CALCOLA RITARDI CON STATI NORMALIZZATI
   const delayed = trackings.filter(t => {
     if (!t.eta) return false
-    return new Date(t.eta) < new Date() && !['ARRIVED', 'DELIVERED'].includes(t.status)
+    const { normalized } = formatStatus(t.status || t.current_status)
+    const isLate = new Date(t.eta) < new Date()
+    const notDelivered = !['delivered', 'cancelled'].includes(normalized)
+    return isLate && notDelivered
   }).length
 
   return (
@@ -54,8 +65,8 @@ export default function StatusCounts({ trackings }: StatusCountsProps) {
             </svg>
           </div>
           <div className="ml-4">
-            <p className="text-sm font-medium text-gray-600">Arrivati</p>
-            <p className="text-2xl font-semibold text-gray-900">{arrived}</p>
+            <p className="text-sm font-medium text-gray-600">Arrivati/Consegnati</p>
+            <p className="text-2xl font-semibold text-gray-900">{arrived + delivered}</p>
           </div>
         </div>
       </div>

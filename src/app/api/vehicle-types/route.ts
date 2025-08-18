@@ -1,236 +1,349 @@
 // src/app/api/vehicle-types/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 
+// 🎯 Definisci i tipi TypeScript
+interface VehicleType {
+  id: string
+  name: string
+  code: string
+  default_kg: string
+  default_cbm: string
+  max_kg: string
+  max_cbm: string
+}
+
+type VehicleTypesByMode = {
+  [key: string]: VehicleType[]
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const transportModeId = searchParams.get('transport_mode_id')
 
-    // ✅ Tipi di veicolo completi dal vecchio progetto
-    const allVehicleTypes = {
-      '1': [ // Marittimo
+    const allVehicleTypes: VehicleTypesByMode = {
+      '1': [ // Marittimo - TERMINOLOGIA TECNICA CONTAINER
         { 
           id: '1', 
-          name: "Container 20' DV", 
+          name: "TEU 20' Dry Van (DV)", 
           code: '20DV',
           default_kg: '21600',
           default_cbm: '33.2',
-          max_kg: '28200',
-          max_cbm: '33.2',
-          description: "Container secco 20 piedi"
+          max_kg: '24000',
+          max_cbm: '33.2'
         },
         { 
           id: '2', 
-          name: "Container 40' DV", 
+          name: "FEU 40' Dry Van (DV)", 
           code: '40DV',
           default_kg: '26680',
           default_cbm: '67.7',
-          max_kg: '30400',
-          max_cbm: '67.7',
-          description: "Container secco 40 piedi"
+          max_kg: '30480',
+          max_cbm: '67.7'
         },
         { 
           id: '3', 
-          name: "Container 40' HC", 
+          name: "FEU 40' High Cube (HC)", 
           code: '40HC',
           default_kg: '26580',
           default_cbm: '76.4',
           max_kg: '30480',
-          max_cbm: '76.4',
-          description: "Container High Cube 40 piedi"
+          max_cbm: '76.4'
         },
         { 
           id: '4', 
-          name: "Container 45' HC", 
-          code: '45HC',
-          default_kg: '26000',
-          default_cbm: '86.0',
-          max_kg: '30000',
-          max_cbm: '86.0',
-          description: "Container High Cube 45 piedi"
-        },
-        { 
-          id: '5', 
-          name: "Container 20' RF", 
+          name: "TEU 20' Reefer (RF)", 
           code: '20RF',
           default_kg: '18000',
           default_cbm: '28.3',
-          max_kg: '25400',
-          max_cbm: '28.3',
-          description: "Container refrigerato 20 piedi"
+          max_kg: '21600',
+          max_cbm: '28.3'
         },
         { 
-          id: '6', 
-          name: "Container 40' RF", 
+          id: '5', 
+          name: "FEU 40' Reefer (RF)", 
           code: '40RF',
           default_kg: '22000',
           default_cbm: '59.3',
-          max_kg: '27700',
-          max_cbm: '59.3',
-          description: "Container refrigerato 40 piedi"
+          max_kg: '26000',
+          max_cbm: '59.3'
+        },
+        {
+          id: '6',
+          name: "Open Top 20' (OT)",
+          code: '20OT',
+          default_kg: '20000',
+          default_cbm: '32.0',
+          max_kg: '24000',
+          max_cbm: '32.0'
         },
         {
           id: '7',
-          name: 'Bulk Carrier',
-          code: 'BULK',
-          default_kg: '50000',
-          default_cbm: '100',
-          max_kg: '180000',
-          max_cbm: '500',
-          description: "Nave per carichi sfusi"
-        }
-      ],
-      '2': [ // Aereo
-        {
-          id: '8',
-          name: 'Cargo Boeing 747F',
-          code: 'B747F',
-          default_kg: '5000',
-          default_cbm: '25',
-          max_kg: '124000',
-          max_cbm: '858',
-          description: "Boeing 747 Freighter"
+          name: "Flat Rack 40' (FR)",
+          code: '40FR',
+          default_kg: '28000',
+          default_cbm: '50.0',
+          max_kg: '45000',
+          max_cbm: '50.0'
         },
         {
+          id: '8',
+          name: "Tank Container 20' (TK)",
+          code: '20TK',
+          default_kg: '24000',
+          default_cbm: '26.0',
+          max_kg: '30480',
+          max_cbm: '26.0'
+        }
+      ],
+      '2': [ // Aereo - TERMINOLOGIA TECNICA CARGO AEREO
+        {
           id: '9',
-          name: 'Cargo Airbus A330F',
-          code: 'A330F',
-          default_kg: '3000',
-          default_cbm: '15',
-          max_kg: '70000',
-          max_cbm: '475',
-          description: "Airbus A330 Freighter"
+          name: 'AWB Express Document',
+          code: 'DOC',
+          default_kg: '0.5',
+          default_cbm: '0.001',
+          max_kg: '2',
+          max_cbm: '0.005'
         },
         {
           id: '10',
-          name: 'Express Package',
-          code: 'EXPRESS',
-          default_kg: '25',
-          default_cbm: '0.1',
+          name: 'AWB Express Package',
+          code: 'PKG',
+          default_kg: '5',
+          default_cbm: '0.05',
           max_kg: '70',
-          max_cbm: '0.3',
-          description: "Pacco espresso aereo"
+          max_cbm: '0.3'
         },
         {
           id: '11',
-          name: 'Air Cargo Pallet',
+          name: 'ULD (Unit Load Device)',
           code: 'ULD',
           default_kg: '1500',
           default_cbm: '10',
           max_kg: '6800',
-          max_cbm: '20',
-          description: "Pallet aereo standard"
-        }
-      ],
-      '3': [ // Stradale
+          max_cbm: '20'
+        },
         {
           id: '12',
-          name: 'Camion 7.5t',
-          code: 'TRUCK75',
-          default_kg: '3500',
-          default_cbm: '35',
-          max_kg: '7500',
-          max_cbm: '42',
-          description: "Camion medio 7.5 tonnellate"
+          name: 'PMC (Prebuilt Metal Container)',
+          code: 'PMC',
+          default_kg: '3000',
+          default_cbm: '15',
+          max_kg: '6800',
+          max_cbm: '20'
         },
         {
           id: '13',
-          name: 'TIR 19t',
-          code: 'TIR19',
-          default_kg: '12000',
-          default_cbm: '76',
-          max_kg: '19000',
-          max_cbm: '90',
-          description: "TIR standard 19 tonnellate"
+          name: 'AKE Container',
+          code: 'AKE',
+          default_kg: '1500',
+          default_cbm: '4.2',
+          max_kg: '1588',
+          max_cbm: '4.2'
         },
         {
           id: '14',
-          name: 'Bilico 44t',
-          code: 'BILICO44',
-          default_kg: '24000',
-          default_cbm: '100',
-          max_kg: '44000',
-          max_cbm: '120',
-          description: "Bilico completo 44 tonnellate"
-        },
+          name: 'Main Deck Cargo',
+          code: 'MDC',
+          default_kg: '5000',
+          default_cbm: '25',
+          max_kg: '20000',
+          max_cbm: '100'
+        }
+      ],
+      '3': [ // Stradale - TERMINOLOGIA TECNICA AUTOTRASPORTO
         {
           id: '15',
-          name: 'Furgone 3.5t',
-          code: 'VAN35',
-          default_kg: '1500',
-          default_cbm: '17',
+          name: 'Veicolo Commerciale Leggero (N1)',
+          code: 'VCL_N1',
+          default_kg: '800',
+          default_cbm: '10',
           max_kg: '3500',
-          max_cbm: '20',
-          description: "Furgone commerciale 3.5t"
+          max_cbm: '15'
         },
         {
           id: '16',
-          name: 'Megatrailer',
-          code: 'MEGA',
-          default_kg: '25000',
-          default_cbm: '110',
-          max_kg: '44000',
-          max_cbm: '125',
-          description: "Megatrailer volume maggiorato"
-        }
-      ],
-      '4': [ // Ferroviario
+          name: 'Autocarro Medio (N2)',
+          code: 'N2',
+          default_kg: '3000',
+          default_cbm: '35',
+          max_kg: '12000',
+          max_cbm: '45'
+        },
         {
           id: '17',
-          name: 'Vagone Container',
-          code: 'RAILCONT',
-          default_kg: '20000',
-          default_cbm: '67',
-          max_kg: '60000',
-          max_cbm: '80',
-          description: "Vagone per container intermodali"
+          name: 'Autocarro Pesante (N3)',
+          code: 'N3',
+          default_kg: '8000',
+          default_cbm: '55',
+          max_kg: '26000',
+          max_cbm: '70'
         },
         {
           id: '18',
-          name: 'Vagone Merci Chiuso',
-          code: 'RAILBOX',
-          default_kg: '15000',
-          default_cbm: '80',
-          max_kg: '50000',
-          max_cbm: '100',
-          description: "Vagone chiuso per merci varie"
+          name: 'Autotreno (Motrice + Rimorchio)',
+          code: 'AUTOTRENO',
+          default_kg: '24000',
+          default_cbm: '100',
+          max_kg: '44000',
+          max_cbm: '120'
         },
         {
           id: '19',
-          name: 'Vagone Cisterna',
-          code: 'RAILTANK',
-          default_kg: '30000',
-          default_cbm: '60',
-          max_kg: '60000',
-          max_cbm: '80',
-          description: "Vagone cisterna per liquidi"
-        }
-      ],
-      '5': [ // Multimodale
+          name: 'Autoarticolato (Motrice + Semirimorchio)',
+          code: 'AUTOARTICOLATO',
+          default_kg: '20000',
+          default_cbm: '85',
+          max_kg: '40000',
+          max_cbm: '100'
+        },
         {
           id: '20',
-          name: 'Intermodale Mare-Strada',
-          code: 'SEAROAD',
+          name: 'Semirimorchio Standard',
+          code: 'SEMI_STD',
           default_kg: '20000',
-          default_cbm: '67',
-          max_kg: '44000',
-          max_cbm: '120',
-          description: "Trasporto combinato marittimo-stradale"
+          default_cbm: '85',
+          max_kg: '33000',
+          max_cbm: '90'
         },
         {
           id: '21',
+          name: 'Semirimorchio Centinato',
+          code: 'SEMI_TENT',
+          default_kg: '20000',
+          default_cbm: '90',
+          max_kg: '33000',
+          max_cbm: '100'
+        },
+        {
+          id: '22',
+          name: 'Semirimorchio Frigo',
+          code: 'SEMI_FRIGO',
+          default_kg: '18000',
+          default_cbm: '80',
+          max_kg: '30000',
+          max_cbm: '85'
+        },
+        {
+          id: '23',
+          name: 'Megatrailer (Volume Maggiorato)',
+          code: 'MEGA',
+          default_kg: '25000',
+          default_cbm: '110',
+          max_kg: '40000',
+          max_cbm: '125'
+        },
+        {
+          id: '24',
+          name: 'Semirimorchio Ribassato',
+          code: 'LOWBED',
+          default_kg: '30000',
+          default_cbm: '60',
+          max_kg: '48000',
+          max_cbm: '80'
+        }
+      ],
+      '4': [ // Ferroviario - TERMINOLOGIA TECNICA FERROVIARIA
+        {
+          id: '25',
+          name: 'Vagone Merci Aperto (E)',
+          code: 'VAG_E',
+          default_kg: '20000',
+          default_cbm: '60',
+          max_kg: '63000',
+          max_cbm: '80'
+        },
+        {
+          id: '26',
+          name: 'Vagone Merci Chiuso (G)',
+          code: 'VAG_G',
+          default_kg: '15000',
+          default_cbm: '80',
+          max_kg: '60000',
+          max_cbm: '100'
+        },
+        {
+          id: '27',
+          name: 'Vagone Pianale (R)',
+          code: 'VAG_R',
+          default_kg: '25000',
+          default_cbm: '70',
+          max_kg: '63000',
+          max_cbm: '90'
+        },
+        {
+          id: '28',
+          name: 'Vagone Container (S)',
+          code: 'VAG_S',
+          default_kg: '20000',
+          default_cbm: '67',
+          max_kg: '63000',
+          max_cbm: '80'
+        },
+        {
+          id: '29',
+          name: 'Vagone Cisterna (Z)',
+          code: 'VAG_Z',
+          default_kg: '30000',
+          default_cbm: '60',
+          max_kg: '63000',
+          max_cbm: '80'
+        },
+        {
+          id: '30',
+          name: 'Vagone Frigo (I)',
+          code: 'VAG_I',
+          default_kg: '18000',
+          default_cbm: '75',
+          max_kg: '55000',
+          max_cbm: '85'
+        }
+      ],
+      '5': [ // Multimodale - TERMINOLOGIA TECNICA INTERMODALE
+        {
+          id: '31',
+          name: 'RoRo (Roll-on/Roll-off)',
+          code: 'RORO',
+          default_kg: '20000',
+          default_cbm: '85',
+          max_kg: '44000',
+          max_cbm: '120'
+        },
+        {
+          id: '32',
+          name: 'Trasporto Combinato Non Accompagnato',
+          code: 'TCNA',
+          default_kg: '20000',
+          default_cbm: '80',
+          max_kg: '40000',
+          max_cbm: '100'
+        },
+        {
+          id: '33',
+          name: 'Intermodale Mare-Ferro',
+          code: 'SEA_RAIL',
+          default_kg: '20000',
+          default_cbm: '67',
+          max_kg: '63000',
+          max_cbm: '80'
+        },
+        {
+          id: '34',
           name: 'Intermodale Ferro-Strada',
-          code: 'RAILROAD',
+          code: 'RAIL_ROAD',
           default_kg: '20000',
           default_cbm: '80',
           max_kg: '44000',
-          max_cbm: '120',
-          description: "Trasporto combinato ferroviario-stradale"
+          max_cbm: '120'
         }
       ]
     }
 
-    const vehicleTypes = transportModeId ? allVehicleTypes[transportModeId] || [] : []
+    // ✅ Fix TypeScript: controlla che transportModeId esista e sia una chiave valida
+    const vehicleTypes = transportModeId && allVehicleTypes[transportModeId] 
+      ? allVehicleTypes[transportModeId] 
+      : []
 
     return NextResponse.json({ success: true, data: vehicleTypes })
   } catch (error) {

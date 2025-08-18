@@ -1,4 +1,3 @@
-// src/coperòmponents/TrackingForm.tsx (aggiornato)
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -19,7 +18,7 @@ export default function TrackingForm({ onAdd, onBatchAdd }: TrackingFormProps) {
     origin_port: '',
     destination_port: '',
     eta: '',
-    tracking_type: 'container', // ✅ Solo per API ShipsGO
+    tracking_type: 'container',
     status: 'SAILING',
     reference_number: '',
     transport_mode_id: '',
@@ -31,11 +30,9 @@ export default function TrackingForm({ onAdd, onBatchAdd }: TrackingFormProps) {
     flight_number: ''
   })
 
-  const [isLiveTracking, setIsLiveTracking] = useState(true)
   const [operation, setOperation] = useState<'single' | 'batch' | 'excel' | 'manual'>('single')
   const [forceNew, setForceNew] = useState(false)
   const [excelFile, setExcelFile] = useState<File | null>(null)
-  
   const [showDetails, setShowDetails] = useState(false)
   const [carriers, setCarriers] = useState<any[]>([])
   const [transportModes, setTransportModes] = useState<any[]>([])
@@ -51,7 +48,6 @@ export default function TrackingForm({ onAdd, onBatchAdd }: TrackingFormProps) {
     loadCarriers()
   }, [])
 
-  // ✅ FUNZIONE FORMATO DATA ITALIANA
   const formatDateForInput = (isoString: string): string => {
     if (!isoString) return ''
     try {
@@ -78,7 +74,6 @@ export default function TrackingForm({ onAdd, onBatchAdd }: TrackingFormProps) {
     }
   }
 
-  // ✅ Auto-detect SOLO per Live Tracking (non per Manual)
   const handleTrackingNumberChange = (value: string) => {
     setFormData(prev => ({ ...prev, tracking_number: value }))
     
@@ -87,8 +82,7 @@ export default function TrackingForm({ onAdd, onBatchAdd }: TrackingFormProps) {
       return
     }
 
-    // ✅ Auto-detect SOLO se è Live Tracking
-    if (isLiveTracking && operation !== 'manual') {
+    if (operation !== 'manual') {
       let detected = 'container'
       let suggestedMode = '1' // Marittimo default
       
@@ -115,12 +109,11 @@ export default function TrackingForm({ onAdd, onBatchAdd }: TrackingFormProps) {
         transport_mode_id: prev.transport_mode_id || suggestedMode
       }))
 
-      // Auto-carica vehicle types se transport mode è stato suggerito
       if (!formData.transport_mode_id) {
         loadVehicleTypes(suggestedMode)
       }
     } else {
-      // ✅ Per Manual: solo suggerisce modalità base senza tracking_type
+      // Per Manual: solo suggerisce modalità base
       let suggestedMode = '1' // Default marittimo
       
       if (/^\d{3}-?\d{8}$/.test(value) || /^[A-Z]{2}\d{6,}/.test(value)) {
@@ -133,7 +126,6 @@ export default function TrackingForm({ onAdd, onBatchAdd }: TrackingFormProps) {
         setDetectedType('sea_manual')
       }
       
-      // Solo suggerisce modalità, non tracking_type
       setFormData(prev => ({ 
         ...prev, 
         transport_mode_id: prev.transport_mode_id || suggestedMode
@@ -271,7 +263,6 @@ export default function TrackingForm({ onAdd, onBatchAdd }: TrackingFormProps) {
     }
   }
 
-  // ✅ Logica di invio corretta
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
@@ -279,34 +270,10 @@ export default function TrackingForm({ onAdd, onBatchAdd }: TrackingFormProps) {
       switch (operation) {
         case 'single':
           if (!formData.tracking_number) return
-          if (isLiveTracking) {
-            // ✅ Live = usa ShipsGO API
-            const result = await trackSingle(formData.tracking_number, forceNew)
-            if (result.found && result.data) {
-              const enrichedData = {
-                ...result.data,
-                reference_number: formData.reference_number,
-                transport_mode_id: formData.transport_mode_id,
-                vehicle_type_id: formData.vehicle_type_id,
-                transport_company: formData.transport_company,
-                total_weight_kg: formData.total_weight_kg ? parseFloat(formData.total_weight_kg) : null,
-                total_volume_cbm: formData.total_volume_cbm ? parseFloat(formData.total_volume_cbm) : null,
-                bl_number: formData.bl_number,
-                flight_number: formData.flight_number,
-                is_api_tracked: true // ✅ Flag per distinguere
-              }
-              onAdd(enrichedData)
-            }
-          } else {
-            // ✅ Manuale = NON usa API ShipsGO
-            const manualData = {
-              id: Date.now().toString(),
-              tracking_number: formData.tracking_number,
-              carrier_name: formData.carrier_name,
-              origin_port: formData.origin_port,
-              destination_port: formData.destination_port,
-              eta: parseDateFromItalian(formData.eta),
-              status: formData.status,
+          const result = await trackSingle(formData.tracking_number, forceNew)
+          if (result.found && result.data) {
+            const enrichedData = {
+              ...result.data,
               reference_number: formData.reference_number,
               transport_mode_id: formData.transport_mode_id,
               vehicle_type_id: formData.vehicle_type_id,
@@ -315,10 +282,9 @@ export default function TrackingForm({ onAdd, onBatchAdd }: TrackingFormProps) {
               total_volume_cbm: formData.total_volume_cbm ? parseFloat(formData.total_volume_cbm) : null,
               bl_number: formData.bl_number,
               flight_number: formData.flight_number,
-              is_api_tracked: false, // ✅ NON tracciabile via API
-              tracking_type: null    // ✅ Non serve per manual
+              is_api_tracked: true
             }
-            onAdd(manualData)
+            onAdd(enrichedData)
           }
           break
 
@@ -331,29 +297,13 @@ export default function TrackingForm({ onAdd, onBatchAdd }: TrackingFormProps) {
           
           if (trackingNumbers.length === 0) return
           
-          if (isLiveTracking) {
-            const result = await trackBatch(trackingNumbers, forceNew)
-            if (result.data.length > 0) {
-              // ✅ Marca come API tracked
-              const enrichedBatch = result.data.map(item => ({
-                ...item,
-                is_api_tracked: true
-              }))
-              onBatchAdd(enrichedBatch)
-            }
-          } else {
-            const manualBatch = trackingNumbers.map((num, index) => ({
-              id: `${Date.now()}-${index}`,
-              tracking_number: num,
-              carrier_name: formData.carrier_name,
-              origin_port: formData.origin_port,
-              destination_port: formData.destination_port,
-              eta: parseDateFromItalian(formData.eta),
-              status: formData.status,
-              is_api_tracked: false,
-              tracking_type: null
+          const batchResult = await trackBatch(trackingNumbers, forceNew)
+          if (batchResult.data.length > 0) {
+            const enrichedBatch = batchResult.data.map(item => ({
+              ...item,
+              is_api_tracked: true
             }))
-            onBatchAdd(manualBatch)
+            onBatchAdd(enrichedBatch)
           }
           break
 
@@ -362,8 +312,8 @@ export default function TrackingForm({ onAdd, onBatchAdd }: TrackingFormProps) {
           break
 
         case 'manual':
-          // ✅ Manual = sempre senza API
           if (!formData.tracking_number) return
+          
           const manualData = {
             id: Date.now().toString(),
             tracking_number: formData.tracking_number,
@@ -380,10 +330,11 @@ export default function TrackingForm({ onAdd, onBatchAdd }: TrackingFormProps) {
             total_volume_cbm: formData.total_volume_cbm ? parseFloat(formData.total_volume_cbm) : null,
             bl_number: formData.bl_number,
             flight_number: formData.flight_number,
-            is_api_tracked: false, // ✅ Mai API per manual
-            tracking_type: null    // ✅ Non serve
+            is_api_tracked: false,
+            tracking_type: null
           }
-          onAdd(manualData)
+          
+          await onAdd(manualData)
           break
       }
       
@@ -439,33 +390,30 @@ export default function TrackingForm({ onAdd, onBatchAdd }: TrackingFormProps) {
   const getButtonText = () => {
     switch (operation) {
       case 'single':
-        return isLiveTracking ? 'Track Live Singolo' : 'Aggiungi Singolo'
+        return 'Track Live Singolo'
       case 'batch':
-        return isLiveTracking ? 'Track Live Multiplo' : 'Aggiungi Multiplo'
+        return 'Track Live Multiplo'
       case 'excel':
         return 'Importa da Excel'
       case 'manual':
-        return 'Inserisci Manualmente'
+        return 'Inserisci Manuale'
       default:
-        return 'Aggiungi'
+        return 'Track'
     }
   }
 
-  // ✅ Helper per mostrare detection message
   const getDetectionMessage = () => {
     if (!detectedType) return null
     
-    if (operation === 'manual' || !isLiveTracking) {
-      // Per manual, mostra solo suggerimento modalità
-      const modeMap = {
+    if (operation === 'manual') {
+      const modeMap: Record<string, string> = {
         'air_manual': '✈️ Suggerito: Modalità Aereo',
         'road_manual': '🚛 Suggerito: Modalità Stradale', 
         'sea_manual': '🚢 Suggerito: Modalità Marittima'
       }
       return modeMap[detectedType] || '🚢 Suggerito: Modalità Marittima'
     } else {
-      // Per live, mostra detection API
-      const typeMap = {
+      const typeMap: Record<string, string> = {
         'awb': '✈️ Rilevato: Aereo (AWB) - API ShipsGO',
         'parcel': '📦 Rilevato: Pacco/Corriere - API ShipsGO',
         'container': '🚢 Rilevato: Container/Mare - API ShipsGO'
@@ -499,7 +447,7 @@ export default function TrackingForm({ onAdd, onBatchAdd }: TrackingFormProps) {
         <label className="block text-sm font-medium text-gray-700 mb-2">
           Tipo Operazione
         </label>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-2">
           {Object.entries(operationLabels).map(([key, label]) => (
             <button
               key={key}
@@ -517,7 +465,7 @@ export default function TrackingForm({ onAdd, onBatchAdd }: TrackingFormProps) {
         </div>
       </div>
 
-      {/* ✅ Spiegazione modalità Manual */}
+      {/* Spiegazione modalità Manual */}
       {operation === 'manual' && (
         <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-md">
           <div className="flex items-start">
@@ -535,32 +483,8 @@ export default function TrackingForm({ onAdd, onBatchAdd }: TrackingFormProps) {
         </div>
       )}
 
-      {/* Toggle Live/Manual - NON per operation=manual */}
+      {/* Force New Toggle - NON per manual e excel */}
       {operation !== 'manual' && operation !== 'excel' && (
-        <div className="mb-4 flex items-center justify-between">
-          <span className="text-sm font-medium text-gray-700">Modalità:</span>
-          <div className="flex items-center space-x-2">
-            <span className="text-sm text-gray-600">Manuale</span>
-            <button
-              type="button"
-              onClick={() => setIsLiveTracking(!isLiveTracking)}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                isLiveTracking ? 'bg-blue-600' : 'bg-gray-200'
-              }`}
-            >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  isLiveTracking ? 'translate-x-6' : 'translate-x-1'
-                }`}
-              />
-            </button>
-            <span className="text-sm text-gray-600">Live</span>
-          </div>
-        </div>
-      )}
-
-      {/* Force New Toggle */}
-      {isLiveTracking && operation !== 'manual' && operation !== 'excel' && (
         <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
@@ -592,14 +516,14 @@ export default function TrackingForm({ onAdd, onBatchAdd }: TrackingFormProps) {
       )}
 
       {/* Status Message */}
-      {isLiveTracking && operation !== 'manual' && operation !== 'excel' && (
+      {operation !== 'manual' && (
         <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
           <div className="flex items-center">
             <svg className="h-5 w-5 text-blue-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
             <p className="text-sm text-blue-700">
-              Modalità Live: i dati verranno recuperati automaticamente da ShipsGO
+              Live Tracking: i dati verranno recuperati automaticamente da ShipsGO
             </p>
           </div>
         </div>
@@ -628,7 +552,7 @@ export default function TrackingForm({ onAdd, onBatchAdd }: TrackingFormProps) {
               type="text"
               name="tracking_number"
               value={formData.tracking_number}
-              onChange={handleChange}
+              onChange={(e) => handleTrackingNumberChange(e.target.value)}
               className={inputClassName}
               placeholder="es. MEDU7905689, 125-12345678 (AWB), 1Z999AA1234567890 (UPS)"
               required
@@ -643,11 +567,9 @@ export default function TrackingForm({ onAdd, onBatchAdd }: TrackingFormProps) {
                 </span>
               </div>
             )}
-            {isLiveTracking && (
-              <p className="mt-1 text-xs text-gray-500">
-                Inserisci solo il numero tracking, gli altri dati verranno recuperati automaticamente
-              </p>
-            )}
+            <p className="mt-1 text-xs text-gray-500">
+              Inserisci solo il numero tracking, gli altri dati verranno recuperati automaticamente
+            </p>
           </div>
         )}
 
@@ -660,7 +582,7 @@ export default function TrackingForm({ onAdd, onBatchAdd }: TrackingFormProps) {
             <textarea
               name="tracking_numbers"
               value={formData.tracking_numbers}
-              onChange={handleChange}
+              onChange={(e) => setFormData(prev => ({ ...prev, tracking_numbers: e.target.value }))}
               rows={6}
               className={textareaClassName}
               placeholder={`MEDU7905689
@@ -671,7 +593,7 @@ MRKU2556409
               required
             />
             <p className="mt-1 text-xs text-gray-500">
-              Massimo 50 tracking per volta. Supporta Container, AWB, Parcel. {isLiveTracking ? 'Dati recuperati automaticamente da ShipsGO.' : 'Inserimento manuale.'}
+              Massimo 50 tracking per volta. Supporta Container, AWB, Parcel. Dati recuperati automaticamente da ShipsGO.
             </p>
           </div>
         )}
@@ -732,25 +654,27 @@ MRKU2556409
           </div>
         )}
 
-        {/* Toggle Details */}
-        <div>
-          <button
-            type="button"
-            onClick={() => setShowDetails(!showDetails)}
-            className="flex items-center text-blue-600 hover:text-blue-800 font-medium text-sm transition-colors"
-          >
-            <span className="mr-1">
-              {showDetails ? '▼' : '▶'}
-            </span>
-            Dettagli & Geografia {operation === 'manual' ? '(Obbligatori)' : '(Opzionale)'}
-          </button>
-        </div>
+        {/* Toggle Details - Solo per singolo */}
+        {operation === 'single' && (
+          <div>
+            <button
+              type="button"
+              onClick={() => setShowDetails(!showDetails)}
+              className="flex items-center text-blue-600 hover:text-blue-800 font-medium text-sm transition-colors"
+            >
+              <span className="mr-1">
+                {showDetails ? '▼' : '▶'}
+              </span>
+              Dettagli Opzionali
+            </button>
+          </div>
+        )}
 
         {/* Campi manuali */}
-        {(operation === 'manual' || (!isLiveTracking && operation !== 'batch' && operation !== 'excel') || showDetails) && (
+        {(operation === 'manual' || showDetails) && (
           <div className="space-y-4 p-4 bg-gray-50 border border-gray-200 rounded-md">
             
-            {/* ✅ Modalità di Trasporto - PRIMO */}
+            {/* Modalità di Trasporto */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 🚚 Modalità di Trasporto *
@@ -769,12 +693,9 @@ MRKU2556409
                   </option>
                 ))}
               </select>
-              <p className="text-xs text-gray-500 mt-1">
-                Scegli prima la modalità per vedere i mezzi specifici
-              </p>
             </div>
 
-            {/* ✅ Spedizioniere - FILTRATO PER MODALITÀ */}
+            {/* Spedizioniere */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 🏢 Spedizioniere
@@ -789,7 +710,7 @@ MRKU2556409
                   <option value="">Seleziona spedizioniere...</option>
                   {getFilteredCarriers().map(carrier => (
                     <option key={carrier.id} value={carrier.name}>
-                      {carrier.name} {carrier.code && `(${carrier.code})`}
+                      {carrier.name}
                     </option>
                   ))}
                 </select>
@@ -803,90 +724,13 @@ MRKU2556409
                   placeholder="es. MSC, MAERSK, DHL, FedEx"
                 />
               )}
-              {formData.transport_mode_id && (
-                <p className="text-xs text-gray-500 mt-1">
-                  Spedizionieri filtrati per: {transportModes.find(m => m.id === formData.transport_mode_id)?.name}
-                </p>
-              )}
             </div>
 
-            {/* ✅ Tipo di Mezzo - DINAMICO */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                🚛 Tipo di Mezzo / Container
-              </label>
-              <select
-                name="vehicle_type_id"
-                value={formData.vehicle_type_id}
-                onChange={handleChange}
-                className={`${selectClassName} ${vehicleTypes.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
-                disabled={vehicleTypes.length === 0}
-              >
-                <option value="">
-                  {vehicleTypes.length === 0 
-                    ? 'Prima seleziona modalità di trasporto...' 
-                    : 'Seleziona tipo di mezzo...'
-                  }
-                </option>
-                {vehicleTypes.map(type => (
-                  <option key={type.id} value={type.id}>
-                    {type.name} - Max: {type.max_kg}kg, {type.max_cbm}cbm
-                  </option>
-                ))}
-              </select>
-              {formData.vehicle_type_id && (
-                <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs">
-                  <div className="flex justify-between">
-                    <span>Peso suggerito: {vehicleTypes.find(v => v.id === formData.vehicle_type_id)?.default_kg}kg</span>
-                    <span>Volume suggerito: {vehicleTypes.find(v => v.id === formData.vehicle_type_id)?.default_cbm}cbm</span>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* ✅ TIPO ShipsGO - SOLO per Live Tracking */}
-            {isLiveTracking && operation !== 'manual' && (
+            {/* Altri campi */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  📋 Tipo per ShipsGO API
-                </label>
-                <select
-                  name="tracking_type"
-                  value={formData.tracking_type}
-                  onChange={handleChange}
-                  className={selectClassName}
-                >
-                  <option value="container">Container (Mare)</option>
-                  <option value="awb">AWB (Aereo)</option>
-                  <option value="parcel">Parcel (Corriere)</option>
-                  <option value="bl">Bill of Lading (Mare)</option>
-                </select>
-                <p className="text-xs text-yellow-600 mt-1">
-                  ⚠️ Questo campo serve per l'API ShipsGO e viene auto-rilevato. 
-                  Non confondere con "Tipo di Mezzo" sopra che serve per i calcoli interni.
-                </p>
-              </div>
-            )}
-
-            {/* ✅ Riferimento */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                📄 Riferimento
-              </label>
-              <input
-                type="text"
-                name="reference_number"
-                value={formData.reference_number}
-                onChange={handleChange}
-                className={inputClassName}
-                placeholder="Es. PO-123, Fattura 456, Cliente ABC"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  🚢 Porto/Hub Origine
+                  🏁 Porto/Hub Origine
                 </label>
                 <input
                   type="text"
@@ -913,57 +757,7 @@ MRKU2556409
               </div>
             </div>
 
-            {/* ✅ Compagnia di Trasporto */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                🏭 Compagnia di Trasporto (Opzionale)
-              </label>
-              <input
-                type="text"
-                name="transport_company"
-                value={formData.transport_company}
-                onChange={handleChange}
-                className={inputClassName}
-                placeholder="Es. MSC, Lufthansa Cargo, DHL, Trenitalia Cargo"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                La compagnia che effettivamente trasporta (può essere diversa dallo spedizioniere)
-              </p>
-            </div>
-
-            {/* ✅ Weight and Volume */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  ⚖️ Peso Totale (kg)
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  name="total_weight_kg"
-                  value={formData.total_weight_kg}
-                  onChange={handleChange}
-                  className={inputClassName}
-                  placeholder="0.00"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  📦 Volume Totale (cbm)
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  name="total_volume_cbm"
-                  value={formData.total_volume_cbm}
-                  onChange={handleChange}
-                  className={inputClassName}
-                  placeholder="0.00"
-                />
-              </div>
-            </div>
-
-            {/* ✅ ETA con formato migliorato */}
+            {/* ETA */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 📅 ETA (Estimated Time of Arrival)
@@ -975,41 +769,9 @@ MRKU2556409
                 onChange={handleChange}
                 className={inputClassName}
               />
-              <p className="text-xs text-gray-500 mt-1">
-                Data e ora stimata di arrivo
-              </p>
             </div>
 
-            {/* ✅ B/L and Flight Numbers */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  📋 B/L Number
-                </label>
-                <input
-                  type="text"
-                  name="bl_number"
-                  value={formData.bl_number}
-                  onChange={handleChange}
-                  className={inputClassName}
-                  placeholder="Solo per Marittimo"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  ✈️ Numero Volo
-                </label>
-                <input
-                  type="text"
-                  name="flight_number"
-                  value={formData.flight_number}
-                  onChange={handleChange}
-                  className={inputClassName}
-                  placeholder="Solo per Aereo (es. LH441)"
-                />
-              </div>
-            </div>
-
+            {/* Status */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 📊 Status Corrente
@@ -1071,18 +833,12 @@ MRKU2556409
             {formData.transport_mode_id && (
               <p><strong>Modalità:</strong> {transportModes.find(m => m.id === formData.transport_mode_id)?.name}</p>
             )}
-            {formData.vehicle_type_id && (
-              <p><strong>Mezzo:</strong> {vehicleTypes.find(v => v.id === formData.vehicle_type_id)?.name}</p>
-            )}
             
-            {/* ✅ Indicatore se sarà tracciato via API */}
             <div className="mt-2 pt-2 border-t border-blue-200">
               {operation === 'manual' ? (
                 <p className="text-orange-600 font-medium">📝 Inserimento manuale - Non tracciato via API</p>
-              ) : isLiveTracking ? (
-                <p className="text-green-600 font-medium">🔴 Live tracking - Tracciato via ShipsGO API</p>
               ) : (
-                <p className="text-blue-600 font-medium">📝 Modalità manuale - Non tracciato via API</p>
+                <p className="text-green-600 font-medium">🔴 Live tracking - Tracciato via ShipsGO API</p>
               )}
             </div>
             

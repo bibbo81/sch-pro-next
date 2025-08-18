@@ -1,9 +1,8 @@
 // src/app/api/carriers/route.ts
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 
 export async function GET() {
   try {
-    // ✅ Dati completi dal vecchio progetto
     const carriers = [
       // Marittimi
       { id: '1', name: 'MSC', type: 'maritime', code: 'MSCU' },
@@ -15,7 +14,7 @@ export async function GET() {
       { id: '7', name: 'EVERGREEN', type: 'maritime', code: 'EGLV' },
       { id: '8', name: 'YANG MING', type: 'maritime', code: 'YMLU' },
       
-      // Aerei
+      // Aerei  
       { id: '9', name: 'DHL', type: 'air', code: 'DHL' },
       { id: '10', name: 'FEDEX', type: 'air', code: 'FDX' },
       { id: '11', name: 'UPS', type: 'air', code: 'UPS' },
@@ -30,11 +29,18 @@ export async function GET() {
       { id: '18', name: 'DSV', type: 'road', code: 'DSV' },
       { id: '19', name: 'GEODIS', type: 'road', code: 'GEO' },
       { id: '20', name: 'EXPEDITORS', type: 'road', code: 'EXP' },
+      { id: '21', name: 'BRT', type: 'road', code: 'BRT' },
+      { id: '22', name: 'SDA', type: 'road', code: 'SDA' },
+      { id: '23', name: 'GLS', type: 'road', code: 'GLS' },
       
       // Ferroviari
-      { id: '21', name: 'TRENITALIA CARGO', type: 'rail', code: 'TRC' },
-      { id: '22', name: 'DB CARGO', type: 'rail', code: 'DBC' },
-      { id: '23', name: 'SBB CARGO', type: 'rail', code: 'SBB' }
+      { id: '24', name: 'TRENITALIA CARGO', type: 'rail', code: 'TRC' },
+      { id: '25', name: 'DB CARGO', type: 'rail', code: 'DBC' },
+      { id: '26', name: 'SBB CARGO', type: 'rail', code: 'SBB' },
+      
+      // Multimodali
+      { id: '27', name: 'DHL GLOBAL FORWARDING', type: 'multi', code: 'DHLGF' },
+      { id: '28', name: 'EXPEDITORS', type: 'multi', code: 'EXP' }
     ]
 
     return NextResponse.json({ success: true, data: carriers })
