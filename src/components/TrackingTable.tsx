@@ -33,8 +33,7 @@ export default function TrackingTable({ shipments, loading = false }: TrackingTa
   const router = useRouter();
 
   const handleViewDetails = (shipmentId: string) => {
-    router.push(`/shipment-details?id=${shipmentId}`);
-  };
+  router.push(`/shipments/${shipmentId}`);  };
 
   const getStatusColor = (status: string | undefined) => {
     switch (status?.toLowerCase()) {

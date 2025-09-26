@@ -3,23 +3,29 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Shipment } from '@/types/shipment';
-import { 
-  Ship, 
-  MapPin, 
-  Calendar, 
-  Hash, 
-  Building, 
+import {
+  Ship,
+  MapPin,
+  Calendar,
+  Hash,
+  Building,
   Package,
   Globe,
-  DollarSign
+  DollarSign,
+  RefreshCw,
+  Loader2
 } from 'lucide-react';
+import { useShipmentDetails } from '@/hooks/useShipmentDetails';
 
 interface ShipmentInfoProps {
   shipment: Shipment;
 }
 
 export default function ShipmentInfo({ shipment }: ShipmentInfoProps) {
+  const { refreshShipsGoData, autoUpdating } = useShipmentDetails(shipment.id);
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'delivered': return 'bg-green-100 text-green-800';
@@ -53,9 +59,27 @@ export default function ShipmentInfo({ shipment }: ShipmentInfoProps) {
       {/* Informazioni Generali */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Ship className="h-5 w-5" />
-            Informazioni Spedizione
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Ship className="h-5 w-5" />
+              Informazioni Spedizione
+            </div>
+            {shipment.tracking_number && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={refreshShipsGoData}
+                disabled={autoUpdating}
+                className="flex items-center gap-2"
+              >
+                {autoUpdating ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4" />
+                )}
+                {autoUpdating ? 'Aggiornando...' : 'Aggiorna da ShipsGo'}
+              </Button>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -88,25 +112,48 @@ export default function ShipmentInfo({ shipment }: ShipmentInfoProps) {
             </div>
           </div>
 
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <Ship className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium">Carrier & Vessel</span>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Building className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium">Spedizioniere</span>
+              </div>
+              <p className="text-sm bg-muted p-2 rounded">
+                {shipment.forwarder_name || 'Non assegnato'}
+              </p>
             </div>
-            <div className="space-y-1">
-              <p className="text-sm">{shipment.carrier || 'N/A'}</p>
-              {shipment.vessel_name && (
-                <p className="text-sm text-muted-foreground">
-                  Vessel: {shipment.vessel_name}
-                </p>
-              )}
-              {shipment.voyage_number && (
-                <p className="text-sm text-muted-foreground">
-                  Voyage: {shipment.voyage_number}
-                </p>
-              )}
+
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Ship className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium">Modalità di Trasporto</span>
+              </div>
+              <p className="text-sm bg-muted p-2 rounded">
+                {shipment.transport_mode || 'N/A'}
+              </p>
             </div>
           </div>
+
+          {(shipment.vessel_name || shipment.voyage_number) && (
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Ship className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium">Dettagli Trasporto</span>
+              </div>
+              <div className="space-y-1">
+                {shipment.vessel_name && (
+                  <p className="text-sm text-muted-foreground">
+                    Vessel: {shipment.vessel_name}
+                  </p>
+                )}
+                {shipment.voyage_number && (
+                  <p className="text-sm text-muted-foreground">
+                    Voyage: {shipment.voyage_number}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -152,18 +199,18 @@ export default function ShipmentInfo({ shipment }: ShipmentInfoProps) {
                 <span className="text-sm">ETA:</span>
               </div>
               <span className="text-sm font-medium">
-                {formatDate(shipment.estimated_arrival)}
+                {formatDate(shipment.eta)}
               </span>
             </div>
             
-            {shipment.actual_arrival && (
+            {shipment.ata && (
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-green-600" />
                   <span className="text-sm">Actual Arrival:</span>
                 </div>
                 <span className="text-sm font-medium text-green-600">
-                  {formatDate(shipment.actual_arrival)}
+                  {formatDate(shipment.ata)}
                 </span>
               </div>
             )}
@@ -176,40 +223,34 @@ export default function ShipmentInfo({ shipment }: ShipmentInfoProps) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Package className="h-5 w-5" />
-            Container & Cargo
+            Dettagli Container e Merce
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {shipment.container_number && (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <span className="text-sm text-muted-foreground">Tipo Container:</span>
+                <p className="text-sm font-medium">{shipment.container_type || 'N/A'}</p>
+              </div>
+              <div>
+                <span className="text-sm text-muted-foreground">Seal Number:</span>
+                <p className="text-sm font-mono">{shipment.seal_number || 'N/A'}</p>
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <span className="text-sm text-muted-foreground">Container:</span>
-              <p className="text-sm font-mono">
-                {shipment.container_number || 'N/A'}
+              <span className="text-sm text-muted-foreground">Peso Totale (kg):</span>
+              <p className="text-sm font-medium">
+                {shipment.total_weight_kg ? `${shipment.total_weight_kg} kg` : '0 kg'}
               </p>
             </div>
             <div>
-              <span className="text-sm text-muted-foreground">Type:</span>
-              <p className="text-sm">{shipment.container_type || 'N/A'}</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <span className="text-sm text-muted-foreground">Packages:</span>
+              <span className="text-sm text-muted-foreground">Volume Totale (cbm):</span>
               <p className="text-sm font-medium">
-                {shipment.number_of_packages || 'N/A'}
-              </p>
-            </div>
-            <div>
-              <span className="text-sm text-muted-foreground">Weight:</span>
-              <p className="text-sm font-medium">
-                {shipment.total_weight ? `${shipment.total_weight} kg` : 'N/A'}
-              </p>
-            </div>
-            <div>
-              <span className="text-sm text-muted-foreground">Volume:</span>
-              <p className="text-sm font-medium">
-                {shipment.total_volume ? `${shipment.total_volume} m³` : 'N/A'}
+                {shipment.total_volume_m3 ? `${shipment.total_volume_m3} m³` : '75 m³'}
               </p>
             </div>
           </div>
@@ -227,12 +268,12 @@ export default function ShipmentInfo({ shipment }: ShipmentInfoProps) {
         <CardContent className="space-y-4">
           <div>
             <span className="text-sm text-muted-foreground">Shipper:</span>
-            <p className="text-sm font-medium">{shipment.shipper_name || 'N/A'}</p>
+            <p className="text-sm font-medium">{shipment.supplier_name || 'N/A'}</p>
           </div>
           
           <div>
             <span className="text-sm text-muted-foreground">Consignee:</span>
-            <p className="text-sm font-medium">{shipment.consignee_name || 'N/A'}</p>
+            <p className="text-sm font-medium">{shipment.recipient_name || 'N/A'}</p>
           </div>
 
           <div className="flex items-center justify-between">
@@ -245,10 +286,10 @@ export default function ShipmentInfo({ shipment }: ShipmentInfoProps) {
             </span>
           </div>
 
-          {shipment.incoterms && (
+          {shipment.incoterm && (
             <div>
               <span className="text-sm text-muted-foreground">Incoterms:</span>
-              <p className="text-sm font-medium">{shipment.incoterms}</p>
+              <p className="text-sm font-medium">{shipment.incoterm}</p>
             </div>
           )}
         </CardContent>

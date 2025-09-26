@@ -2,260 +2,264 @@
 
 import React, { useState, useRef, useCallback } from 'react';
 import { X, Upload, FileSpreadsheet, MapPin, CheckCircle, Eye, AlertCircle, FileText, RefreshCw, Plus, PlusCircle } from 'lucide-react';
-import styles from './ImportWizard.module.css';
 import { Product, ImportColumn, ImportPreview } from '@/types/product';
+import { useAuth } from '@/contexts/AuthContext';
 import * as XLSX from 'xlsx';
 
 interface ImportWizardProps {
   isOpen: boolean;
   onClose: () => void;
   onImportComplete?: (results: any) => void;
-  existingProducts?: Product[]; // Prodotti esistenti per il controllo duplicati
+  existingProducts?: Product[];
 }
 
-type ImportStep = 'upload' | 'mapping' | 'preview' | 'options' | 'import';
+interface ImportStep {
+  id: 'upload' | 'mapping' | 'preview' | 'options' | 'import';
+  title: string;
+  description: string;
+}
 
 type ImportMode = 'replace' | 'new_only' | 'append';
 
+interface EnhancedImportColumn extends ImportColumn {
+  csvField: string;
+  productField: string;
+  index: number;
+  required?: boolean;
+  suggestions?: string[];
+}
+
+interface EnhancedImportPreview {
+  valid: Product[];
+  invalid: Array<{ row: number; data: any; errors: string[] }>;
+  summary: {
+    total: number;
+    valid: number;
+    invalid: number;
+  };
+}
+
+interface DuplicatesAnalysis {
+  total: number;
+  duplicates: number;
+  newProducts: number;
+  toReplace: Product[];
+  toAdd: Product[];
+}
+
+const IMPORT_STEPS: ImportStep[] = [
+  { id: 'upload', title: 'Upload File', description: 'Seleziona il file da importare' },
+  { id: 'mapping', title: 'Mappa Colonne', description: 'Associa le colonne ai campi' },
+  { id: 'preview', title: 'Preview', description: 'Controlla i dati' },
+  { id: 'options', title: 'Opzioni', description: 'Configura l\'import' },
+  { id: 'import', title: 'Import', description: 'Importa i prodotti' }
+];
+
 export function ImportWizard({ isOpen, onClose, onImportComplete, existingProducts = [] }: ImportWizardProps) {
-  const [currentStep, setCurrentStep] = useState<ImportStep>('upload');
+  const { userId } = useAuth();
+  
+  const [currentStep, setCurrentStep] = useState<'upload' | 'mapping' | 'preview' | 'options' | 'import'>('upload');
   const [file, setFile] = useState<File | null>(null);
   const [csvData, setCsvData] = useState<string[][]>([]);
-  const [columns, setColumns] = useState<ImportColumn[]>([]);
-  const [preview, setPreview] = useState<ImportPreview | null>(null);
+  const [columns, setColumns] = useState<EnhancedImportColumn[]>([]);
+  const [preview, setPreview] = useState<EnhancedImportPreview | null>(null);
   const [importMode, setImportMode] = useState<ImportMode>('new_only');
-  const [duplicatesAnalysis, setDuplicatesAnalysis] = useState<{
-    total: number;
-    duplicates: number;
-    newProducts: number;
-    toReplace: Product[];
-    toAdd: Product[];
-  } | null>(null);
+  const [duplicatesAnalysis, setDuplicatesAnalysis] = useState<DuplicatesAnalysis | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [importResults, setImportResults] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Campi disponibili del prodotto
-  const productFields: Array<{ key: keyof Product; label: string; required: boolean }> = [
-    { key: 'sku', label: 'SKU', required: true },
-    { key: 'description', label: 'Descrizione', required: true },
-    { key: 'other_description', label: 'Descrizione aggiuntiva', required: false },
-    { key: 'category', label: 'Categoria', required: false },
-    { key: 'unit_price', label: 'Prezzo unitario', required: false },
-    { key: 'currency', label: 'Valuta', required: false },
-    { key: 'weight_kg', label: 'Peso (kg)', required: false },
-    { key: 'hs_code', label: 'Codice HS', required: false },
-    { key: 'origin_country', label: 'Paese origine', required: false },
-    { key: 'ean', label: 'EAN', required: false },
-  ];
-
-  const steps = [
-    { id: 'upload', label: 'Upload', icon: Upload },
-    { id: 'mapping', label: 'Map Columns', icon: MapPin },
-    { id: 'preview', label: 'Preview', icon: Eye },
-    { id: 'options', label: 'Import Options', icon: RefreshCw },
-    { id: 'import', label: 'Import', icon: CheckCircle },
-  ];
-
-  const importModeOptions = [
-    {
-      id: 'replace' as ImportMode,
-      title: 'Replace All Data',
-      description: 'Replace existing products with the same SKU',
-      icon: RefreshCw,
-      color: '#f59e0b'
-    },
-    {
-      id: 'new_only' as ImportMode,
-      title: 'Add New Only',
-      description: 'Only add products with new SKUs, skip duplicates',
-      icon: Plus,
-      color: '#10b981'
-    },
-    {
-      id: 'append' as ImportMode,
-      title: 'Append All',
-      description: 'Add all products, even if SKU already exists',
-      icon: PlusCircle,
-      color: '#3b82f6'
-    }
-  ];
-
-  const getStepStatus = (stepId: string) => {
-    const stepIndex = steps.findIndex(s => s.id === stepId);
-    const currentIndex = steps.findIndex(s => s.id === currentStep);
-    
-    if (stepIndex < currentIndex) return 'completed';
-    if (stepIndex === currentIndex) return 'active';
-    return 'pending';
-  };
-
-  const parseCSV = (text: string): string[][] => {
-    const lines = text.split('\n').filter(line => line.trim());
-    return lines.map(line => {
-      const result = [];
-      let current = '';
-      let inQuotes = false;
-      
-      for (let i = 0; i < line.length; i++) {
-        const char = line[i];
-        if (char === '"') {
-          inQuotes = !inQuotes;
-        } else if (char === ',' && !inQuotes) {
-          result.push(current.trim());
-          current = '';
-        } else {
-          current += char;
-        }
-      }
-      result.push(current.trim());
-      return result;
-    });
-  };
-
-  const handleFileUpload = useCallback(async (uploadedFile: File) => {
-    if (!uploadedFile) return;
-
+  const handleFileSelect = useCallback((selectedFile: File) => {
+    setFile(selectedFile);
     setIsProcessing(true);
-    try {
-      let parsed: string[][] = [];
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = e.target?.result;
+        let parsedData: string[][] = [];
+        
+        if (selectedFile.name.endsWith('.csv')) {
+          // Parse CSV
+          const text = data as string;
+          parsedData = text.split('\n').map(row => 
+            row.split(',').map(cell => cell.replace(/^"|"$/g, '').trim())
+          ).filter(row => row.some(cell => cell.length > 0));
+        } else if (selectedFile.name.endsWith('.xlsx') || selectedFile.name.endsWith('.xls')) {
+          // Parse Excel
+          const workbook = XLSX.read(data, { type: 'binary' });
+          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+          const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '' });
+          parsedData = jsonData as string[][];
+        }
 
-      if (uploadedFile.name.endsWith('.csv')) {
-        const text = await uploadedFile.text();
-        parsed = parseCSV(text);
-      } else if (
-        uploadedFile.name.endsWith('.xlsx') ||
-        uploadedFile.name.endsWith('.xls')
-      ) {
-        const data = await uploadedFile.arrayBuffer();
-        const workbook = XLSX.read(data, { type: 'array' });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        parsed = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as string[][];
-      } else {
-        throw new Error('Formato file non supportato');
+        if (parsedData.length === 0) {
+          throw new Error('File vuoto o formato non valido');
+        }
+
+        setCsvData(parsedData);
+        
+        // Initialize columns from first row
+        const headers = parsedData[0] || [];
+        const initialColumns: EnhancedImportColumn[] = headers.map((header, index) => ({
+          key: 'ignore' as keyof Product | 'ignore',
+          label: header,
+          csvField: header,
+          productField: '',
+          index,
+          required: false,
+          suggestions: getSuggestions(header)
+        }));
+        
+        setColumns(initialColumns);
+        setCurrentStep('mapping');
+      } catch (error) {
+        console.error('Errore nel parsing del file:', error);
+        alert('Errore nel parsing del file. Controlla il formato.');
+      } finally {
+        setIsProcessing(false);
       }
+    };
 
-      if (parsed.length === 0) {
-        throw new Error('File vuoto o formato non valido');
-      }
-
-      const headers = parsed[0];
-      const initialColumns: ImportColumn[] = headers.map(header => ({
-        csvColumn: header,
-        productField: null,
-        required: false,
-        sample: parsed[1]?.[headers.indexOf(header)] || ''
-      }));
-
-      setFile(uploadedFile);
-      setCsvData(parsed);
-      setColumns(initialColumns);
-      setCurrentStep('mapping');
-    } catch (error) {
-      alert('Errore nel caricamento del file. Verifica che sia un CSV o Excel valido.');
-    } finally {
-      setIsProcessing(false);
+    if (selectedFile.name.endsWith('.csv')) {
+      reader.readAsText(selectedFile);
+    } else {
+      reader.readAsBinaryString(selectedFile);
     }
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
+  const getSuggestions = (header: string): string[] => {
+    const headerLower = header.toLowerCase();
+    const suggestions: string[] = [];
+    
+    const mappings = {
+      'sku': ['sku', 'codice', 'code', 'articolo', 'article'],
+      'description': ['description', 'descrizione', 'nome', 'name', 'prodotto', 'product'],
+      'category': ['category', 'categoria', 'tipo', 'type'],
+      'unit_price': ['price', 'prezzo', 'costo', 'cost', 'unit_price', 'unitprice'],
+      'currency': ['currency', 'valuta', 'moneta'],
+      'weight_kg': ['weight', 'peso', 'kg', 'weight_kg', 'weightkg'],
+      'quantity': ['quantity', 'quantità', 'qty', 'stock', 'magazzino'],
+      'min_stock': ['min_stock', 'min', 'minimo', 'soglia', 'minimum'],
+      'max_stock': ['max_stock', 'max', 'massimo', 'maximum'],
+      'active': ['active', 'attivo', 'status', 'stato'],
+      'ean': ['ean', 'barcode', 'codice_barre'],
+      'hs_code': ['hs_code', 'hs', 'codice_hs', 'harmonized'],
+      'origin_country': ['origin', 'origine', 'country', 'paese'],
+      'other_description': ['other_description', 'note', 'notes', 'dettagli']
+    };
+
+    for (const [field, keywords] of Object.entries(mappings)) {
+      if (keywords.some(keyword => headerLower.includes(keyword))) {
+        suggestions.push(field);
+      }
+    }
+
+    return suggestions;
+  };
+
+  const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragOver(false);
+    
     const files = Array.from(e.dataTransfer.files);
-    const supportedFile = files.find(f =>
-      f.type === 'text/csv' ||
-      f.name.endsWith('.csv') ||
-      f.name.endsWith('.xlsx') ||
-      f.name.endsWith('.xls') ||
-      f.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
-      f.type === 'application/vnd.ms-excel'
+    const validFile = files.find(file => 
+      file.name.endsWith('.csv') || 
+      file.name.endsWith('.xlsx') || 
+      file.name.endsWith('.xls')
     );
-    if (supportedFile) {
-      handleFileUpload(supportedFile);
-    }
-  }, [handleFileUpload]);
 
-  const handleColumnMapping = (csvColumn: string, productField: keyof Product | null) => {
-    setColumns(prev => prev.map(col => 
-      col.csvColumn === csvColumn 
-        ? { 
-            ...col, 
-            productField, 
-            required: productField ? (productFields.find(f => f.key === productField)?.required ?? false) : false 
-          }
-        : col
+    if (validFile) {
+      handleFileSelect(validFile);
+    } else {
+      alert('Formato file non supportato. Usa CSV o Excel (.xlsx, .xls).');
+    }
+  }, [handleFileSelect]);
+
+  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  }, []);
+
+  const updateColumnMapping = (index: number, productField: string) => {
+    setColumns(prev => prev.map((col, i) => 
+      i === index ? { ...col, productField, key: productField as keyof Product | 'ignore' } : col
     ));
   };
-  
+
   const generatePreview = () => {
+    if (!userId) {
+      alert('Utente non autenticato');
+      return;
+    }
+
     setIsProcessing(true);
     try {
-      const mappedColumns = columns.filter(col => col.productField);
+      const mappedColumns = columns.filter(col => col.productField && col.productField !== 'ignore');
       const valid: Product[] = [];
       const invalid: Array<{ row: number; data: any; errors: string[] }> = [];
 
       csvData.slice(1).forEach((row, index) => {
         const errors: string[] = [];
         const productData: any = {
-          user_id: '21766c53-a16b-4019-9a11-845ecea8cf10',
+          user_id: userId,
+          id: `temp_${index}`,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         };
 
         mappedColumns.forEach(col => {
-          const csvIndex = csvData[0].indexOf(col.csvColumn);
-          const cell = row[csvIndex];
-          const value = typeof cell === 'string'
-            ? cell.trim()
-            : cell != null
-              ? String(cell).trim()
-              : '';
-              
-          if (col.required && !value) {
-            let label = '';
-            if (col.productField !== null) {
-              label = productFields.find(f => f.key === col.productField)?.label || '';
-            }
-            errors.push(`${label} è obbligatorio`);
-          }
+          const value = row[col.index];
+          const field = col.productField;
+          
+          if (!value || value.trim() === '') return;
 
-          if (col.productField === 'unit_price' && value) {
-            const price = parseFloat(value);
-            if (isNaN(price)) {
-              errors.push('Prezzo non valido');
+          try {
+            if (field === 'unit_price' || field === 'weight_kg') {
+              const numValue = parseFloat(value.replace(',', '.'));
+              if (!isNaN(numValue)) {
+                productData[field] = numValue;
+              }
+            } else if (field === 'quantity' || field === 'min_stock' || field === 'max_stock') {
+              const intValue = parseInt(value);
+              if (!isNaN(intValue)) {
+                productData[field] = intValue;
+              }
+            } else if (field === 'active') {
+              const boolValue = ['true', '1', 'yes', 'si', 'attivo', 'active'].includes(value.toLowerCase());
+              productData[field] = boolValue;
             } else {
-              productData[col.productField] = price;
+              productData[field] = value.trim();
             }
-          } else if (col.productField === 'weight_kg' && value) {
-            const weight = parseFloat(value);
-            if (isNaN(weight)) {
-              errors.push('Peso non valido');
-            } else {
-              productData[col.productField] = weight;
-            }
-          } else if (col.productField === 'active') {
-            productData[col.productField] = ['true', '1', 'yes', 'si'].includes(value.toLowerCase());
-          } else {
-            if (col.productField) {
-              productData[col.productField] = value || null;
-            }
+          } catch (err) {
+            errors.push(`Errore nel campo ${field}: ${err}`);
           }
         });
 
+        // Validation
         if (!productData.sku) {
-          errors.push('SKU è obbligatorio');
+          errors.push('SKU obbligatorio');
         }
         if (!productData.description) {
-          errors.push('Descrizione è obbligatoria');
+          errors.push('Descrizione obbligatoria');
+        }
+
+        // Set defaults
+        if (productData.active === undefined) {
+          productData.active = true;
+        }
+        if (!productData.currency) {
+          productData.currency = 'EUR';
         }
 
         if (errors.length === 0) {
-          valid.push({
-            ...productData,
-            id: `temp_${index}`,
-            active: productData.active ?? true,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          } as Product);
+          valid.push(productData as Product);
         } else {
           invalid.push({
             row: index + 2,
@@ -287,39 +291,34 @@ export function ImportWizard({ isOpen, onClose, onImportComplete, existingProduc
   const analyzeDuplicates = () => {
     if (!preview) return;
 
-    setIsProcessing(true);
-    try {
-      const existingSkus = new Set(existingProducts.map(p => p.sku));
-      const toReplace: Product[] = [];
-      const toAdd: Product[] = [];
+    const duplicates: Product[] = [];
+    const newProducts: Product[] = [];
 
-      preview.valid.forEach(product => {
-        if (existingSkus.has(product.sku)) {
-          toReplace.push(product);
-        } else {
-          toAdd.push(product);
-        }
-      });
+    preview.valid.forEach(product => {
+      const existing = existingProducts.find(p => 
+        p.sku.toLowerCase() === product.sku.toLowerCase()
+      );
+      
+      if (existing) {
+        duplicates.push({ ...product, id: existing.id });
+      } else {
+        newProducts.push(product);
+      }
+    });
 
-      setDuplicatesAnalysis({
-        total: preview.valid.length,
-        duplicates: toReplace.length,
-        newProducts: toAdd.length,
-        toReplace,
-        toAdd
-      });
+    setDuplicatesAnalysis({
+      total: preview.valid.length,
+      duplicates: duplicates.length,
+      newProducts: newProducts.length,
+      toReplace: duplicates,
+      toAdd: newProducts
+    });
 
-      setCurrentStep('options');
-    } catch (error) {
-      console.error('Errore nell\'analisi duplicati:', error);
-      alert('Errore nell\'analisi duplicati');
-    } finally {
-      setIsProcessing(false);
-    }
+    setCurrentStep('options');
   };
 
   const handleImport = async () => {
-    if (!preview || !duplicatesAnalysis) return;
+    if (!preview || !duplicatesAnalysis || !userId) return;
     
     setIsProcessing(true);
     setCurrentStep('import');
@@ -339,447 +338,581 @@ export function ImportWizard({ isOpen, onClose, onImportComplete, existingProduc
           break;
       }
 
-      // Simula import - sostituisci con chiamata API reale
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const response = await fetch('/api/products/import', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          user_id: userId,
+          products: productsToImport,
+          mode: importMode
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Errore nell\'import');
+      }
+
+      const result = await response.json();
       
+      setImportResults({
+        success: true,
+        mode: importMode,
+        imported: result.imported || productsToImport.length,
+        replaced: importMode === 'replace' ? duplicatesAnalysis.duplicates : 0,
+        skipped: importMode === 'new_only' ? duplicatesAnalysis.duplicates : 0,
+        products: productsToImport
+      });
+
       if (onImportComplete) {
-        onImportComplete({
-          mode: importMode,
-          imported: productsToImport.length,
-          replaced: importMode === 'replace' ? duplicatesAnalysis.duplicates : 0,
-          skipped: importMode === 'new_only' ? duplicatesAnalysis.duplicates : 0,
-          products: productsToImport
-        });
+        onImportComplete(result);
       }
       
-      onClose();
     } catch (error) {
       console.error('Errore nell\'import:', error);
-      alert('Errore durante l\'import');
+      setImportResults({
+        success: false,
+        error: error instanceof Error ? error.message : 'Errore sconosciuto'
+      });
     } finally {
       setIsProcessing(false);
     }
   };
 
-  if (!isOpen) return null;
+  const resetWizard = () => {
+    setCurrentStep('upload');
+    setFile(null);
+    setCsvData([]);
+    setColumns([]);
+    setPreview(null);
+    setImportMode('new_only');
+    setDuplicatesAnalysis(null);
+    setImportResults(null);
+    setIsProcessing(false);
+  };
+
+  const getCurrentStepIndex = () => {
+    const steps = ['upload', 'mapping', 'preview', 'options', 'import'];
+    return steps.indexOf(currentStep);
+  };
+
+  if (!isOpen || !userId) return null;
 
   return (
-    <div className={styles.overlay}>
-      <div className={styles.modal}>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden">
         {/* Header */}
-        <div className={styles.header}>
-          <div className={styles.titleSection}>
-            <h2 className={styles.title}>Import Products</h2>
-            <p className={styles.subtitle}>Upload and import your product data</p>
+        <div className="flex items-center justify-between p-6 border-b bg-gradient-to-r from-blue-50 to-indigo-50">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Import Prodotti</h2>
+            <p className="text-gray-600 text-sm">
+              Importa prodotti da file CSV o Excel
+            </p>
           </div>
-          <button onClick={onClose} className={styles.closeButton}>
-            <X size={20} />
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-white/50 rounded-lg transition-colors"
+          >
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Steps Progress */}
-        <div className={styles.stepsContainer}>
-          <div className={styles.stepWrapper}>
-            {steps.map((step, index) => {
-              const status = getStepStatus(step.id);
-              const StepIcon = step.icon;
-              
-              return (
-                <React.Fragment key={step.id}>
-                  <div className={`${styles.step} ${styles[`step${status.charAt(0).toUpperCase() + status.slice(1)}`]}`}>
-                    <div className={styles.stepIcon}>
-                      <StepIcon size={18} />
-                    </div>
-                    <span className={styles.stepLabel}>{step.label}</span>
-                  </div>
-                  {index < steps.length - 1 && (
-                    <div className={`${styles.stepConnector} ${status === 'completed' ? styles.stepConnectorCompleted : ''}`} />
-                  )}
-                </React.Fragment>
-              );
-            })}
-          </div>
+        {/* Steps Indicator */}
+        <div className="flex items-center justify-center p-4 bg-gray-50 border-b">
+          {IMPORT_STEPS.map((step, index) => (
+            <div key={step.id} className="flex items-center">
+              <div className={`
+                flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium
+                ${currentStep === step.id 
+                  ? 'bg-blue-600 text-white' 
+                  : index < getCurrentStepIndex()
+                  ? 'bg-green-500 text-white'
+                  : 'bg-gray-200 text-gray-600'
+                }
+              `}>
+                {index < getCurrentStepIndex() ? (
+                  <CheckCircle className="w-4 h-4" />
+                ) : (
+                  index + 1
+                )}
+              </div>
+              {index < IMPORT_STEPS.length - 1 && (
+                <div className={`w-12 h-0.5 mx-2 ${
+                  index < getCurrentStepIndex()
+                    ? 'bg-green-500'
+                    : 'bg-gray-200'
+                }`} />
+              )}
+            </div>
+          ))}
         </div>
 
         {/* Content */}
-        <div className={styles.content}>
-          {/* Upload Step */}
+        <div className="p-6 overflow-y-auto max-h-[60vh]">
+          {/* UPLOAD STEP */}
           {currentStep === 'upload' && (
-            <div className={styles.uploadStep}>
-              {file ? (
-                <div className={styles.filePreview}>
-                  <FileSpreadsheet size={24} color="#3b82f6" />
-                  <div>
-                    <p className={styles.fileName}>{file.name}</p>
-                    <p className={styles.fileSize}>{(file.size / 1024).toFixed(1)} KB</p>
+            <div className="text-center">
+              <div
+                onDrop={handleDrop}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                className={`
+                  border-2 border-dashed rounded-xl p-12 transition-all cursor-pointer
+                  ${isDragOver 
+                    ? 'border-blue-400 bg-blue-50' 
+                    : 'border-gray-300 hover:border-gray-400'
+                  }
+                `}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <div className="space-y-4">
+                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
+                    <Upload className="w-8 h-8 text-blue-600" />
                   </div>
-                  <button 
-                    onClick={() => { setFile(null); setCsvData([]); setColumns([]); }}
-                    className={styles.backButton}
-                  >
-                    Remove
-                  </button>
+                  <div>
+                    <p className="text-lg font-medium text-gray-900">
+                      Trascina qui il tuo file o clicca per selezionare
+                    </p>
+                    <p className="text-gray-600 text-sm mt-2">
+                      Formati supportati: CSV, Excel (.xlsx, .xls)
+                    </p>
+                    <p className="text-gray-500 text-xs mt-2">
+                      Dimensione massima: 10MB
+                    </p>
+                  </div>
                 </div>
-              ) : (
-                <div 
-                  className={`${styles.dropZone} ${isDragOver ? styles.dropZoneActive : ''}`}
-                  onDrop={handleDrop}
-                  onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
-                  onDragLeave={() => setIsDragOver(false)}
-                >
-                  <Upload size={48} className={styles.uploadIcon} />
-                  <h3>Drop your CSV or Excel file here</h3>
-                  <p>Or click to browse files (CSV, XLSX, XLS formats supported)</p>
-                  <button className={styles.browseButton} onClick={() => fileInputRef.current?.click()}>
-                    Browse Files
-                  </button>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".csv, .xlsx, .xls, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
-                    onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])}
-                    className={styles.fileInput}
-                  />
-                </div>
-              )}
+              </div>
+              
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv,.xlsx,.xls"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleFileSelect(file);
+                }}
+                className="hidden"
+              />
 
-              <div className={styles.stepActions}>
-                <button 
-                  onClick={() => setCurrentStep('mapping')} 
-                  disabled={!file || isProcessing}
-                  className={styles.nextButton}
-                >
-                  {isProcessing ? 'Processing...' : 'Next: Map Columns'}
+              {/* Template Download */}
+              <div className="mt-8 p-4 bg-gray-50 rounded-lg">
+                <h4 className="font-medium text-gray-900 mb-2">Non hai un file?</h4>
+                <p className="text-sm text-gray-600 mb-3">
+                  Scarica il template per iniziare
+                </p>
+                <button className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 text-sm">
+                  <FileSpreadsheet className="w-4 h-4 mr-2 inline" />
+                  Scarica Template
                 </button>
               </div>
             </div>
           )}
 
-          {/* Mapping Step */}
+          {/* MAPPING STEP */}
           {currentStep === 'mapping' && (
-            <div className={styles.mappingStep}>
-              <div>
-                <h3>Map CSV Columns to Product Fields</h3>
-                <p>Match your CSV columns with the product fields below</p>
-              </div>
-
-              <div style={{ flex: 1, overflowY: 'auto' }}>
-                <div style={{ display: 'grid', gap: '12px' }}>
-                  {columns.map((col, index) => (
-                    <div key={index} style={{
-                      background: 'rgba(255, 255, 255, 0.6)',
-                      border: '1px solid rgba(0, 0, 0, 0.1)',
-                      borderRadius: '12px',
-                      padding: '16px',
-                      display: 'grid',
-                      gridTemplateColumns: '1fr 1fr 200px',
-                      gap: '16px',
-                      alignItems: 'center'
-                    }}>
-                      <div>
-                        <p style={{ margin: 0, fontWeight: 600, fontSize: '14px' }}>{col.csvColumn}</p>
-                        {col.sample && (
-                          <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'rgba(0, 0, 0, 0.5)' }}>
-                            Sample: {col.sample}
-                          </p>
-                        )}
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Mappa le Colonne</h3>
+              <p className="text-gray-600 mb-6">
+                Associa le colonne del tuo file ai campi prodotto. I campi SKU e Descrizione sono obbligatori.
+              </p>
+              
+              <div className="space-y-4 max-h-96 overflow-y-auto">
+                {columns.map((col, index) => (
+                  <div key={index} className="flex items-center gap-4 p-4 border rounded-lg bg-white">
+                    <div className="flex-1">
+                      <div className="font-medium text-gray-900">{col.csvField}</div>
+                      <div className="text-sm text-gray-500">
+                        Esempio: {csvData[1]?.[col.index] || 'N/A'}
                       </div>
-
-                      <div>
-                        <select
-                          value={col.productField || ''}
-                          onChange={(e) => handleColumnMapping(col.csvColumn, e.target.value as keyof Product || null)}
-                          style={{
-                            width: '100%',
-                            padding: '8px 12px',
-                            borderRadius: '8px',
-                            border: '1px solid rgba(0, 0, 0, 0.2)',
-                            background: 'rgba(255, 255, 255, 0.8)',
-                            fontSize: '14px'
-                          }}
-                        >
-                          <option value="">Select field...</option>
-                          {productFields.map(field => (
-                            <option key={field.key} value={field.key}>
-                              {field.label} {field.required ? '*' : ''}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div>
-                        {col.required && (
-                          <span style={{ 
-                            fontSize: '12px', 
-                            color: '#dc2626',
-                            fontWeight: 500
-                          }}>
-                            Required
-                          </span>
-                        )}
-                      </div>
+                      {col.suggestions && col.suggestions.length > 0 && (
+                        <div className="text-xs text-blue-600 mt-1">
+                          Suggerito: {col.suggestions[0]}
+                        </div>
+                      )}
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className={styles.stepActions}>
-                <button onClick={() => setCurrentStep('upload')} className={styles.backButton}>
-                  Back
-                </button>
-                <button 
-                  onClick={generatePreview}
-                  disabled={!columns.some(col => col.productField) || isProcessing}
-                  className={styles.nextButton}
-                >
-                  {isProcessing ? 'Generating...' : 'Preview Import'}
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Preview Step */}
-          {currentStep === 'preview' && preview && (
-            <div className={styles.mappingStep}>
-              <div>
-                <h3>Import Preview</h3>
-                <p>Review your data before importing</p>
-              </div>
-
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(3, 1fr)',
-                gap: '16px',
-                marginBottom: '20px'
-              }}>
-                <div style={{
-                  background: 'rgba(34, 197, 94, 0.1)',
-                  border: '1px solid rgba(34, 197, 94, 0.2)',
-                  borderRadius: '12px',
-                  padding: '16px',
-                  textAlign: 'center'
-                }}>
-                  <p style={{ margin: '0 0 4px 0', fontSize: '24px', fontWeight: 600, color: '#22c55e' }}>
-                    {preview.summary.valid}
-                  </p>
-                  <p style={{ margin: 0, fontSize: '14px', color: 'rgba(0, 0, 0, 0.6)' }}>Valid Records</p>
-                </div>
-
-                <div style={{
-                  background: 'rgba(239, 68, 68, 0.1)',
-                  border: '1px solid rgba(239, 68, 68, 0.2)',
-                  borderRadius: '12px',
-                  padding: '16px',
-                  textAlign: 'center'
-                }}>
-                  <p style={{ margin: '0 0 4px 0', fontSize: '24px', fontWeight: 600, color: '#ef4444' }}>
-                    {preview.summary.invalid}
-                  </p>
-                  <p style={{ margin: 0, fontSize: '14px', color: 'rgba(0, 0, 0, 0.6)' }}>Errors</p>
-                </div>
-
-                <div style={{
-                  background: 'rgba(59, 130, 246, 0.1)',
-                  border: '1px solid rgba(59, 130, 246, 0.2)',
-                  borderRadius: '12px',
-                  padding: '16px',
-                  textAlign: 'center'
-                }}>
-                  <p style={{ margin: '0 0 4px 0', fontSize: '24px', fontWeight: 600, color: '#3b82f6' }}>
-                    {preview.summary.total}
-                  </p>
-                  <p style={{ margin: 0, fontSize: '14px', color: 'rgba(0, 0, 0, 0.6)' }}>Total Records</p>
-                </div>
-              </div>
-
-              {preview.invalid.length > 0 && (
-                <div style={{
-                  background: 'rgba(239, 68, 68, 0.05)',
-                  border: '1px solid rgba(239, 68, 68, 0.2)',
-                  borderRadius: '12px',
-                  padding: '16px',
-                  maxHeight: '200px',
-                  overflowY: 'auto'
-                }}>
-                  <h4 style={{ margin: '0 0 12px 0', color: '#ef4444', fontSize: '16px' }}>
-                    <AlertCircle size={16} style={{ display: 'inline', marginRight: '8px' }} />
-                    Errors Found
-                  </h4>
-                  {preview.invalid.map((item, index) => (
-                    <div key={index} style={{ marginBottom: '8px', fontSize: '14px' }}>
-                      <strong>Row {item.row}:</strong> {item.errors.join(', ')}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <div className={styles.stepActions}>
-                <button onClick={() => setCurrentStep('mapping')} className={styles.backButton}>
-                  Back
-                </button>
-                <button 
-                  onClick={analyzeDuplicates}
-                  disabled={preview.summary.valid === 0 || isProcessing}
-                  className={styles.nextButton}
-                >
-                  {isProcessing ? 'Analyzing...' : 'Check for Duplicates'}
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Options Step */}
-          {currentStep === 'options' && duplicatesAnalysis && (
-            <div className={styles.mappingStep}>
-              <div>
-                <h3>Import Options</h3>
-                <p>Choose how to handle duplicate products</p>
-              </div>
-
-              {/* Duplicates Summary */}
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(3, 1fr)',
-                gap: '16px',
-                marginBottom: '24px'
-              }}>
-                <div style={{
-                  background: 'rgba(59, 130, 246, 0.1)',
-                  border: '1px solid rgba(59, 130, 246, 0.2)',
-                  borderRadius: '12px',
-                  padding: '16px',
-                  textAlign: 'center'
-                }}>
-                  <p style={{ margin: '0 0 4px 0', fontSize: '20px', fontWeight: 600, color: '#3b82f6' }}>
-                    {duplicatesAnalysis.total}
-                  </p>
-                  <p style={{ margin: 0, fontSize: '12px', color: 'rgba(0, 0, 0, 0.6)' }}>Total Products</p>
-                </div>
-
-                <div style={{
-                  background: 'rgba(34, 197, 94, 0.1)',
-                  border: '1px solid rgba(34, 197, 94, 0.2)',
-                  borderRadius: '12px',
-                  padding: '16px',
-                  textAlign: 'center'
-                }}>
-                  <p style={{ margin: '0 0 4px 0', fontSize: '20px', fontWeight: 600, color: '#22c55e' }}>
-                    {duplicatesAnalysis.newProducts}
-                  </p>
-                  <p style={{ margin: 0, fontSize: '12px', color: 'rgba(0, 0, 0, 0.6)' }}>New Products</p>
-                </div>
-
-                <div style={{
-                  background: 'rgba(239, 68, 68, 0.1)',
-                  border: '1px solid rgba(239, 68, 68, 0.2)',
-                  borderRadius: '12px',
-                  padding: '16px',
-                  textAlign: 'center'
-                }}>
-                  <p style={{ margin: '0 0 4px 0', fontSize: '20px', fontWeight: 600, color: '#ef4444' }}>
-                    {duplicatesAnalysis.duplicates}
-                  </p>
-                  <p style={{ margin: 0, fontSize: '12px', color: 'rgba(0, 0, 0, 0.6)' }}>Duplicates Found</p>
-                </div>
-              </div>
-
-              {/* Import Mode Selection */}
-              <div style={{ flex: 1, overflowY: 'auto' }}>
-                <div style={{ display: 'grid', gap: '16px' }}>
-                  {importModeOptions.map((option) => {
-                    const OptionIcon = option.icon;
-                    const isSelected = importMode === option.id;
-                    
-                    return (
-                      <div
-                        key={option.id}
-                        onClick={() => setImportMode(option.id)}
-                        style={{
-                          background: isSelected ? `rgba(${option.color === '#f59e0b' ? '245, 158, 11' : option.color === '#10b981' ? '16, 185, 129' : '59, 130, 246'}, 0.1)` : 'rgba(255, 255, 255, 0.6)',
-                          border: `2px solid ${isSelected ? option.color : 'rgba(0, 0, 0, 0.1)'}`,
-                          borderRadius: '16px',
-                          padding: '20px',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s ease',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '16px'
-                        }}
+                    <div className="w-px h-12 bg-gray-200" />
+                    <div className="flex-1">
+                      <select
+                        value={col.productField}
+                        onChange={(e) => updateColumnMapping(index, e.target.value)}
+                        className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       >
-                        <div style={{
-                          width: '48px',
-                          height: '48px',
-                          borderRadius: '12px',
-                          background: `rgba(${option.color === '#f59e0b' ? '245, 158, 11' : option.color === '#10b981' ? '16, 185, 129' : '59, 130, 246'}, 0.15)`,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          color: option.color
-                        }}>
-                          <OptionIcon size={24} />
+                        <option value="">-- Non mappare --</option>
+                        <option value="sku">SKU *</option>
+                        <option value="description">Descrizione *</option>
+                        <option value="category">Categoria</option>
+                        <option value="unit_price">Prezzo Unitario</option>
+                        <option value="currency">Valuta</option>
+                        <option value="weight_kg">Peso (kg)</option>
+                        <option value="quantity">Quantità</option>
+                        <option value="min_stock">Stock Minimo</option>
+                        <option value="max_stock">Stock Massimo</option>
+                        <option value="active">Attivo</option>
+                        <option value="ean">EAN</option>
+                        <option value="hs_code">Codice HS</option>
+                        <option value="origin_country">Paese di Origine</option>
+                        <option value="other_description">Altra Descrizione</option>
+                      </select>
+                      
+                      {/* Auto-suggest buttons */}
+                      {col.suggestions && col.suggestions.length > 0 && !col.productField && (
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {col.suggestions.slice(0, 2).map(suggestion => (
+                            <button
+                              key={suggestion}
+                              onClick={() => updateColumnMapping(index, suggestion)}
+                              className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                            >
+                              {suggestion}
+                            </button>
+                          ))}
                         </div>
-                        <div style={{ flex: 1 }}>
-                          <h4 style={{ margin: '0 0 4px 0', color: 'rgba(0, 0, 0, 0.9)', fontSize: '16px' }}>
-                            {option.title}
-                          </h4>
-                          <p style={{ margin: 0, color: 'rgba(0, 0, 0, 0.6)', fontSize: '14px' }}>
-                            {option.description}
-                          </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Mapping Summary */}
+              <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                <div className="flex items-center justify-between text-sm">
+                  <div>
+                    <span className="font-medium">Colonne mappate: </span>
+                    <span className="text-blue-600">
+                      {columns.filter(col => col.productField && col.productField !== 'ignore').length}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="font-medium">Campi obbligatori: </span>
+                    <span className={
+                      columns.some(col => col.productField === 'sku') && 
+                      columns.some(col => col.productField === 'description')
+                        ? 'text-green-600'
+                        : 'text-red-600'
+                    }>
+                      {columns.some(col => col.productField === 'sku') ? '✓ SKU' : '✗ SKU'} | {' '}
+                      {columns.some(col => col.productField === 'description') ? '✓ Descrizione' : '✗ Descrizione'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* PREVIEW STEP */}
+          {currentStep === 'preview' && preview && (
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Anteprima Dati</h3>
+              
+              <div className="space-y-6">
+                {/* Summary Cards */}
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="bg-blue-50 p-4 rounded-lg text-center">
+                    <div className="text-2xl font-bold text-blue-600">{preview.summary.total}</div>
+                    <div className="text-sm text-blue-400">Righe totali</div>
+                  </div>
+                  <div className="bg-green-50 p-4 rounded-lg text-center">
+                    <div className="text-2xl font-bold text-green-600">{preview.summary.valid}</div>
+                    <div className="text-sm text-green-400">Prodotti validi</div>
+                  </div>
+                  <div className="bg-red-50 p-4 rounded-lg text-center">
+                    <div className="text-2xl font-bold text-red-600">{preview.summary.invalid}</div>
+                    <div className="text-sm text-red-400">Con errori</div>
+                  </div>
+                </div>
+
+                {/* Valid Products */}
+                {preview.valid.length > 0 && (
+                  <div>
+                    <h4 className="font-semibold text-green-600 mb-3 flex items-center">
+                      <CheckCircle className="w-5 h-5 mr-2" />
+                      Prodotti Validi ({preview.valid.length})
+                    </h4>
+                    <div className="border rounded-lg overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="text-left p-3 font-medium">SKU</th>
+                              <th className="text-left p-3 font-medium">Descrizione</th>
+                              <th className="text-left p-3 font-medium">Categoria</th>
+                              <th className="text-left p-3 font-medium">Prezzo</th>
+                              <th className="text-left p-3 font-medium">Stock</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {preview.valid.slice(0, 10).map((product: Product, index: number) => (
+                              <tr key={index} className="border-t hover:bg-gray-50">
+                                <td className="p-3 font-mono text-blue-600">{product.sku}</td>
+                                <td className="p-3">{product.description}</td>
+                                <td className="p-3">{product.category || '-'}</td>
+                                <td className="p-3">
+                                  {product.unit_price 
+                                    ? `${product.unit_price.toFixed(2)} ${product.currency || 'EUR'}` 
+                                    : '-'
+                                  }
+                                </td>
+                                <td className="p-3">{product.quantity || '-'}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                      {preview.valid.length > 10 && (
+                        <div className="p-3 bg-gray-50 text-center text-sm text-gray-600">
+                          ... e altri {preview.valid.length - 10} prodotti
                         </div>
-                        {isSelected && (
-                          <div style={{
-                            width: '24px',
-                            height: '24px',
-                            borderRadius: '50%',
-                            background: option.color,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}>
-                            <CheckCircle size={16} color="white" />
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Invalid Products */}
+                {preview.invalid.length > 0 && (
+                  <div>
+                    <h4 className="font-semibold text-red-600 mb-3 flex items-center">
+                      <AlertCircle className="w-5 h-5 mr-2" />
+                      Prodotti con Errori ({preview.invalid.length})
+                    </h4>
+                    <div className="border rounded-lg overflow-hidden">
+                      <div className="max-h-64 overflow-y-auto">
+                        {preview.invalid.map((item, index) => (
+                          <div key={index} className="p-3 border-b last:border-b-0 bg-red-50">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <span className="font-medium">Riga {item.row}</span>
+                                <div className="text-sm text-gray-600 mt-1">
+                                  SKU: {item.data.sku || 'N/A'} - {item.data.description || 'N/A'}
+                                </div>
+                              </div>
+                              <div className="text-xs text-red-600">
+                                {item.errors.join(', ')}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* OPTIONS STEP */}
+          {currentStep === 'options' && duplicatesAnalysis && (
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Opzioni di Import</h3>
+              
+              <div className="space-y-6">
+                {/* Duplicates Analysis */}
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <h4 className="font-medium text-yellow-800 mb-2">Analisi Duplicati</h4>
+                  <div className="grid grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <div className="font-medium">Prodotti Nuovi</div>
+                      <div className="text-green-600 text-lg font-bold">{duplicatesAnalysis.newProducts}</div>
+                    </div>
+                    <div>
+                      <div className="font-medium">Duplicati (stesso SKU)</div>
+                      <div className="text-yellow-600 text-lg font-bold">{duplicatesAnalysis.duplicates}</div>
+                    </div>
+                    <div>
+                      <div className="font-medium">Totale</div>
+                      <div className="text-blue-600 text-lg font-bold">{duplicatesAnalysis.total}</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Import Mode Selection */}
+                <div>
+                  <h4 className="font-medium mb-3">Modalità di Import</h4>
+                  <div className="space-y-3">
+                    <label className="flex items-start space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                      <input
+                        type="radio"
+                        name="importMode"
+                        value="new_only"
+                        checked={importMode === 'new_only'}
+                        onChange={(e) => setImportMode(e.target.value as ImportMode)}
+                        className="mt-1"
+                      />
+                      <div>
+                        <div className="font-medium">Solo Nuovi Prodotti</div>
+                        <div className="text-sm text-gray-600">
+                          Importa solo prodotti con SKU non esistenti ({duplicatesAnalysis.newProducts} prodotti)
+                        </div>
+                      </div>
+                    </label>
+                    
+                    <label className="flex items-start space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                      <input
+                        type="radio"
+                        name="importMode"
+                        value="replace"
+                        checked={importMode === 'replace'}
+                        onChange={(e) => setImportMode(e.target.value as ImportMode)}
+                        className="mt-1"
+                      />
+                      <div>
+                        <div className="font-medium">Sostituisci Esistenti</div>
+                        <div className="text-sm text-gray-600">
+                          Importa tutti i prodotti, sostituendo quelli esistenti ({duplicatesAnalysis.total} prodotti)
+                        </div>
+                      </div>
+                    </label>
+                    
+                    <label className="flex items-start space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                      <input
+                        type="radio"
+                        name="importMode"
+                        value="append"
+                        checked={importMode === 'append'}
+                        onChange={(e) => setImportMode(e.target.value as ImportMode)}
+                        className="mt-1"
+                      />
+                      <div>
+                        <div className="font-medium">Aggiungi Tutto</div>
+                        <div className="text-sm text-gray-600">
+                          Importa tutti i prodotti creando duplicati per SKU esistenti
+                        </div>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* IMPORT STEP */}
+          {currentStep === 'import' && (
+            <div className="text-center">
+              {isProcessing ? (
+                <div className="space-y-4">
+                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
+                    <RefreshCw className="w-8 h-8 text-blue-600 animate-spin" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold">Import in corso...</h3>
+                    <p className="text-gray-600">Sto importando i tuoi prodotti, attendere prego.</p>
+                  </div>
+                </div>
+              ) : importResults ? (
+                <div className="space-y-4">
+                  {importResults.success ? (
+                    <>
+                      <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+                        <CheckCircle className="w-8 h-8 text-green-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-green-600">Import Completato!</h3>
+                        <p className="text-gray-600">I prodotti sono stati importati con successo.</p>
+                      </div>
+                      <div className="grid grid-cols-3 gap-4 mt-6">
+                        <div className="bg-green-50 p-3 rounded-lg">
+                          <div className="text-lg font-bold text-green-600">{importResults.imported}</div>
+                          <div className="text-sm text-green-400">Importati</div>
+                        </div>
+                        {importResults.replaced > 0 && (
+                          <div className="bg-yellow-50 p-3 rounded-lg">
+                            <div className="text-lg font-bold text-yellow-600">{importResults.replaced}</div>
+                            <div className="text-sm text-yellow-400">Sostituiti</div>
+                          </div>
+                        )}
+                        {importResults.skipped > 0 && (
+                          <div className="bg-gray-50 p-3 rounded-lg">
+                            <div className="text-lg font-bold text-gray-600">{importResults.skipped}</div>
+                            <div className="text-sm text-gray-400">Saltati</div>
                           </div>
                         )}
                       </div>
-                    );
-                  })}
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto">
+                        <AlertCircle className="w-8 h-8 text-red-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-red-600">Errore nell'Import</h3>
+                        <p className="text-gray-600">{importResults.error}</p>
+                      </div>
+                    </>
+                  )}
                 </div>
-              </div>
+              ) : null}
+            </div>
+          )}
+        </div>
 
-              <div className={styles.stepActions}>
-                <button onClick={() => setCurrentStep('preview')} className={styles.backButton}>
-                  Back
-                </button>
-                <button 
-                  onClick={handleImport}
-                  disabled={isProcessing}
-                  className={styles.nextButton}
+        {/* Footer */}
+        <div className="flex justify-between items-center p-6 border-t bg-gray-50">
+          <div className="text-sm text-gray-600">
+            {file && (
+              <span>File: {file.name} ({(file.size / 1024).toFixed(1)} KB)</span>
+            )}
+          </div>
+          
+          <div className="flex gap-3">
+            {currentStep === 'import' && importResults ? (
+              <>
+                <button
+                  onClick={resetWizard}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
                 >
-                  {isProcessing ? 'Importing...' : `Import Products`}
+                  Nuovo Import
                 </button>
-              </div>
-            </div>
-          )}
+                <button
+                  onClick={onClose}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  Chiudi
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={onClose}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                >
+                  Annulla
+                </button>
+                
+                {currentStep === 'mapping' && (
+                  <button
+                    onClick={generatePreview}
+                    disabled={
+                      isProcessing || 
+                      !columns.some(col => col.productField === 'sku') ||
+                      !columns.some(col => col.productField === 'description')
+                    }
+                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isProcessing ? 'Elaborazione...' : 'Genera Preview'}
+                  </button>
+                )}
 
-          {/* Import Step */}
-          {currentStep === 'import' && (
-            <div className={styles.uploadStep}>
-              <div style={{
-                textAlign: 'center',
-                padding: '40px',
-                background: 'rgba(34, 197, 94, 0.05)',
-                borderRadius: '20px',
-                border: '1px solid rgba(34, 197, 94, 0.2)'
-              }}>
-                <CheckCircle size={64} color="#22c55e" style={{ marginBottom: '16px' }} />
-                <h3 style={{ color: '#22c55e', margin: '0 0 8px 0' }}>
-                  {isProcessing ? 'Importing...' : 'Import Complete!'}
-                </h3>
-                <p style={{ margin: 0, color: 'rgba(0, 0, 0, 0.6)' }}>
-                  {isProcessing ? 'Please wait while we import your products' : 'Products imported successfully'}
-                </p>
-              </div>
-            </div>
-          )}
+                {currentStep === 'preview' && preview && preview.valid.length > 0 && (
+                  <button
+                    onClick={analyzeDuplicates}
+                    className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                  >
+                    Continua
+                  </button>
+                )}
+
+                {currentStep === 'options' && (
+                  <button
+                    onClick={handleImport}
+                    className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                  >
+                    Inizia Import
+                  </button>
+                )}
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>

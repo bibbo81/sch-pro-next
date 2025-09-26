@@ -16,7 +16,8 @@ import {
   Hash,
   Tag,
   Globe,
-  Calendar
+  Calendar,
+  Ruler
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -45,7 +46,6 @@ export default function ProductCard({ product, onEdit, onDelete, viewMode = 'gri
   const formatPrice = (price?: number | null, currency?: string | null) => {
     if (!price && price !== 0) return 'N/A'
     
-    // Gestisci currency null/undefined
     const currencyCode = currency || 'EUR'
     
     return new Intl.NumberFormat('it-IT', {
@@ -61,6 +61,20 @@ export default function ProductCard({ product, onEdit, onDelete, viewMode = 'gri
       month: '2-digit',
       year: 'numeric'
     })
+  }
+
+  const formatDimensions = (dimensions?: string | { length: number; width: number; height: number }) => {
+    if (!dimensions) return null;
+    
+    if (typeof dimensions === 'string') {
+      return dimensions;
+    }
+    
+    if (typeof dimensions === 'object' && dimensions.length && dimensions.width && dimensions.height) {
+      return `${dimensions.length}x${dimensions.width}x${dimensions.height} cm`;
+    }
+    
+    return JSON.stringify(dimensions);
   }
 
   const truncateText = (text: string, maxLength = 60) => {
@@ -193,13 +207,14 @@ export default function ProductCard({ product, onEdit, onDelete, viewMode = 'gri
               </div>
             )}
             
-            {product.dimensions_cm && (
+            {product.dimensions && (
               <div>
-                <h4 className="text-xs font-medium text-muted-foreground mb-1">
+                <h4 className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1">
+                  <Ruler className="h-3 w-3" />
                   Dimensioni:
                 </h4>
                 <p className="text-xs text-foreground">
-                  {JSON.stringify(product.dimensions_cm)}
+                  {formatDimensions(product.dimensions)}
                 </p>
               </div>
             )}

@@ -49,9 +49,16 @@ export async function POST(request: NextRequest) {
               tracking_type: detectTrackingType(trackingNumber),
               awb_number: data.data?.awb_number,
               container_number: data.data?.container_number,
+              container_type: data.data?.container_type || data.data?.equipment_type,
+              container_size: data.data?.container_size || data.data?.equipment_size,
               vessel_name: data.data?.vessel?.name,
               events: data.data?.events || [],
               last_update: data.data?.last_update,
+              // Dati cargo se disponibili
+              weight_kg: data.data?.cargo?.weight_kg || data.data?.weight,
+              volume_cbm: data.data?.cargo?.volume_cbm || data.data?.volume,
+              pieces: data.data?.cargo?.pieces || data.data?.pieces,
+              transport_mode: detectTransportModeFromData(data.data),
               success: true
             }
           } else {
@@ -100,6 +107,17 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// ✅ AGGIUNGI QUESTO HANDLER GET
+export async function GET() {
+  return NextResponse.json(
+    { 
+      error: 'Method not allowed. Use POST instead.',
+      usage: 'POST /api/shipsgo/batch with { tracking_numbers: ["..."] }' 
+    },
+    { status: 405 }
+  )
+}
+
 // Funzioni helper mancanti
 function mapShipsGoStatus(status: string): string {
   const statusMap: { [key: string]: string } = {
@@ -119,4 +137,20 @@ function detectTrackingType(trackingNumber: string): string {
   if (/^AWB/i.test(trackingNumber)) return 'awb'
   if (/^\d{10,}$/.test(trackingNumber)) return 'parcel'
   return 'container'
+}
+
+function detectTransportModeFromData(data: any): string {
+  // Prova a determinare dal vessel (nave = mare)
+  if (data?.vessel?.name) return 'sea'
+
+  // Prova dal carrier name
+  const carrier = (data?.carrier_name || '').toLowerCase()
+  if (carrier.includes('air') || carrier.includes('cargo') || carrier.includes('express')) return 'air'
+  if (carrier.includes('line') || carrier.includes('shipping') || carrier.includes('maritime')) return 'sea'
+
+  // Prova dal tipo di tracking
+  if (data?.awb_number) return 'air'
+  if (data?.container_number) return 'sea'
+
+  return 'unknown'
 }

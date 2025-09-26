@@ -84,3 +84,12 @@ function detectTrackingType(trackingNumber: string): string {
   if (/^\d{10,}$/.test(trackingNumber)) return 'parcel'
   return 'container'
 }
+export async function GET() {
+  return NextResponse.json(
+    { 
+      error: 'Method not allowed. Use POST instead.',
+      usage: 'POST /api/shipsgo/track with { tracking_number: "..." }' 
+    },
+    { status: 405 }
+  )
+}

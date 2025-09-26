@@ -26,49 +26,39 @@ import {
   Loader2,
   Plus
 } from 'lucide-react'
-
-interface Product {
-  id: string
-  user_id: string
-  sku: string
-  description: string
-  other_description?: string
-  category?: string
-  unit_price?: number
-  currency?: string
-  weight_kg?: number
-  dimensions_cm?: any
-  hs_code?: string
-  origin_country?: string
-  metadata: any
-  active: boolean
-  created_at: string
-  updated_at: string
-  organization_id?: string
-  ean?: string
-}
+import { Product, CreateProduct } from '@/types/product'
+import { useAuth } from '@/contexts/AuthContext' // ✅ AGGIUNGI QUESTO
 
 interface ProductFormProps {
   product?: Product | null
-  categories: string[]
-  onSave: (product: Product) => void
+  categories?: string[]  // ✅ Rimane opzionale
+  onSave: (product: CreateProduct) => Promise<void>
   onCancel: () => void
 }
 
 export default function ProductForm({ product, categories, onSave, onCancel }: ProductFormProps) {
+  // ✅ USA IL CONTEXT INVECE DI HARDCODE
+  const { userId } = useAuth()
+  
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
     sku: '',
     description: '',
-    other_description: '',
     category: '',
     unit_price: '',
     currency: 'EUR',
     weight_kg: '',
+    dimensions: '',
     hs_code: '',
-    origin_country: '',
+    country_of_origin: '',
+    supplier_name: '',
+    supplier_code: '',
+    notes: '',
+    min_stock: '',
+    max_stock: '',
+    quantity: '',
     active: true,
-    ean: ''
+    image_url: ''
   })
 
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -80,15 +70,21 @@ export default function ProductForm({ product, categories, onSave, onCancel }: P
       setFormData({
         sku: product.sku || '',
         description: product.description || '',
-        other_description: product.other_description || '',
         category: product.category || '',
         unit_price: product.unit_price?.toString() || '',
         currency: product.currency || 'EUR',
         weight_kg: product.weight_kg?.toString() || '',
+        dimensions: product.dimensions || '',
         hs_code: product.hs_code || '',
-        origin_country: product.origin_country || '',
+        country_of_origin: product.country_of_origin || '',
+        supplier_name: product.supplier_name || '',
+        supplier_code: product.supplier_code || '',
+        notes: product.notes || '',
+        min_stock: product.min_stock?.toString() || '',
+        max_stock: product.max_stock?.toString() || '',
+        quantity: product.quantity?.toString() || '',
         active: product.active ?? true,
-        ean: product.ean || ''
+        image_url: product.image_url || ''
       })
     }
   }, [product])
@@ -112,8 +108,16 @@ export default function ProductForm({ product, categories, onSave, onCancel }: P
       newErrors.weight_kg = 'Peso deve essere un numero valido'
     }
 
-    if (formData.ean && (formData.ean.length < 8 || formData.ean.length > 13)) {
-      newErrors.ean = 'EAN deve essere tra 8 e 13 caratteri'
+    if (formData.quantity && isNaN(parseInt(formData.quantity))) {
+      newErrors.quantity = 'Quantità deve essere un numero intero'
+    }
+
+    if (formData.min_stock && isNaN(parseInt(formData.min_stock))) {
+      newErrors.min_stock = 'Stock minimo deve essere un numero intero'
+    }
+
+    if (formData.max_stock && isNaN(parseInt(formData.max_stock))) {
+      newErrors.max_stock = 'Stock massimo deve essere un numero intero'
     }
 
     setErrors(newErrors)
@@ -127,23 +131,34 @@ export default function ProductForm({ product, categories, onSave, onCancel }: P
       return
     }
 
+    // ✅ CONTROLLA CHE L'UTENTE SIA AUTENTICATO
+    if (!userId) {
+      setErrors({ general: 'Utente non autenticato' })
+      return
+    }
+
     setLoading(true)
 
     try {
-      const userId = "21766c53-a16b-4019-9a11-845ecea8cf10"
-      
       const productData = {
-        user_id: userId,
+        user_id: userId, // ✅ DINAMICO INVECE DI HARDCODED
         sku: formData.sku.trim(),
         description: formData.description.trim(),
-        other_description: formData.other_description.trim() || null,
-        category: formData.category === "__none__" ? null : formData.category || null,        unit_price: formData.unit_price ? parseFloat(formData.unit_price) : null,
+        category: formData.category === "__none__" ? null : formData.category || null,
+        unit_price: formData.unit_price ? parseFloat(formData.unit_price) : null,
         currency: formData.currency,
         weight_kg: formData.weight_kg ? parseFloat(formData.weight_kg) : null,
+        dimensions: formData.dimensions.trim() || null,
         hs_code: formData.hs_code.trim() || null,
-        origin_country: formData.origin_country.trim() || null,
+        country_of_origin: formData.country_of_origin.trim() || null,
+        supplier_name: formData.supplier_name.trim() || null,
+        supplier_code: formData.supplier_code.trim() || null,
+        notes: formData.notes.trim() || null,
+        min_stock: formData.min_stock ? parseInt(formData.min_stock) : null,
+        max_stock: formData.max_stock ? parseInt(formData.max_stock) : null,
+        quantity: formData.quantity ? parseInt(formData.quantity) : null,
         active: formData.active,
-        ean: formData.ean.trim() || null,
+        image_url: formData.image_url.trim() || null,
         metadata: {},
         updated_at: new Date().toISOString()
       }
@@ -152,7 +167,7 @@ export default function ProductForm({ product, categories, onSave, onCancel }: P
       
       if (product) {
         // Update existing product
-        response = await fetch(`/api/products/${product.id}`, {
+        response = await fetch(`/api/products/${product.id}?user_id=${userId}`, { // ✅ AGGIUNGI user_id
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -161,7 +176,7 @@ export default function ProductForm({ product, categories, onSave, onCancel }: P
         })
       } else {
         // Create new product
-        response = await fetch('/api/products', {
+        response = await fetch(`/api/products?user_id=${userId}`, { // ✅ AGGIUNGI user_id
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -246,15 +261,13 @@ export default function ProductForm({ product, categories, onSave, onCancel }: P
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="ean">Codice EAN</Label>
+                  <Label htmlFor="supplier_code">Codice Fornitore</Label>
                   <Input
-                    id="ean"
-                    value={formData.ean}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('ean', e.target.value)}
-                    placeholder="8057500164222"
-                    className={errors.ean ? 'border-red-500' : ''}
+                    id="supplier_code"
+                    value={formData.supplier_code}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('supplier_code', e.target.value)}
+                    placeholder="Codice prodotto del fornitore"
                   />
-                  {errors.ean && <p className="text-xs text-red-500">{errors.ean}</p>}
                 </div>
               </div>
 
@@ -269,17 +282,6 @@ export default function ProductForm({ product, categories, onSave, onCancel }: P
                   className={errors.description ? 'border-red-500' : ''}
                 />
                 {errors.description && <p className="text-xs text-red-500">{errors.description}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="other_description">Descrizione Aggiuntiva</Label>
-                <Textarea
-                  id="other_description"
-                  value={formData.other_description}
-                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleChange('other_description', e.target.value)}
-                  placeholder="Informazioni aggiuntive..."
-                  rows={2}
-                />
               </div>
             </div>
 
@@ -296,11 +298,11 @@ export default function ProductForm({ product, categories, onSave, onCancel }: P
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="__none__">Nessuna categoria</SelectItem>
-                      {categories.sort().map(category => (
-                        <SelectItem key={category} value={category}>
-                          {category}
-                        </SelectItem>
-                      ))}
+                      {(categories || []).sort().map(category => (  // ✅ AGGIUNTO (categories || [])
+  <SelectItem key={category} value={category}>
+    {category}
+  </SelectItem>
+))}
                     </SelectContent>
                   </Select>
                   
@@ -394,6 +396,62 @@ export default function ProductForm({ product, categories, onSave, onCancel }: P
                   {errors.weight_kg && <p className="text-xs text-red-500">{errors.weight_kg}</p>}
                 </div>
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="dimensions">Dimensioni</Label>
+                <Input
+                  id="dimensions"
+                  value={formData.dimensions}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('dimensions', e.target.value)}
+                  placeholder="es. 30x20x10 cm"
+                />
+              </div>
+            </div>
+
+            {/* Stock */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Inventario</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="quantity">Quantità Attuale</Label>
+                  <Input
+                    id="quantity"
+                    type="number"
+                    value={formData.quantity}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('quantity', e.target.value)}
+                    placeholder="0"
+                    className={errors.quantity ? 'border-red-500' : ''}
+                  />
+                  {errors.quantity && <p className="text-xs text-red-500">{errors.quantity}</p>}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="min_stock">Stock Minimo</Label>
+                  <Input
+                    id="min_stock"
+                    type="number"
+                    value={formData.min_stock}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('min_stock', e.target.value)}
+                    placeholder="0"
+                    className={errors.min_stock ? 'border-red-500' : ''}
+                  />
+                  {errors.min_stock && <p className="text-xs text-red-500">{errors.min_stock}</p>}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="max_stock">Stock Massimo</Label>
+                  <Input
+                    id="max_stock"
+                    type="number"
+                    value={formData.max_stock}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('max_stock', e.target.value)}
+                    placeholder="0"
+                    className={errors.max_stock ? 'border-red-500' : ''}
+                  />
+                  {errors.max_stock && <p className="text-xs text-red-500">{errors.max_stock}</p>}
+                </div>
+              </div>
             </div>
 
             {/* Informazioni Commerciali */}
@@ -412,53 +470,72 @@ export default function ProductForm({ product, categories, onSave, onCancel }: P
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="origin_country">Paese di Origine</Label>
+                  <Label htmlFor="country_of_origin">Paese di Origine</Label>
                   <Input
-                    id="origin_country"
-                    value={formData.origin_country}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('origin_country', e.target.value)}
+                    id="country_of_origin"
+                    value={formData.country_of_origin}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('country_of_origin', e.target.value)}
                     placeholder="es. CN, IT, DE"
                   />
                 </div>
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="supplier_name">Nome Fornitore</Label>
+                <Input
+                  id="supplier_name"
+                  value={formData.supplier_name}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('supplier_name', e.target.value)}
+                  placeholder="Nome del fornitore principale"
+                />
+              </div>
             </div>
 
-            {/* Stato */}
+            {/* Altre Informazioni */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Stato Prodotto</h3>
+              <h3 className="text-lg font-semibold">Altre Informazioni</h3>
               
+              <div className="space-y-2">
+                <Label htmlFor="notes">Note</Label>
+                <Textarea
+                  id="notes"
+                  value={formData.notes}
+                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleChange('notes', e.target.value)}
+                  placeholder="Note aggiuntive sul prodotto..."
+                  rows={3}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="image_url">URL Immagine</Label>
+                <Input
+                  id="image_url"
+                  type="url"
+                  value={formData.image_url}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('image_url', e.target.value)}
+                  placeholder="https://..."
+                />
+              </div>
+
               <div className="flex items-center space-x-2">
                 <Switch
                   id="active"
                   checked={formData.active}
-                  onCheckedChange={(checked: boolean) => handleChange('active', checked)}
+                  onCheckedChange={(checked) => handleChange('active', checked)}
                 />
-                <Label htmlFor="active">
-                  Prodotto attivo
-                </Label>
-                <Badge variant={formData.active ? 'default' : 'secondary'}>
-                  {formData.active ? 'Attivo' : 'Inattivo'}
-                </Badge>
+                <Label htmlFor="active">Prodotto attivo</Label>
               </div>
             </div>
 
-            {/* Azioni */}
-            <div className="flex items-center justify-end space-x-2 pt-6">
+            {/* Buttons */}
+            <div className="flex justify-end space-x-2 pt-4 border-t">
               <Button type="button" variant="outline" onClick={onCancel}>
                 Annulla
               </Button>
               <Button type="submit" disabled={loading}>
-                {loading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Salvando...
-                  </>
-                ) : (
-                  <>
-                    <Save className="h-4 w-4 mr-2" />
-                    {product ? 'Aggiorna' : 'Crea'} Prodotto
-                  </>
-                )}
+                {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                <Save className="h-4 w-4 mr-2" />
+                {product ? 'Aggiorna' : 'Crea'} Prodotto
               </Button>
             </div>
           </form>

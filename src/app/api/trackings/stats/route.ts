@@ -1,15 +1,28 @@
 import { NextResponse } from 'next/server'
 import { TrackingService } from '@/lib/trackingService'
-
-// Mock user ID per ora
-const MOCK_USER_ID = '21766c53-a16b-4019-9a11-845ecea8cf10'
+import { createClient } from '@/utils/supabase/server'
 
 export async function GET() {
   try {
-    const stats = await TrackingService.getStats(MOCK_USER_ID)
+    // ✅ AUTENTICA L'UTENTE DINAMICAMENTE
+    const supabase = await createClient()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      return NextResponse.json({
+        success: false,
+        error: 'Autenticazione richiesta'
+      }, { status: 401 })
+    }
+
+    console.log('🔍 Getting tracking stats for user:', user.id)
+
+    const stats = await TrackingService.getStats(user.id)
+    
     return NextResponse.json({
       success: true,
-      data: stats
+      data: stats,
+      user_id: user.id
     })
   } catch (error) {
     console.error('GET /api/trackings/stats error:', error)

@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/fabriziocagnucci/Downloads/Ristrutturazione-SCH/pages/shipment-details/**)",
+      "Read(//Users/fabriziocagnucci/Downloads/Ristrutturazione-SCH//**)",
+      "Read(//var/folders/vc/z089_kwj3jb7d3hynxwb8pb00000gn/T/TemporaryItems/NSIRD_screencaptureui_fVlV4y/**)",
+      "Read(//Users/fabriziocagnucci/Desktop/**)",
+      "Read(//var/folders/vc/z089_kwj3jb7d3hynxwb8pb00000gn/T/TemporaryItems/NSIRD_screencaptureui_GsGXKA/**)",
+      "Read(//var/folders/vc/z089_kwj3jb7d3hynxwb8pb00000gn/T/TemporaryItems/NSIRD_screencaptureui_ZofBZV/**)",
+      "Read(//var/folders/vc/z089_kwj3jb7d3hynxwb8pb00000gn/T/TemporaryItems/NSIRD_screencaptureui_6ohd2d/**)",
+      "Read(//Users/fabriziocagnucci/Downloads/Ristrutturazione-SCH/**)",
+      "Bash(npx tsc:*)",
+      "Bash(npm install:*)",
+      "Read(//var/folders/vc/z089_kwj3jb7d3hynxwb8pb00000gn/T/TemporaryItems/NSIRD_screencaptureui_Hfk81r/**)",
+      "Read(//var/folders/vc/z089_kwj3jb7d3hynxwb8pb00000gn/T/TemporaryItems/NSIRD_screencaptureui_J2jBLc/**)",
+      "Bash(npm run lint)",
+      "Read(//var/folders/vc/z089_kwj3jb7d3hynxwb8pb00000gn/T/TemporaryItems/NSIRD_screencaptureui_OyPTbh/**)",
+      "Read(//var/folders/vc/z089_kwj3jb7d3hynxwb8pb00000gn/T/TemporaryItems/NSIRD_screencaptureui_QwhL58/**)",
+      "Read(//var/folders/vc/z089_kwj3jb7d3hynxwb8pb00000gn/T/TemporaryItems/NSIRD_screencaptureui_Huqmev/**)",
+      "Read(//Users/fabriziocagnucci/Library/Application Support/Claude/**)",
+      "Read(//var/folders/vc/z089_kwj3jb7d3hynxwb8pb00000gn/T/TemporaryItems/NSIRD_screencaptureui_16dCGo/**)",
+      "Read(//Users/fabriziocagnucci/Library/Logs/Claude/**)",
+      "Read(//var/folders/vc/z089_kwj3jb7d3hynxwb8pb00000gn/T/TemporaryItems/NSIRD_screencaptureui_W4MbUR/**)",
+      "Read(//var/folders/vc/z089_kwj3jb7d3hynxwb8pb00000gn/T/TemporaryItems/NSIRD_screencaptureui_HNRCOx/**)",
+      "Bash(npm run dev:*)",
+      "Bash(curl:*)",
+      "Bash(npm run lint:*)",
+      "Bash(npx next build:*)",
+      "Bash(npm run build:*)",
+      "Read(//var/folders/vc/z089_kwj3jb7d3hynxwb8pb00000gn/T/TemporaryItems/NSIRD_screencaptureui_vP0196/**)",
+      "Read(//var/folders/vc/z089_kwj3jb7d3hynxwb8pb00000gn/T/TemporaryItems/NSIRD_screencaptureui_6fAUu5/**)",
+      "Read(//var/folders/vc/z089_kwj3jb7d3hynxwb8pb00000gn/T/TemporaryItems/NSIRD_screencaptureui_3kLQhZ/**)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

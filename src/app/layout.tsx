@@ -1,14 +1,14 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
-import Header from '@/components/layout/Header'
-import Sidebar from '@/components/layout/Sidebar'
+import { AuthProvider } from '@/contexts/AuthContext'
+import { ThemeProvider } from '@/components/theme-provider'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'SCH Pro Next',
-  description: 'Sistema di gestione spedizioni e tracking',
+  title: 'SCH Pro - Supply Chain Hub',
+  description: 'Professional Supply Chain Management System',
 }
 
 export default function RootLayout({
@@ -17,16 +17,25 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="it-IT" className="dark" suppressHydrationWarning={true}>
-      <body className={`${inter.className} dark`} suppressHydrationWarning={true}>
-        <div className="flex h-screen">
-          <Sidebar />
-          <div className="flex-1 flex flex-col overflow-hidden">
-            <Header />
-            <main className="flex-1 overflow-x-hidden overflow-y-auto">
+    <html lang="it" suppressHydrationWarning>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+      </head>
+      <body
+        className={`${inter.className}`}
+        suppressHydrationWarning
+      >
+        <div id="root" suppressHydrationWarning>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <AuthProvider>
               {children}
-            </main>
-          </div>
+            </AuthProvider>
+          </ThemeProvider>
         </div>
       </body>
     </html>

@@ -6,9 +6,10 @@ import { useShipsGO } from '@/hooks/useShipsGO'
 interface TrackingFormProps {
   onAdd: (tracking: any) => void
   onBatchAdd: (trackings: any[]) => void
+  onCancel?: () => void // ✅ FIX: Aggiungi onCancel opzionale
 }
 
-export default function TrackingForm({ onAdd, onBatchAdd }: TrackingFormProps) {
+export default function TrackingForm({ onAdd, onBatchAdd, onCancel }: TrackingFormProps) {
   const { trackSingle, trackBatch, loading, error, creditsUsed, resetCredits } = useShipsGO()
   
   const [formData, setFormData] = useState({
@@ -257,6 +258,11 @@ export default function TrackingForm({ onAdd, onBatchAdd }: TrackingFormProps) {
         setExcelFile(null)
         const fileInput = document.getElementById('excel-input') as HTMLInputElement
         if (fileInput) fileInput.value = ''
+        
+        // ✅ FIX: Chiama onCancel se disponibile
+        if (onCancel) {
+          onCancel()
+        }
       }
     } catch (err) {
       console.error('Errore import Excel:', err)
@@ -284,7 +290,12 @@ export default function TrackingForm({ onAdd, onBatchAdd }: TrackingFormProps) {
               flight_number: formData.flight_number,
               is_api_tracked: true
             }
-            onAdd(enrichedData)
+            await onAdd(enrichedData)
+            
+            // ✅ FIX: Chiama onCancel se disponibile
+            if (onCancel) {
+              onCancel()
+            }
           }
           break
 
@@ -303,7 +314,12 @@ export default function TrackingForm({ onAdd, onBatchAdd }: TrackingFormProps) {
               ...item,
               is_api_tracked: true
             }))
-            onBatchAdd(enrichedBatch)
+            await onBatchAdd(enrichedBatch)
+            
+            // ✅ FIX: Chiama onCancel se disponibile
+            if (onCancel) {
+              onCancel()
+            }
           }
           break
 
@@ -335,6 +351,11 @@ export default function TrackingForm({ onAdd, onBatchAdd }: TrackingFormProps) {
           }
           
           await onAdd(manualData)
+          
+          // ✅ FIX: Chiama onCancel se disponibile
+          if (onCancel) {
+            onCancel()
+          }
           break
       }
       
@@ -362,6 +383,7 @@ export default function TrackingForm({ onAdd, onBatchAdd }: TrackingFormProps) {
       setDetectedType(null)
     } catch (err) {
       console.error('Errore nel tracking:', err)
+      alert('Errore nel tracking: ' + (err instanceof Error ? err.message : 'Errore sconosciuto'))
     }
   }
 
@@ -427,16 +449,29 @@ export default function TrackingForm({ onAdd, onBatchAdd }: TrackingFormProps) {
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-semibold text-gray-900">Gestione Tracking</h2>
         
-        <div className="text-right">
-          <div className="text-sm text-gray-600">
-            Crediti usati: <span className="font-bold text-red-600">{creditsUsed}</span>
+        <div className="flex items-center gap-4">
+          <div className="text-right">
+            <div className="text-sm text-gray-600">
+              Crediti usati: <span className="font-bold text-red-600">{creditsUsed}</span>
+            </div>
+            {creditsUsed > 0 && (
+              <button
+                onClick={resetCredits}
+                className="text-xs text-blue-600 hover:text-blue-800"
+              >
+                Reset contatore
+              </button>
+            )}
           </div>
-          {creditsUsed > 0 && (
+          
+          {/* ✅ FIX: Pulsante Cancel se onCancel è disponibile */}
+          {onCancel && (
             <button
-              onClick={resetCredits}
-              className="text-xs text-blue-600 hover:text-blue-800"
+              type="button"
+              onClick={onCancel}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
             >
-              Reset contatore
+              Annulla
             </button>
           )}
         </div>

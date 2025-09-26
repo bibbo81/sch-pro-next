@@ -5,7 +5,6 @@ import React from 'react';
 import ShipmentInfo from './ShipmentInfo';
 import ProductsSection from './ProductsSection';
 import DocumentsSection from './DocumentsSection';
-import CostsSection from './CostsSection';
 import { Shipment } from '@/types/shipment';
 
 interface ShipmentDetailsViewProps {
@@ -19,7 +18,6 @@ export default function ShipmentDetailsView({ shipment, onUpdate }: ShipmentDeta
     <div className="shipment-details">
       <ShipmentInfo shipment={shipment} />
       <ProductsSection shipment={shipment} onUpdate={onUpdate} />
-      <CostsSection shipment={shipment} onUpdate={onUpdate} />
       <DocumentsSection shipment={shipment} onUpdate={onUpdate} />
     </div>
   );

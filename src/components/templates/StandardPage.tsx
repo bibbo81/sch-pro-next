@@ -1,4 +1,3 @@
-/* filepath: /Users/fabriziocagnucci/sch-pro-next/src/components/templates/StandardPage.tsx */
 'use client';
 
 import React from 'react';
@@ -19,11 +18,42 @@ interface StandardPageProps {
     variant?: 'glass' | 'frosted' | 'solid';
     badge?: {
       text: string;
-      variant?: 'default' | 'secondary' | 'destructive' | 'outline' | 'success' | 'warning' | 'glass';
+      // ✅ AGGIUNGI 'glass' AL TIPO
+      variant?: 'default' | 'secondary' | 'destructive' | 'outline' | 'glass';
     };
   }>;
   layout?: 'grid' | 'list' | 'masonry';
   gridCols?: 1 | 2 | 3 | 4;
+}
+
+// ✅ FUNZIONE HELPER PER GESTIRE LE VARIANTI CARD
+const getCardVariantClasses = (variant?: string) => {
+  switch (variant) {
+    case 'glass':
+      return 'bg-white/80 backdrop-blur-sm border border-white/20 shadow-xl'
+    case 'frosted':
+      return 'bg-white/60 backdrop-blur-md border border-white/30 shadow-lg'
+    case 'solid':
+    default:
+      return 'bg-white border border-gray-200 shadow-sm'
+  }
+}
+
+// ✅ FUNZIONE HELPER PER CONVERTIRE BADGE VARIANT
+const getBadgeVariant = (variant?: string): 'default' | 'secondary' | 'destructive' | 'outline' => {
+  // Converte varianti personalizzate in varianti standard di shadcn/ui
+  switch (variant) {
+    case 'glass':
+      return 'default'
+    case 'secondary':
+      return 'secondary'
+    case 'destructive':
+      return 'destructive'
+    case 'outline':
+      return 'outline'
+    default:
+      return 'default'
+  }
 }
 
 export const StandardPage = ({
@@ -69,8 +99,11 @@ export const StandardPage = ({
           {cards.map((card, index) => (
             <Card 
               key={index} 
-              variant={card.variant || 'glass'}
-              className={layout === 'masonry' ? 'break-inside-avoid mb-6' : ''}
+              // ✅ USA className CON VARIANTI
+              className={`
+                ${layout === 'masonry' ? 'break-inside-avoid mb-6' : ''}
+                ${getCardVariantClasses(card.variant)}
+              `.trim()}
             >
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
@@ -78,7 +111,10 @@ export const StandardPage = ({
                     {card.title}
                   </CardTitle>
                   {card.badge && (
-                    <Badge variant={card.badge.variant || 'glass'}>
+                    <Badge 
+                      // ✅ USA LA FUNZIONE HELPER
+                      variant={getBadgeVariant(card.badge.variant)}
+                    >
                       {card.badge.text}
                     </Badge>
                   )}

@@ -1,4 +1,3 @@
-/* filepath: /Users/fabriziocagnucci/sch-pro-next/src/components/products/ProductFilters.tsx */
 'use client';
 
 import React from 'react';
@@ -98,13 +97,13 @@ export default function ProductFilters({
               <SelectValue placeholder="Tutte le categorie" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Tutte le categorie</SelectItem>
-              {categories.sort().map(category => (
-                <SelectItem key={category} value={category}>
-                  {category}
-                </SelectItem>
-              ))}
-            </SelectContent>
+  <SelectItem value="all">Tutte le categorie</SelectItem>
+  {categories.map(category => (
+    <SelectItem key={category} value={category}>
+      {category}
+    </SelectItem>
+  ))}
+</SelectContent>
           </Select>
           
           {filters.category && (
@@ -141,20 +140,20 @@ export default function ProductFilters({
               <SelectValue placeholder="Tutti gli stati" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Tutti gli stati</SelectItem>
-              <SelectItem value="active">
-                <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-green-500" />
-                  Attivi
-                </div>
-              </SelectItem>
-              <SelectItem value="inactive">
-                <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-gray-400" />
-                  Inattivi
-                </div>
-              </SelectItem>
-            </SelectContent>
+  <SelectItem value="all">Tutti gli stati</SelectItem>
+  <SelectItem value="active">
+    <span className="flex items-center gap-2">
+      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+      Attivo
+    </span>
+  </SelectItem>
+  <SelectItem value="inactive">
+    <span className="flex items-center gap-2">
+      <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+      Inattivo
+    </span>
+  </SelectItem>
+</SelectContent>
           </Select>
           
           {filters.active !== null && (

@@ -1,4 +1,3 @@
-/* filepath: /Users/fabriziocagnucci/sch-pro-next/src/components/layout/PageWrapper.tsx */
 import React from 'react';
 import { cn } from '@/lib/utils';
 
@@ -18,8 +17,8 @@ export const PageWrapper = ({
   actions 
 }: PageWrapperProps) => {
   return (
-    <div className="min-h-screen page-container">
-      <div className="content-wrapper">
+    <div className="min-h-screen bg-background text-foreground">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {(title || description || actions) && (
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-8 animate-fade-in">
             <div className="space-y-2">
@@ -42,7 +41,7 @@ export const PageWrapper = ({
           </div>
         )}
         
-        <div className={cn("space-y-6 animate-slide-in-right", className)}>
+        <div className={cn("space-y-6 animate-fade-in", className)}>
           {children}
         </div>
       </div>
