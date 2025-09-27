@@ -5,12 +5,12 @@ import { createSupabaseServer } from '@/lib/auth'
 // GET /api/super-admin/organizations/[id]/members - Get organization members
 export async function GET(
   request: NextRequest,
-  context: any
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await requireSuperAdmin()
     const supabase = await createSupabaseServer()
-    const { id: orgId } = await context.params
+    const { id: orgId } = await params
 
     const { data: members, error } = await supabase
       .from('organization_members')

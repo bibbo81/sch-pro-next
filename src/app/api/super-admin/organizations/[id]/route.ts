@@ -5,12 +5,12 @@ import { createSupabaseServer } from '@/lib/auth'
 // GET /api/super-admin/organizations/[id] - Get organization details
 export async function GET(
   request: NextRequest,
-  context: any
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await requireSuperAdmin()
     const supabase = await createSupabaseServer()
-    const { id: orgId } = await context.params
+    const { id: orgId } = await params
 
     // Get organization with basic information first
     const { data: org, error: orgError } = await supabase
@@ -81,12 +81,12 @@ export async function GET(
 // PATCH /api/super-admin/organizations/[id] - Update organization
 export async function PATCH(
   request: NextRequest,
-  context: any
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await requireSuperAdmin()
     const supabase = await createSupabaseServer()
-    const { id: orgId } = await context.params
+    const { id: orgId } = await params
     const body = await request.json()
 
     const { name, description } = body
@@ -138,20 +138,20 @@ export async function PATCH(
 // PUT /api/super-admin/organizations/[id] - Update organization (alias for PATCH)
 export async function PUT(
   request: NextRequest,
-  context: any
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  return PATCH(request, context)
+  return PATCH(request, { params })
 }
 
 // DELETE /api/super-admin/organizations/[id] - Delete organization
 export async function DELETE(
   request: NextRequest,
-  context: any
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await requireSuperAdmin()
     const supabase = await createSupabaseServer()
-    const { id: orgId } = await context.params
+    const { id: orgId } = await params
 
     // Get organization details for logging
     const { data: org } = await supabase

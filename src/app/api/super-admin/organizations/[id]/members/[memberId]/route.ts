@@ -5,12 +5,12 @@ import { createSupabaseServer } from '@/lib/auth'
 // PUT /api/super-admin/organizations/[id]/members/[memberId] - Update member role
 export async function PUT(
   request: NextRequest,
-  context: any
+  { params }: { params: Promise<{ id: string; memberId: string }> }
 ) {
   try {
     await requireSuperAdmin()
     const supabase = await createSupabaseServer()
-    const { id: orgId, memberId } = await context.params
+    const { id: orgId, memberId } = await params
     const body = await request.json()
     const { role, restrictToOwnRecords } = body
 
@@ -100,12 +100,12 @@ export async function PUT(
 // DELETE /api/super-admin/organizations/[id]/members/[memberId] - Remove member
 export async function DELETE(
   request: NextRequest,
-  context: any
+  { params }: { params: Promise<{ id: string; memberId: string }> }
 ) {
   try {
     await requireSuperAdmin()
     const supabase = await createSupabaseServer()
-    const { id: orgId, memberId } = await context.params
+    const { id: orgId, memberId } = await params
 
     // Get member details before deletion for logging
     const { data: member } = await supabase
