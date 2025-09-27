@@ -1,0 +1,183 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { requireSuperAdmin, logSuperAdminAction } from '@/lib/auth-super-admin'
+import { createSupabaseServer } from '@/lib/auth'
+
+// PUT /api/super-admin/organizations/[id]/members/[memberId] - Update member role
+export async function PUT(
+  request: NextRequest,
+  context: any
+) {
+  try {
+    await requireSuperAdmin()
+    const supabase = await createSupabaseServer()
+    const { id: orgId, memberId } = await context.params
+    const body = await request.json()
+    const { role, restrictToOwnRecords } = body
+
+    if (!role) {
+      return NextResponse.json(
+        { error: 'Role is required' },
+        { status: 400 }
+      )
+    }
+
+    // Check if member exists
+    const { data: existingMember } = await supabase
+      .from('organization_members')
+      .select('user_id')
+      .eq('id', memberId)
+      .eq('organization_id', orgId)
+      .single()
+
+    if (!existingMember) {
+      return NextResponse.json(
+        { error: 'Member not found' },
+        { status: 404 }
+      )
+    }
+
+    // Update member
+    const updateData: any = { role }
+    if (restrictToOwnRecords !== undefined) {
+      updateData.restrict_to_own_records = restrictToOwnRecords
+    }
+
+    const { data: updatedMember, error } = await supabase
+      .from('organization_members')
+      .update(updateData)
+      .eq('id', memberId)
+      .eq('organization_id', orgId)
+      .select(`
+        id,
+        role,
+        restrict_to_own_records,
+        created_at,
+        user_id,
+        users:user_id (
+          id,
+          email,
+          full_name
+        )
+      `)
+      .single()
+
+    if (error) {
+      console.error('Error updating member:', error)
+      return NextResponse.json(
+        { error: 'Failed to update member' },
+        { status: 500 }
+      )
+    }
+
+    // Log the action
+    await logSuperAdminAction(
+      'update_organization_member',
+      'organization_member',
+      memberId,
+      { organizationId: orgId, role, restrictToOwnRecords }
+    )
+
+    return NextResponse.json({
+      success: true,
+      member: {
+        id: updatedMember.id,
+        user_id: updatedMember.user_id,
+        role: updatedMember.role,
+        restrict_to_own_records: updatedMember.restrict_to_own_records,
+        created_at: updatedMember.created_at,
+        user: updatedMember.users
+      }
+    })
+  } catch (error) {
+    console.error('Error in PUT /api/super-admin/organizations/[id]/members/[memberId]:', error)
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+
+// DELETE /api/super-admin/organizations/[id]/members/[memberId] - Remove member
+export async function DELETE(
+  request: NextRequest,
+  context: any
+) {
+  try {
+    await requireSuperAdmin()
+    const supabase = await createSupabaseServer()
+    const { id: orgId, memberId } = await context.params
+
+    // Get member details before deletion for logging
+    const { data: member } = await supabase
+      .from('organization_members')
+      .select(`
+        user_id,
+        role,
+        users:user_id (
+          email
+        )
+      `)
+      .eq('id', memberId)
+      .eq('organization_id', orgId)
+      .single()
+
+    if (!member) {
+      return NextResponse.json(
+        { error: 'Member not found' },
+        { status: 404 }
+      )
+    }
+
+    // Remove member from organization
+    const { error: deleteError } = await supabase
+      .from('organization_members')
+      .delete()
+      .eq('id', memberId)
+      .eq('organization_id', orgId)
+
+    if (deleteError) {
+      console.error('Error removing member:', deleteError)
+      return NextResponse.json(
+        { error: 'Failed to remove member' },
+        { status: 500 }
+      )
+    }
+
+    // Check if user has other organization memberships
+    const { data: otherMemberships } = await supabase
+      .from('organization_members')
+      .select('id')
+      .eq('user_id', member.user_id)
+
+    // If no other memberships, optionally delete the user account
+    if (!otherMemberships || otherMemberships.length === 0) {
+      try {
+        await supabase.auth.admin.deleteUser(member.user_id)
+      } catch (userDeleteError) {
+        console.error('Error deleting user account:', userDeleteError)
+        // Continue even if user deletion fails
+      }
+    }
+
+    // Log the action
+    await logSuperAdminAction(
+      'remove_organization_member',
+      'organization_member',
+      memberId,
+      { 
+        organizationId: orgId, 
+        userId: member.user_id,
+        email: member.users?.email,
+        role: member.role
+      }
+    )
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Error in DELETE /api/super-admin/organizations/[id]/members/[memberId]:', error)
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
