@@ -3,9 +3,14 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
 
-  // TypeScript checking: Next.js 15 params fixed, only bypass for Supabase types
+  // TypeScript checking: DISABLED for deployment
   typescript: {
-    ignoreBuildErrors: true, // Temporary: until Supabase types are fixed
+    ignoreBuildErrors: true
+  },
+
+  // Force Vercel to rebuild without cache
+  experimental: {
+    typedRoutes: false
   },
 
 
