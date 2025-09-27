@@ -82,19 +82,28 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    console.log('🔄 PATCH request received')
     await requireSuperAdmin()
+    console.log('✅ Super admin authenticated')
+
     const supabase = await createSupabaseServer()
     const { id: orgId } = await params
     const body = await request.json()
 
+    console.log('📝 Request body:', body)
+    console.log('🎯 Organization ID:', orgId)
+
     const { name } = body
 
     if (!name) {
+      console.warn('❌ Name is required but not provided')
       return NextResponse.json(
         { error: 'Organization name is required' },
         { status: 400 }
       )
     }
+
+    console.log('🔄 Attempting to update organization with name:', name)
 
     // Update organization
     const { data, error } = await supabase
@@ -105,12 +114,14 @@ export async function PATCH(
       .single() as any
 
     if (error) {
-      console.error('Error updating organization:', error)
+      console.error('❌ Error updating organization:', error)
       return NextResponse.json(
-        { error: 'Failed to update organization' },
+        { error: 'Failed to update organization: ' + error.message },
         { status: 500 }
       )
     }
+
+    console.log('✅ Update successful:', data)
 
     // Log the action
     await logSuperAdminAction(
@@ -125,10 +136,10 @@ export async function PATCH(
       organization: data
     })
   } catch (error) {
-    console.error('Error in PATCH /api/super-admin/organizations/[id]:', error)
+    console.error('❌ Error in PATCH /api/super-admin/organizations/[id]:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Internal server error' },
-      { status: 401 }
+      { status: 500 }
     )
   }
 }
