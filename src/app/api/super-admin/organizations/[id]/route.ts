@@ -105,10 +105,27 @@ export async function PATCH(
 
     console.log('🔄 Attempting to update organization with name:', name)
 
-    // Update organization
+    // First, check if organization exists
+    const { data: existingOrg, error: checkError } = await supabase
+      .from('organizations')
+      .select('id, name')
+      .eq('id', orgId)
+      .single() as any
+
+    if (checkError || !existingOrg) {
+      console.error('❌ Organization not found for update:', checkError)
+      return NextResponse.json(
+        { error: 'Organization not found' },
+        { status: 404 }
+      )
+    }
+
+    console.log('✅ Found organization:', existingOrg)
+
+    // Update organization - only update the name field
     const { data, error } = await supabase
       .from('organizations')
-      .update({ name } as any)
+      .update({ name: name.trim() })
       .eq('id', orgId)
       .select()
       .single() as any
