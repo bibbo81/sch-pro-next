@@ -12,31 +12,17 @@ export async function GET(
     const supabase = await createSupabaseServer()
     const { id: orgId } = await context.params
 
-    // Get organization with detailed information
+    // Get organization with basic information first
     const { data: org, error: orgError } = await supabase
       .from('organizations')
       .select(`
         id,
         name,
         description,
-        created_at,
-        organization_members (
-          id,
-          role,
-          restrict_to_own_records,
-          created_at,
-          users:user_id (
-            id,
-            email,
-            created_at,
-            last_sign_in_at
-          )
-        ),
-        shipments (count),
-        products (count)
+        created_at
       `)
       .eq('id', orgId)
-      .single()
+      .single() as any
 
     if (orgError || !org) {
       return NextResponse.json(
@@ -45,32 +31,40 @@ export async function GET(
       )
     }
 
-    // Process members data
-    const members = Array.isArray(org.organization_members)
-      ? org.organization_members.map(member => ({
-          id: member.id,
-          role: member.role,
-          restrict_to_own_records: member.restrict_to_own_records,
-          created_at: member.created_at,
-          user: {
-            id: member.users?.id,
-            email: member.users?.email,
-            created_at: member.users?.created_at,
-            last_sign_in_at: member.users?.last_sign_in_at
-          }
-        }))
-      : []
+    // Get members separately to avoid complex joins
+    const { data: members, error: membersError } = await supabase
+      .from('organization_members')
+      .select(`
+        id,
+        role,
+        restrict_to_own_records,
+        created_at,
+        user_id
+      `)
+      .eq('organization_id', orgId) as any
+
+    // Get shipment count
+    const { count: shipmentsCount } = await supabase
+      .from('shipments')
+      .select('*', { count: 'exact', head: true })
+      .eq('organization_id', orgId) as any
+
+    // Get products count
+    const { count: productsCount } = await supabase
+      .from('products')
+      .select('*', { count: 'exact', head: true })
+      .eq('organization_id', orgId) as any
 
     const processedOrg = {
       id: org.id,
       name: org.name,
       description: org.description,
       created_at: org.created_at,
-      members,
+      members: members || [],
       stats: {
-        membersCount: members.length,
-        shipmentsCount: Array.isArray(org.shipments) ? org.shipments.length : 0,
-        productsCount: Array.isArray(org.products) ? org.products.length : 0
+        membersCount: members?.length || 0,
+        shipmentsCount: shipmentsCount || 0,
+        productsCount: productsCount || 0
       }
     }
 
@@ -107,10 +101,10 @@ export async function PATCH(
     // Update organization
     const { data, error } = await supabase
       .from('organizations')
-      .update({ name, description })
+      .update({ name, description } as any)
       .eq('id', orgId)
       .select()
-      .single()
+      .single() as any
 
     if (error) {
       console.error('Error updating organization:', error)
@@ -164,7 +158,7 @@ export async function DELETE(
       .from('organizations')
       .select('name')
       .eq('id', orgId)
-      .single()
+      .single() as any
 
     if (!org) {
       return NextResponse.json(
@@ -177,13 +171,13 @@ export async function DELETE(
     const { data: members } = await supabase
       .from('organization_members')
       .select('user_id')
-      .eq('organization_id', orgId)
+      .eq('organization_id', orgId) as any
 
     // Delete the organization (this will cascade delete related data)
     const { error: deleteError } = await supabase
       .from('organizations')
       .delete()
-      .eq('id', orgId)
+      .eq('id', orgId) as any
 
     if (deleteError) {
       console.error('Error deleting organization:', deleteError)
@@ -201,7 +195,7 @@ export async function DELETE(
           const { data: otherMemberships } = await supabase
             .from('organization_members')
             .select('id')
-            .eq('user_id', member.user_id)
+            .eq('user_id', member.user_id) as any
 
           // If no other memberships, delete the user account
           if (!otherMemberships || otherMemberships.length === 0) {
