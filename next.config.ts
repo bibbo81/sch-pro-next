@@ -3,15 +3,6 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
 
-  // Disabilita TypeScript checking durante il build per evitare errori
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-
-  // Disabilita ESLint durante il build
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
 
   async redirects() {
     return [

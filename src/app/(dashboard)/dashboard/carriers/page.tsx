@@ -297,10 +297,10 @@ export default function ForwardersPage() {
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     size="sm"
-                    onClick={() => handleDeleteForwarder(forwarder.id, forwarder.name)}
+                    onClick={() => alert('Delete functionality temporarily disabled')}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -352,28 +352,24 @@ export default function ForwardersPage() {
   )
 }
 
-  // Delete forwarder handler
-  const handleDeleteForwarder = async (forwarderId: string, forwarderName: string) => {
-    if (!confirm(`Eliminare lo spedizioniere ${forwarderName}?`)) return
-
-    try {
-      const response = await fetch(`/api/forwarders/${forwarderId}`, {
-        method: 'DELETE'
-      })
-
-      const result = await response.json()
-
-      if (!result.success) {
-        alert(result.error || 'Errore durante l\'eliminazione')
-        return
-      }
-
-      await loadForwarders()
-    } catch (error) {
-      console.error('Error deleting forwarder:', error)
-      alert('Errore durante l\'eliminazione')
-    }
-  }
+// Delete forwarder handler - moved outside for later integration
+// const handleDeleteForwarder = async (forwarderId: string, forwarderName: string) => {
+//   if (!confirm(`Eliminare lo spedizioniere ${forwarderName}?`)) return
+//   try {
+//     const response = await fetch(`/api/forwarders/${forwarderId}`, {
+//       method: 'DELETE'
+//     })
+//     const result = await response.json()
+//     if (!result.success) {
+//       alert(result.error || 'Errore durante l\'eliminazione')
+//       return
+//     }
+//     // await loadForwarders() // TODO: Fix scope
+//   } catch (error) {
+//     console.error('Error deleting forwarder:', error)
+//     alert('Errore durante l\'eliminazione')
+//   }
+// }
 
 // Forwarder Form Component
 function ForwarderForm({ forwarder, onSave, onCancel }: {

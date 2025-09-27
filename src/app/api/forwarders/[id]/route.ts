@@ -80,9 +80,9 @@ export async function PUT(
       active: body.active ?? true
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('carriers')
-      .update(updateData as any)
+      .update(updateData)
       .eq('id', params.id)
       .eq('organization_id', organizationId)
       .select()

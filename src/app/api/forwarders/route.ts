@@ -35,16 +35,16 @@ export async function GET(request: NextRequest) {
       .not('forwarder_id', 'is', null) as any
 
     // Calculate analytics for each forwarder
-    const forwardersWithAnalytics = (forwarders || []).map(forwarder => {
-      const shipments = shipmentsData?.filter(s =>
+    const forwardersWithAnalytics = (forwarders || []).map((forwarder: any) => {
+      const shipments = shipmentsData?.filter((s: any) =>
         s.forwarder_id === forwarder.id
       ) || []
 
       const total_shipments = shipments.length
-      const total_spent = shipments.reduce((sum, s) => sum + (s.total_value || 0), 0)
+      const total_spent = shipments.reduce((sum: number, s: any) => sum + (s.total_value || 0), 0)
       const average_cost = total_shipments > 0 ? total_spent / total_shipments : 0
       const last_used = shipments.length > 0
-        ? Math.max(...shipments.map(s => new Date(s.created_at).getTime()))
+        ? Math.max(...shipments.map((s: any) => new Date(s.created_at).getTime()))
         : null
 
       return {

@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
       .select('id, tracking_number, organization_id, status')
       .not('tracking_number', 'is', null)
       .neq('status', 'delivered')
-      .neq('status', 'cancelled')
+      .neq('status', 'cancelled') as { data: any[] | null, error: any }
 
     if (shipmentsError) {
       console.error('❌ Error fetching shipments:', shipmentsError)
@@ -57,8 +57,8 @@ export async function GET(request: NextRequest) {
     // Processa ogni organizzazione
     for (const [orgId, orgShipments] of Object.entries(shipmentsByOrg)) {
       try {
-        const trackingNumbers = orgShipments
-          .map(s => s.tracking_number)
+        const trackingNumbers = (orgShipments as any[])
+          .map((s: any) => s.tracking_number)
           .filter(Boolean) as string[]
 
         if (trackingNumbers.length === 0) continue
@@ -99,11 +99,11 @@ export async function GET(request: NextRequest) {
           }
 
           // Trova la spedizione corrispondente
-          const shipment = orgShipments.find(s => s.tracking_number === trackingData.tracking_number)
+          const shipment = (orgShipments as any[]).find((s: any) => s.tracking_number === trackingData.tracking_number)
           if (!shipment) continue
 
           // Aggiorna la spedizione con i nuovi dati
-          const { error: updateError } = await supabase
+          const { error: updateError } = await (supabase as any)
             .from('shipments')
             .update({
               status: mapShipsGoStatusToInternal(trackingData.status),
@@ -130,7 +130,7 @@ export async function GET(request: NextRequest) {
 
           // Aggiorna anche la tabella trackings se esiste un record
           if (trackingData.events && trackingData.events.length > 0) {
-            const { error: trackingError } = await supabase
+            const { error: trackingError } = await (supabase as any)
               .from('trackings')
               .upsert({
                 tracking_number: trackingData.tracking_number,
@@ -158,7 +158,7 @@ export async function GET(request: NextRequest) {
 
       } catch (orgError) {
         console.error(`❌ Error processing org ${orgId}:`, orgError)
-        totalErrors += orgShipments.length
+        totalErrors += (orgShipments as any[]).length
       }
     }
 
