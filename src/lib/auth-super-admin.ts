@@ -1,9 +1,9 @@
-import { createSupabaseServer } from './auth'
+import { createSupabaseServer, createSupabaseClient } from './auth'
 
 // Check if current user is a super admin
 export async function isSuperAdmin(): Promise<boolean> {
   try {
-    const supabase = await createSupabaseServer()
+    const supabase = await createSupabaseClient() // Use client for auth check
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) return false
@@ -19,7 +19,7 @@ export async function isSuperAdmin(): Promise<boolean> {
 
 // Require super admin access (throws error if not super admin)
 export async function requireSuperAdmin() {
-  const supabase = await createSupabaseServer()
+  const supabase = await createSupabaseClient() // Use client for auth check
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -84,14 +84,17 @@ export async function logSuperAdminAction(
   details?: any
 ) {
   try {
-    const supabase = await createSupabaseServer()
+    // Temporarily disabled - RPC function doesn't exist yet
+    console.log('Super admin action:', { action, targetType, targetId, details })
 
-    await supabase.rpc('log_super_admin_action', {
-      p_action: action,
-      p_target_type: targetType,
-      p_target_id: targetId,
-      p_details: details
-    })
+    // TODO: Implement proper logging when RPC function is created
+    // const supabase = await createSupabaseServer()
+    // await supabase.rpc('log_super_admin_action', {
+    //   p_action: action,
+    //   p_target_type: targetType,
+    //   p_target_id: targetId,
+    //   p_details: details
+    // })
   } catch (error) {
     console.error('Error logging super admin action:', error)
     // Don't throw - logging shouldn't break the action
