@@ -5,7 +5,7 @@ import { Database } from '@/types/supabase'
 // ✅ FUNZIONE HELPER per creare client Supabase server-side
 async function createSupabaseServer() {
   const cookieStore = await cookies()
-  
+
   return createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,

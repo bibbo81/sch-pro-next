@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireSuperAdmin, logSuperAdminAction } from '@/lib/auth-super-admin'
-import { createSupabaseServer } from '@/lib/auth'
+import { createSuperAdminClient } from '@/lib/auth-super-admin-bypass'
 
 // GET /api/super-admin/organizations/[id] - Get organization details
 export async function GET(
@@ -12,7 +12,7 @@ export async function GET(
     await requireSuperAdmin()
     console.log('✅ [DEBUG] Super admin auth passed')
 
-    const supabase = await createSupabaseServer()
+    const supabase = await createSuperAdminClient()
     const { id: orgId } = await params
 
     console.log('🔍 [DEBUG] Organization ID:', orgId)

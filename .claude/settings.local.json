@@ -39,7 +39,8 @@
       "Bash(pkill:*)",
       "Read(//var/folders/vc/z089_kwj3jb7d3hynxwb8pb00000gn/T/TemporaryItems/NSIRD_screencaptureui_cYoaLV/**)",
       "mcp__ide__getDiagnostics",
-      "Bash(git reset:*)"
+      "Bash(git reset:*)",
+      "Bash(source .env.local)"
     ],
     "deny": [],
     "ask": []
