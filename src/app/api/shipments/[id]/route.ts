@@ -4,10 +4,11 @@ import { requireAuth, createSupabaseServer } from '@/lib/auth'
 // GET - Ottieni spedizione per ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  segmentData: any
 ) {
   try {
-    const { id } = await params
+    const params = await segmentData.params
+    const { id } = params
     console.log('🔍 GET shipment:', id)
     
     // ✅ DESTRUCTURING CORRETTO
@@ -91,10 +92,11 @@ export async function GET(
 // PUT - Aggiorna spedizione specifica
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  segmentData: any
 ) {
   try {
-    const { id } = await params
+    const params = await segmentData.params
+    const { id } = params
     const body = await request.json()
     console.log('🔄 PUT shipment:', id)
     
@@ -265,10 +267,11 @@ export async function PUT(
 // DELETE - Elimina spedizione
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  segmentData: any
 ) {
   try {
-    const { id } = await params
+    const params = await segmentData.params
+    const { id } = params
     console.log('🗑️ DELETE shipment:', id)
     
     // ✅ DESTRUCTURING CORRETTO
