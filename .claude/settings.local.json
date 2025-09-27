@@ -36,9 +36,15 @@
       "Bash(git commit:*)",
       "Read(//var/folders/vc/z089_kwj3jb7d3hynxwb8pb00000gn/T/TemporaryItems/NSIRD_screencaptureui_JUPnVn/**)",
       "Bash(/bashes)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Read(//var/folders/vc/z089_kwj3jb7d3hynxwb8pb00000gn/T/TemporaryItems/NSIRD_screencaptureui_cYoaLV/**)",
+      "mcp__ide__getDiagnostics"
     ],
     "deny": [],
     "ask": []
-  }
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "supabase"
+  ]
 }

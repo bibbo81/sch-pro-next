@@ -8,17 +8,15 @@ export async function GET(request: NextRequest) {
     await requireSuperAdmin()
     const supabase = await createSupabaseServer()
 
-    // Get all organizations with member counts and recent activity
+    // Get all organizations with basic info
     const { data: organizations, error } = await supabase
       .from('organizations')
       .select(`
         id,
         name,
-        created_at,
-        organization_members (count),
-        shipments (count, created_at)
+        created_at
       `)
-      .order('created_at', { ascending: false })
+      .order('created_at', { ascending: false }) as any
 
     if (error) {
       console.error('Error fetching organizations:', error)
@@ -28,21 +26,48 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    if (!organizations || organizations.length === 0) {
+      return NextResponse.json({
+        organizations: []
+      })
+    }
+
+    // Get member counts separately to avoid complex joins
+    const memberCounts = await Promise.all(
+      organizations.map(async (org: any) => {
+        const { count } = await supabase
+          .from('organization_members')
+          .select('*', { count: 'exact', head: true })
+          .eq('organization_id', org.id) as any
+        return { orgId: org.id, count: count || 0 }
+      })
+    )
+
+    // Get shipment counts separately
+    const shipmentCounts = await Promise.all(
+      organizations.map(async (org: any) => {
+        const { count } = await supabase
+          .from('shipments')
+          .select('*', { count: 'exact', head: true })
+          .eq('organization_id', org.id) as any
+        return { orgId: org.id, count: count || 0 }
+      })
+    )
+
     // Process the data to add computed fields
-    const processedOrgs = organizations?.map(org => {
-      const shipments = Array.isArray(org.shipments) ? org.shipments : []
-      const lastShipment = shipments
-        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]
+    const processedOrgs = organizations.map((org: any) => {
+      const memberCount = memberCounts.find(m => m.orgId === org.id)?.count || 0
+      const shipmentCount = shipmentCounts.find(s => s.orgId === org.id)?.count || 0
 
       return {
         id: org.id,
         name: org.name,
         created_at: org.created_at,
-        membersCount: Array.isArray(org.organization_members) ? org.organization_members.length : 0,
-        shipmentsCount: shipments.length,
-        lastActive: lastShipment?.created_at || null
+        membersCount: memberCount,
+        shipmentsCount: shipmentCount,
+        lastActive: null
       }
-    }) || []
+    })
 
     return NextResponse.json({
       organizations: processedOrgs
@@ -59,7 +84,7 @@ export async function GET(request: NextRequest) {
 // POST /api/super-admin/organizations - Create new organization with admin user
 export async function POST(request: NextRequest) {
   try {
-    const { user } = await requireSuperAdmin()
+    await requireSuperAdmin()
     const body = await request.json()
     const {
       organizationName,
@@ -84,9 +109,9 @@ export async function POST(request: NextRequest) {
       .insert({
         name: organizationName,
         description: organizationDescription
-      })
+      } as any)
       .select()
-      .single()
+      .single() as any
 
     if (orgError || !newOrg) {
       console.error('Error creating organization:', orgError)
@@ -110,7 +135,7 @@ export async function POST(request: NextRequest) {
       console.error('Error creating admin user:', authError)
 
       // Cleanup - delete the organization if user creation failed
-      await supabase.from('organizations').delete().eq('id', newOrg.id)
+      await supabase.from('organizations').delete().eq('id', newOrg.id) as any
 
       return NextResponse.json(
         { error: authError?.message || 'Failed to create admin user' },
@@ -126,14 +151,14 @@ export async function POST(request: NextRequest) {
         organization_id: newOrg.id,
         role: 'admin',
         restrict_to_own_records: false
-      })
+      } as any)
 
     if (memberError) {
       console.error('Error adding user to organization:', memberError)
 
       // Cleanup - delete user and organization
       await supabase.auth.admin.deleteUser(authData.user.id)
-      await supabase.from('organizations').delete().eq('id', newOrg.id)
+      await supabase.from('organizations').delete().eq('id', newOrg.id) as any
 
       return NextResponse.json(
         { error: 'Failed to add user to organization' },
