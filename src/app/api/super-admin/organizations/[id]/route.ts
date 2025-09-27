@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireSuperAdmin, logSuperAdminAction } from '@/lib/auth-super-admin'
-import { createSuperAdminClient } from '@/lib/auth-super-admin-bypass'
+import { createSupabaseServer } from '@/lib/auth'
 
 // GET /api/super-admin/organizations/[id] - Get organization details
 export async function GET(
@@ -8,14 +8,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    console.log('🔍 [DEBUG] Organization detail API called')
     await requireSuperAdmin()
-    console.log('✅ [DEBUG] Super admin auth passed')
-
-    const supabase = await createSuperAdminClient()
+    const supabase = await createSupabaseServer()
     const { id: orgId } = await params
-
-    console.log('🔍 [DEBUG] Organization ID:', orgId)
 
     // Get organization with basic information first
     const { data: org, error: orgError } = await supabase
@@ -29,10 +24,7 @@ export async function GET(
       .eq('id', orgId)
       .single() as any
 
-    console.log('📊 [DEBUG] Organization query result:', { org, orgError })
-
     if (orgError || !org) {
-      console.log('❌ [DEBUG] Organization not found:', { orgId, orgError })
       return NextResponse.json(
         { error: 'Organization not found' },
         { status: 404 }

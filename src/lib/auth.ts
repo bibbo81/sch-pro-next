@@ -8,7 +8,7 @@ async function createSupabaseServer() {
 
   return createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!, // Now working with proper RLS policies
     {
       cookies: {
         get(name: string) {

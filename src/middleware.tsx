@@ -35,12 +35,7 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  const { data: { session }, error } = await supabase.auth.getSession()
-
-  console.log('Middleware: Checking auth for', pathname)
-  console.log('Cookies:', request.cookies.getAll().map(c => c.name))
-  console.log('Session exists:', !!session)
-  console.log('Session error:', error)
+  const { data: { session } } = await supabase.auth.getSession()
   
   // Protezione per dashboard e API protette
   const requiresAuth = pathname.startsWith('/dashboard') ||
@@ -49,18 +44,15 @@ export async function middleware(request: NextRequest) {
                       pathname.startsWith('/api/trackings') ||
                       pathname.startsWith('/api/users') ||
                       pathname.startsWith('/api/organizations') ||
-                      (pathname.startsWith('/api/super-admin') && !pathname.includes('/activate') && !pathname.includes('/check') && !pathname.includes('/api/debug')) ||
                       pathname.startsWith('/super-admin') ||
                       pathname.startsWith('/api/protected')
   
   if (!session && requiresAuth) {
-    console.log('Redirecting to login - no session for:', pathname)
-    
     // Per le API, ritorna 401 invece di redirect
     if (pathname.startsWith('/api/')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-    
+
     // Per le pagine, redirect al login
     return NextResponse.redirect(new URL('/login', request.url))
   }

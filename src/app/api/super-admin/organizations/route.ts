@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireSuperAdmin, logSuperAdminAction } from '@/lib/auth-super-admin'
-import { createServiceClient } from '@/lib/auth-super-admin-bypass'
+import { createSupabaseServer } from '@/lib/auth'
 
 // GET /api/super-admin/organizations - Get all organizations
 export async function GET(request: NextRequest) {
   try {
     await requireSuperAdmin()
-    const supabase = createServiceClient()
+    const supabase = await createSupabaseServer()
 
     // Get all organizations with basic info
     const { data: organizations, error } = await supabase
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const supabase = createServiceClient()
+    const supabase = await createSupabaseServer()
 
     // 1. Create the organization
     const { data: newOrg, error: orgError } = await supabase
