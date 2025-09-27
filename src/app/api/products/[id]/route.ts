@@ -4,10 +4,10 @@ import { requireAuth, createSupabaseServer } from '@/lib/auth'
 // GET - Ottieni singolo prodotto per ID
 export async function GET(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await context.params
+    const { id } = await params
     console.log('🔍 GET product:', id)
     
     // ✅ DESTRUCTURING CORRETTO
@@ -69,10 +69,10 @@ export async function GET(
 // PUT - Aggiorna prodotto esistente
 export async function PUT(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await context.params
+    const { id } = await params
     const body = await request.json()
     console.log('🔄 PUT product:', id)
     
@@ -216,10 +216,10 @@ export async function PUT(
 // DELETE - Elimina prodotto
 export async function DELETE(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await context.params
+    const { id } = await params
     console.log('🗑️ DELETE product:', id)
     
     // ✅ DESTRUCTURING CORRETTO
