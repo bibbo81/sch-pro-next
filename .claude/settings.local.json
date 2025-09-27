@@ -32,7 +32,10 @@
       "Read(//var/folders/vc/z089_kwj3jb7d3hynxwb8pb00000gn/T/TemporaryItems/NSIRD_screencaptureui_3kLQhZ/**)",
       "Bash(git add:*)",
       "Bash(NODE_ENV=production npm run build)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(git commit:*)",
+      "Read(//var/folders/vc/z089_kwj3jb7d3hynxwb8pb00000gn/T/TemporaryItems/NSIRD_screencaptureui_JUPnVn/**)",
+      "Bash(/bashes)"
     ],
     "deny": [],
     "ask": []
