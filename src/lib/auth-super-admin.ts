@@ -19,20 +19,19 @@ export async function isSuperAdmin(): Promise<boolean> {
 
 // Require super admin access (throws error if not super admin)
 export async function requireSuperAdmin() {
-  const supabase = await createSupabaseClient() // Use client for auth check
-  const { data: { user } } = await supabase.auth.getUser()
+  const supabase = await createSupabaseServer() // Use server for API routes
+  const { data: { session } } = await supabase.auth.getSession()
 
-  if (!user) {
+  if (!session?.user) {
     throw new Error('Authentication required')
   }
 
-  const isAdmin = await isSuperAdmin()
-
-  if (!isAdmin) {
+  // Check if the user email matches the expected super admin
+  if (session.user.email !== 'fabrizio.cagnucci@gmail.com') {
     throw new Error('Super admin access required')
   }
 
-  return { user, isSuperAdmin: true }
+  return { user: session.user, isSuperAdmin: true }
 }
 
 // Get super admin statistics
