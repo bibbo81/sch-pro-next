@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
+import { entityColors } from '@/lib/colors'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useProducts } from '@/hooks/useProducts'
 import { Button } from '@/components/ui/button'
@@ -272,7 +273,7 @@ export default function ProductsPage() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 rounded-xl bg-blue-500/10">
-                <Package className="h-5 w-5 text-blue-500" />
+                <Package className={`h-5 w-5 ${entityColors.products.total}`} />
               </div>
             </div>
             <div className="space-y-2">
@@ -286,7 +287,7 @@ export default function ProductsPage() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 rounded-xl bg-green-500/10">
-                <CheckCircle className="h-5 w-5 text-green-500" />
+                <CheckCircle className={`h-5 w-5 ${entityColors.products.active}`} />
               </div>
             </div>
             <div className="space-y-2">
@@ -300,7 +301,7 @@ export default function ProductsPage() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 rounded-xl bg-yellow-500/10">
-                <AlertTriangle className="h-5 w-5 text-yellow-500" />
+                <AlertTriangle className={`h-5 w-5 ${entityColors.products.low_stock}`} />
               </div>
             </div>
             <div className="space-y-2">
@@ -314,7 +315,7 @@ export default function ProductsPage() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 rounded-xl bg-red-500/10">
-                <XCircle className="h-5 w-5 text-red-500" />
+                <XCircle className={`h-5 w-5 ${entityColors.products.out_of_stock}`} />
               </div>
             </div>
             <div className="space-y-2">
@@ -331,7 +332,7 @@ export default function ProductsPage() {
                 <div className="text-2xl font-bold text-purple-600">€{Math.round(stats.totalValue).toLocaleString()}</div>
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Valore Totale</p>
               </div>
-              <DollarSign className="h-8 w-8 text-purple-500" />
+              <DollarSign className={`h-8 w-8 ${entityColors.products.value}`} />
             </div>
           </CardContent>
         </Card>
@@ -343,7 +344,7 @@ export default function ProductsPage() {
                 <div className="text-2xl font-bold text-indigo-600">{stats.categories}</div>
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Categorie</p>
               </div>
-              <ShoppingCart className="h-8 w-8 text-indigo-500" />
+              <ShoppingCart className={`h-8 w-8 ${entityColors.products.categories}`} />
             </div>
           </CardContent>
         </Card>

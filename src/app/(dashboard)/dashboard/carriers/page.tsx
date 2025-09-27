@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
+import { entityColors } from '@/lib/colors'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -175,7 +176,7 @@ export default function ForwardersPage() {
             <div className="flex items-center justify-between">
               <div>
                 <div className="p-3 rounded-xl bg-green-500/10 mb-4 inline-block">
-                  <Package className="h-5 w-5 text-green-500" />
+                  <Package className={`h-5 w-5 ${entityColors.carriers.shipments}`} />
                 </div>
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Attivi</p>
                 <p className="text-2xl font-bold text-foreground">{stats.active}</p>
@@ -189,7 +190,7 @@ export default function ForwardersPage() {
             <div className="flex items-center justify-between">
               <div>
                 <div className="p-3 rounded-xl bg-purple-500/10 mb-4 inline-block">
-                  <Euro className="h-5 w-5 text-purple-500" />
+                  <Euro className={`h-5 w-5 ${entityColors.carriers.spent}`} />
                 </div>
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Spesa Totale</p>
                 <p className="text-2xl font-bold text-foreground">{formatCurrency(stats.totalSpent)}</p>
@@ -203,7 +204,7 @@ export default function ForwardersPage() {
             <div className="flex items-center justify-between">
               <div>
                 <div className="p-3 rounded-xl bg-orange-500/10 mb-4 inline-block">
-                  <Ship className="h-5 w-5 text-orange-500" />
+                  <Ship className={`h-5 w-5 ${entityColors.carriers.active}`} />
                 </div>
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Spedizioni</p>
                 <p className="text-2xl font-bold text-foreground">{stats.totalShipments}</p>

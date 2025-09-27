@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
+import { entityColors } from '@/lib/colors'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -577,7 +578,7 @@ export default function ShipmentsPage() {
                 <div className="text-2xl font-bold">{stats.total}</div>
                 <div className="text-xs text-gray-600">Totale</div>
               </div>
-              <Ship className="h-8 w-8 text-blue-500" />
+              <Ship className={`h-8 w-8 ${entityColors.shipments.total}`} />
             </div>
           </CardContent>
         </Card>
@@ -589,7 +590,7 @@ export default function ShipmentsPage() {
                 <div className="text-2xl font-bold text-orange-600">{stats.inTransit}</div>
                 <div className="text-xs text-gray-600">In Transito</div>
               </div>
-              <Truck className="h-8 w-8 text-orange-500" />
+              <Truck className={`h-8 w-8 ${entityColors.shipments.in_transit}`} />
             </div>
           </CardContent>
         </Card>
@@ -601,7 +602,7 @@ export default function ShipmentsPage() {
                 <div className="text-2xl font-bold text-green-600">€{stats.totalValue.toLocaleString()}</div>
                 <div className="text-xs text-gray-600">Valore Totale</div>
               </div>
-              <DollarSign className="h-8 w-8 text-green-500" />
+              <DollarSign className={`h-8 w-8 ${entityColors.shipments.value}`} />
             </div>
           </CardContent>
         </Card>
@@ -613,7 +614,7 @@ export default function ShipmentsPage() {
                 <div className="text-2xl font-bold text-blue-600">{stats.shipped}</div>
                 <div className="text-xs text-gray-600">Spedite</div>
               </div>
-              <Package className="h-8 w-8 text-blue-500" />
+              <Package className={`h-8 w-8 ${entityColors.shipments.packages}`} />
             </div>
           </CardContent>
         </Card>
@@ -625,7 +626,7 @@ export default function ShipmentsPage() {
                 <div className="text-2xl font-bold text-green-600">{stats.delivered}</div>
                 <div className="text-xs text-gray-600">Consegnate</div>
               </div>
-              <MapPin className="h-8 w-8 text-green-500" />
+              <MapPin className={`h-8 w-8 ${entityColors.shipments.destinations}`} />
             </div>
           </CardContent>
         </Card>
@@ -637,7 +638,7 @@ export default function ShipmentsPage() {
                 <div className="text-2xl font-bold text-purple-600">{stats.items}</div>
                 <div className="text-xs text-gray-600">Articoli</div>
               </div>
-              <Activity className="h-8 w-8 text-purple-500" />
+              <Activity className={`h-8 w-8 ${entityColors.shipments.tracking}`} />
             </div>
           </CardContent>
         </Card>

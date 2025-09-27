@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
+import { entityColors } from '@/lib/colors'
 import { useTrackings } from '@/hooks/useTrackings'
 import { useShipsGO } from '@/hooks/useShipsGO'
 import TrackingForm from '@/components/TrackingForm'
@@ -210,7 +211,7 @@ export default function TrackingPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 rounded-xl bg-blue-500/10">
-                <Package className="h-5 w-5 text-blue-500" />
+                <Package className={`h-5 w-5 ${entityColors.tracking.total}`} />
               </div>
             </div>
             <div className="space-y-2">
@@ -226,7 +227,7 @@ export default function TrackingPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 rounded-xl bg-orange-500/10">
-                <Truck className="h-5 w-5 text-orange-500" />
+                <Truck className={`h-5 w-5 ${entityColors.tracking.in_transit}`} />
               </div>
             </div>
             <div className="space-y-2">
@@ -242,7 +243,7 @@ export default function TrackingPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 rounded-xl bg-green-500/10">
-                <MapPin className="h-5 w-5 text-green-500" />
+                <MapPin className={`h-5 w-5 ${entityColors.tracking.delivered}`} />
               </div>
             </div>
             <div className="space-y-2">
@@ -258,7 +259,7 @@ export default function TrackingPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 rounded-xl bg-red-500/10">
-                <Clock className="h-5 w-5 text-red-500" />
+                <Clock className={`h-5 w-5 ${entityColors.tracking.delayed}`} />
               </div>
             </div>
             <div className="space-y-2">

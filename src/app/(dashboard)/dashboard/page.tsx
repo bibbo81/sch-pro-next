@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useCallback, useRef } from 'react'
+import { entityColors, getStatusColor, colorScheme, statusConfig } from '@/lib/colors'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -22,7 +23,7 @@ interface KPIConfig {
   id: string
   name: string
   icon: string
-  color: string
+  colorClass: string
   calculation: string
   format: 'number' | 'currency' | 'weight' | 'volume' | 'days'
 }
@@ -100,7 +101,7 @@ export default function AdvancedDashboardPage() {
       id: 'total_shipments',
       name: 'Spedizioni Totali',
       icon: 'Ship',
-      color: '#3b82f6',
+      colorClass: entityColors.shipments.total,
       calculation: 'count_shipments',
       format: 'number'
     },
@@ -108,7 +109,7 @@ export default function AdvancedDashboardPage() {
       id: 'total_costs',
       name: 'Costi Totali',
       icon: 'Calculator',
-      color: '#ef4444',
+      colorClass: entityColors.status.delayed,
       calculation: 'sum_costs',
       format: 'currency'
     },
@@ -116,7 +117,7 @@ export default function AdvancedDashboardPage() {
       id: 'avg_cost_per_shipment',
       name: 'Costo Medio',
       icon: 'TrendingUp',
-      color: '#f59e0b',
+      colorClass: entityColors.shipments.in_transit,
       calculation: 'avg_cost_shipment',
       format: 'currency'
     },
@@ -124,7 +125,7 @@ export default function AdvancedDashboardPage() {
       id: 'total_weight',
       name: 'Peso Totale',
       icon: 'Weight',
-      color: '#10b981',
+      colorClass: entityColors.status.delivered,
       calculation: 'sum_weight',
       format: 'weight'
     },
@@ -132,7 +133,7 @@ export default function AdvancedDashboardPage() {
       id: 'total_volume',
       name: 'Volume Totale',
       icon: 'Box',
-      color: '#8b5cf6',
+      colorClass: entityColors.shipments.tracking,
       calculation: 'sum_volume',
       format: 'volume'
     },
@@ -140,7 +141,7 @@ export default function AdvancedDashboardPage() {
       id: 'avg_delivery_time',
       name: 'Tempo Medio Consegna',
       icon: 'Timer',
-      color: '#06b6d4',
+      colorClass: colorScheme.primary.cyan,
       calculation: 'avg_delivery_time',
       format: 'days'
     },
@@ -150,7 +151,7 @@ export default function AdvancedDashboardPage() {
       id: 'avg_sea_delivery_time',
       name: 'Tempo Medio Via Mare',
       icon: 'Ship',
-      color: '#0891b2',
+      colorClass: colorScheme.primary.cyan,
       calculation: 'avg_sea_delivery_time',
       format: 'days'
     },
@@ -158,7 +159,7 @@ export default function AdvancedDashboardPage() {
       id: 'avg_air_delivery_time',
       name: 'Tempo Medio Via Aerea',
       icon: 'Plane',
-      color: '#f59e0b',
+      colorClass: entityColors.shipments.in_transit,
       calculation: 'avg_air_delivery_time',
       format: 'days'
     },
@@ -166,7 +167,7 @@ export default function AdvancedDashboardPage() {
       id: 'avg_road_delivery_time',
       name: 'Tempo Medio Stradale',
       icon: 'Truck',
-      color: '#64748b',
+      colorClass: colorScheme.primary.gray,
       calculation: 'avg_road_delivery_time',
       format: 'days'
     },
@@ -174,7 +175,7 @@ export default function AdvancedDashboardPage() {
       id: 'avg_parcel_delivery_time',
       name: 'Tempo Medio Corriere',
       icon: 'Package',
-      color: '#8b5cf6',
+      colorClass: entityColors.shipments.tracking,
       calculation: 'avg_parcel_delivery_time',
       format: 'days'
     },
@@ -184,7 +185,7 @@ export default function AdvancedDashboardPage() {
       id: 'sea_total_cost',
       name: 'Costo Totale Mare',
       icon: 'Ship',
-      color: '#0891b2',
+      colorClass: colorScheme.primary.cyan,
       calculation: 'sea_total_cost',
       format: 'currency'
     },
@@ -192,7 +193,7 @@ export default function AdvancedDashboardPage() {
       id: 'air_total_cost',
       name: 'Costo Totale Aereo',
       icon: 'Plane',
-      color: '#f59e0b',
+      colorClass: entityColors.shipments.in_transit,
       calculation: 'air_total_cost',
       format: 'currency'
     },
@@ -200,7 +201,7 @@ export default function AdvancedDashboardPage() {
       id: 'road_total_cost',
       name: 'Costo Totale Stradale',
       icon: 'Truck',
-      color: '#64748b',
+      colorClass: colorScheme.primary.gray,
       calculation: 'road_total_cost',
       format: 'currency'
     },
@@ -208,7 +209,7 @@ export default function AdvancedDashboardPage() {
       id: 'parcel_total_cost',
       name: 'Costo Totale Corriere',
       icon: 'Package',
-      color: '#8b5cf6',
+      colorClass: entityColors.shipments.tracking,
       calculation: 'parcel_total_cost',
       format: 'currency'
     },
@@ -216,7 +217,7 @@ export default function AdvancedDashboardPage() {
       id: 'other_total_cost',
       name: 'Costo Non Classificato',
       icon: 'HelpCircle',
-      color: '#6b7280',
+      colorClass: colorScheme.primary.gray,
       calculation: 'other_total_cost',
       format: 'currency'
     },
@@ -226,7 +227,7 @@ export default function AdvancedDashboardPage() {
       id: 'cost_per_kg',
       name: 'Costo per Kg',
       icon: 'Weight',
-      color: '#16a34a',
+      colorClass: entityColors.status.delivered,
       calculation: 'cost_per_kg',
       format: 'currency'
     },
@@ -234,7 +235,7 @@ export default function AdvancedDashboardPage() {
       id: 'cost_per_cbm',
       name: 'Costo per m³',
       icon: 'Box',
-      color: '#dc2626',
+      colorClass: entityColors.status.cancelled,
       calculation: 'cost_per_cbm',
       format: 'currency'
     },
@@ -244,7 +245,7 @@ export default function AdvancedDashboardPage() {
       id: 'on_time_delivery_rate',
       name: 'Consegne Puntuali',
       icon: 'Clock',
-      color: '#059669',
+      colorClass: entityColors.status.delivered,
       calculation: 'on_time_delivery_rate',
       format: 'number'
     },
@@ -252,7 +253,7 @@ export default function AdvancedDashboardPage() {
       id: 'in_transit_count',
       name: 'In Transito',
       icon: 'Activity',
-      color: '#2563eb',
+      colorClass: entityColors.status.created,
       calculation: 'in_transit_count',
       format: 'number'
     }
@@ -360,9 +361,9 @@ export default function AdvancedDashboardPage() {
     return statusMap[status] || 'pending'
   }
 
-  // Get icon component
-  const getIconComponent = (iconName: string) => {
-    const iconProps = { className: "h-5 w-5" }
+  // Get icon component with color class
+  const getIconComponent = (iconName: string, colorClass: string = 'text-primary') => {
+    const iconProps = { className: `h-5 w-5 ${colorClass}` }
     switch (iconName) {
       case 'Ship': return <Ship {...iconProps} />
       case 'Calculator': return <Calculator {...iconProps} />
@@ -1152,17 +1153,7 @@ export default function AdvancedDashboardPage() {
     })
 
 
-    // Define status colors and order
-    const statusConfig = {
-      'sailing': { label: 'In navigazione', color: '#3b82f6' },
-      'in_transit': { label: 'In transito', color: '#06b6d4' },
-      'departed': { label: 'Partite', color: '#8b5cf6' },
-      'delivered': { label: 'Consegnate', color: '#10b981' },
-      'discharged': { label: 'Scaricate', color: '#f59e0b' },
-      'completed': { label: 'Completate', color: '#84cc16' },
-      'cancelled': { label: 'Cancellate', color: '#ef4444' },
-      'unknown': { label: 'Sconosciuto', color: '#6b7280' }
-    }
+    // Status colors are now imported from centralized colors
 
     // Group by final label to eliminate duplicates
     const labelCounts: { [label: string]: { count: number, color: string } } = {}
@@ -1575,7 +1566,7 @@ export default function AdvancedDashboardPage() {
                       className="p-3 rounded-xl bg-primary/10"
                     >
                       <div className="text-primary">
-                        {getIconComponent(kpi.icon)}
+                        {getIconComponent(kpi.icon, kpi.colorClass)}
                       </div>
                     </div>
                   </div>
@@ -1612,7 +1603,7 @@ export default function AdvancedDashboardPage() {
                   <div className="flex items-center justify-between mb-3">
                     <div className="p-3 rounded-xl bg-secondary/50">
                       <div className="text-secondary-foreground">
-                        {getIconComponent(kpi.icon)}
+                        {getIconComponent(kpi.icon, kpi.colorClass)}
                       </div>
                     </div>
                   </div>
@@ -1649,7 +1640,7 @@ export default function AdvancedDashboardPage() {
                   <div className="flex items-center justify-between mb-3">
                     <div className="p-3 rounded-xl bg-secondary/50">
                       <div className="text-secondary-foreground">
-                        {getIconComponent(kpi.icon)}
+                        {getIconComponent(kpi.icon, kpi.colorClass)}
                       </div>
                     </div>
                   </div>
@@ -1686,7 +1677,7 @@ export default function AdvancedDashboardPage() {
                   <div className="flex items-center justify-between mb-3">
                     <div className="p-3 rounded-xl bg-secondary/50">
                       <div className="text-secondary-foreground">
-                        {getIconComponent(kpi.icon)}
+                        {getIconComponent(kpi.icon, kpi.colorClass)}
                       </div>
                     </div>
                   </div>
