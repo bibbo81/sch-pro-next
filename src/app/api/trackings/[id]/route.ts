@@ -4,10 +4,11 @@ import { requireAuth, createSupabaseServer } from '@/lib/auth'
 // PUT - Aggiorna tracking esistente
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params
+    const params = await context.params
+    const { id } = params
     const body = await request.json()
     console.log('🔄 PUT tracking:', id)
     
@@ -146,10 +147,11 @@ export async function PUT(
 // GET - Ottieni singolo tracking per ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params
+    const params = await context.params
+    const { id } = params
     console.log('🔍 GET tracking:', id)
     
     // ✅ DESTRUCTURING CORRETTO
@@ -211,10 +213,11 @@ export async function GET(
 // DELETE - Elimina tracking
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params
+    const params = await context.params
+    const { id } = params
     console.log('🗑️ DELETE tracking:', id)
     
     // ✅ DESTRUCTURING CORRETTO

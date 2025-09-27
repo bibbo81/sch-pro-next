@@ -34,7 +34,9 @@
       "Bash(git commit:*)",
       "Bash(git push:*)",
       "Bash(cat:*)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(npx @next/codemod@canary next-async-request-api:*)",
+      "Bash(NODE_ENV=production npm run build)"
     ],
     "deny": [],
     "ask": []

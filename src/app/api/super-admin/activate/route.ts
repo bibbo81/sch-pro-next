@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Add user to super_admins table
-    const { error: insertError } = await supabase
+    const { error: insertError } = await (supabase as any)
       .from('super_admins')
       .insert({
         user_id: user.id,
@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
     console.log(`Super admin activated: ${email} (${user.id})`)
 
     // Log the action in audit log
-    await supabase.rpc('log_super_admin_action', {
+    await (supabase as any).rpc('log_super_admin_action', {
       p_action: 'super_admin_activated',
       p_target_type: 'user',
       p_target_id: user.id,
