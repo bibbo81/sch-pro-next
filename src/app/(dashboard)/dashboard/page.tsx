@@ -228,7 +228,7 @@ export default function AdvancedDashboardPage() {
       icon: 'Weight',
       color: '#16a34a',
       calculation: 'cost_per_kg',
-      format: 'currency_per_unit'
+      format: 'currency'
     },
     {
       id: 'cost_per_cbm',
@@ -236,7 +236,7 @@ export default function AdvancedDashboardPage() {
       icon: 'Box',
       color: '#dc2626',
       calculation: 'cost_per_cbm',
-      format: 'currency_per_unit'
+      format: 'currency'
     },
 
     // === PERFORMANCE OPERATIVA ===
@@ -246,7 +246,7 @@ export default function AdvancedDashboardPage() {
       icon: 'Clock',
       color: '#059669',
       calculation: 'on_time_delivery_rate',
-      format: 'percentage'
+      format: 'number'
     },
     {
       id: 'in_transit_count',

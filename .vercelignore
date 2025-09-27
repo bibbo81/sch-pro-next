@@ -1,0 +1,5 @@
+# Force clean deployment
+.next/
+node_modules/
+.vercel/
+.cache/
