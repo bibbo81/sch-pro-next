@@ -6,7 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { ArrowLeft, Save } from 'lucide-react'
 import Link from 'next/link'
@@ -14,7 +13,6 @@ import Link from 'next/link'
 interface Organization {
   id: string
   name: string
-  description?: string
   created_at: string
 }
 
@@ -30,8 +28,7 @@ export default function SuperAdminEditOrganization() {
   const [success, setSuccess] = useState(false)
 
   const [formData, setFormData] = useState({
-    name: '',
-    description: ''
+    name: ''
   })
 
   useEffect(() => {
@@ -52,8 +49,7 @@ export default function SuperAdminEditOrganization() {
       const data = await response.json()
       setOrganization(data.organization)
       setFormData({
-        name: data.organization.name || '',
-        description: data.organization.description || ''
+        name: data.organization.name || ''
       })
     } catch (error) {
       console.error('Error fetching organization:', error)
@@ -176,16 +172,6 @@ export default function SuperAdminEditOrganization() {
               />
             </div>
 
-            <div>
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Enter organization description (optional)"
-                rows={4}
-              />
-            </div>
 
             <div className="flex gap-4">
               <Button type="submit" disabled={saving}>
