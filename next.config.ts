@@ -3,14 +3,9 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
 
-  // Temporarily disable TypeScript checking during build for deployment
-  // TODO: Re-enable after fixing Supabase types
+  // TypeScript checking: Next.js 15 params fixed, only bypass for Supabase types
   typescript: {
-    ignoreBuildErrors: true,
-  },
-
-  eslint: {
-    ignoreDuringBuilds: true,
+    ignoreBuildErrors: true, // Temporary: until Supabase types are fixed
   },
 
 

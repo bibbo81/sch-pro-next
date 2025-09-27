@@ -9,11 +9,10 @@ type ShipmentItemUpdate = Database['public']['Tables']['shipment_items']['Update
 // PUT - Aggiorna item nella spedizione
 export async function PUT(
   request: NextRequest,
-  context: { params: Promise<{ id: string; linkId: string }> }
+  { params }: { params: Promise<{ id: string; linkId: string }> }
 ) {
   try {
-    const params = await context.params
-    const { id, linkId } = params
+    const { id, linkId } = await params
     console.log('🔄 PUT shipment item:', { shipmentId: id, itemId: linkId })
     
     // ✅ DESTRUCTURING CORRETTO
@@ -147,11 +146,10 @@ export async function PUT(
 // GET - Ottieni singolo item della spedizione
 export async function GET(
   request: NextRequest,
-  context: { params: Promise<{ id: string; linkId: string }> }
+  { params }: { params: Promise<{ id: string; linkId: string }> }
 ) {
   try {
-    const params = await context.params
-    const { id, linkId } = params
+    const { id, linkId } = await params
     console.log('🔍 GET shipment item:', { shipmentId: id, itemId: linkId })
     
     // ✅ DESTRUCTURING CORRETTO
@@ -238,11 +236,10 @@ export async function GET(
 // DELETE - Rimuovi item dalla spedizione
 export async function DELETE(
   request: NextRequest,
-  context: { params: Promise<{ id: string; linkId: string }> }
+  { params }: { params: Promise<{ id: string; linkId: string }> }
 ) {
   try {
-    const params = await context.params
-    const { id, linkId } = params
+    const { id, linkId } = await params
     console.log('🗑️ DELETE shipment item:', { shipmentId: id, itemId: linkId })
     
     // ✅ DESTRUCTURING CORRETTO

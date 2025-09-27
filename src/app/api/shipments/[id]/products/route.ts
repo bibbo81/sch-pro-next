@@ -3,11 +3,10 @@ import { createClient } from '@/utils/supabase/server'
 
 export async function GET(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const params = await context.params
-    const { id } = params
+    const { id } = await params
     const supabase = await createClient()
 
     // Ottieni i prodotti associati alla spedizione
@@ -42,11 +41,10 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const params = await context.params
-    const { id } = params
+    const { id } = await params
     const body = await request.json()
     const supabase = await createClient()
 
@@ -86,11 +84,10 @@ export async function POST(
 
 export async function DELETE(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const params = await context.params
-    const { id } = params
+    const { id } = await params
     const { searchParams } = new URL(request.url)
     const itemId = searchParams.get('itemId')
     const supabase = await createClient()
