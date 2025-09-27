@@ -18,7 +18,6 @@ export async function GET(
       .select(`
         id,
         name,
-        description,
         created_at
       `)
       .eq('id', orgId)
@@ -58,7 +57,6 @@ export async function GET(
     const processedOrg = {
       id: org.id,
       name: org.name,
-      description: org.description,
       created_at: org.created_at,
       members: members || [],
       stats: {
@@ -89,7 +87,7 @@ export async function PATCH(
     const { id: orgId } = await params
     const body = await request.json()
 
-    const { name, description } = body
+    const { name } = body
 
     if (!name) {
       return NextResponse.json(
@@ -101,7 +99,7 @@ export async function PATCH(
     // Update organization
     const { data, error } = await supabase
       .from('organizations')
-      .update({ name, description } as any)
+      .update({ name } as any)
       .eq('id', orgId)
       .select()
       .single() as any
@@ -119,7 +117,7 @@ export async function PATCH(
       'update_organization',
       'organization',
       orgId,
-      { name, description }
+      { name }
     )
 
     return NextResponse.json({
