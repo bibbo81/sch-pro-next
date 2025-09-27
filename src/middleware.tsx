@@ -47,7 +47,7 @@ export async function middleware(request: NextRequest) {
                       pathname.startsWith('/api/trackings') ||
                       pathname.startsWith('/api/users') ||
                       pathname.startsWith('/api/organizations') ||
-                      (pathname.startsWith('/api/super-admin') && !pathname.includes('/activate')) ||
+                      (pathname.startsWith('/api/super-admin') && !pathname.includes('/activate') && !pathname.includes('/check')) ||
                       pathname.startsWith('/super-admin') ||
                       pathname.startsWith('/api/protected')
   
