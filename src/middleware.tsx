@@ -35,10 +35,12 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  const { data: { session } } = await supabase.auth.getSession()
-  
+  const { data: { session }, error } = await supabase.auth.getSession()
+
   console.log('Middleware: Checking auth for', pathname)
+  console.log('Cookies:', request.cookies.getAll().map(c => c.name))
   console.log('Session exists:', !!session)
+  console.log('Session error:', error)
   
   // Protezione per dashboard e API protette
   const requiresAuth = pathname.startsWith('/dashboard') ||
@@ -47,7 +49,8 @@ export async function middleware(request: NextRequest) {
                       pathname.startsWith('/api/trackings') ||
                       pathname.startsWith('/api/users') ||
                       pathname.startsWith('/api/organizations') ||
-                      (pathname.startsWith('/api/super-admin') && !pathname.includes('/activate') && !pathname.includes('/check')) ||
+                      // Temporarily disable middleware for super admin API to debug
+                      // (pathname.startsWith('/api/super-admin') && !pathname.includes('/activate') && !pathname.includes('/check')) ||
                       pathname.startsWith('/super-admin') ||
                       pathname.startsWith('/api/protected')
   

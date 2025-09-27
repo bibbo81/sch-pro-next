@@ -8,9 +8,14 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    console.log('🔍 [DEBUG] Organization detail API called')
     await requireSuperAdmin()
+    console.log('✅ [DEBUG] Super admin auth passed')
+
     const supabase = await createSupabaseServer()
     const { id: orgId } = await params
+
+    console.log('🔍 [DEBUG] Organization ID:', orgId)
 
     // Get organization with basic information first
     const { data: org, error: orgError } = await supabase
@@ -24,7 +29,10 @@ export async function GET(
       .eq('id', orgId)
       .single() as any
 
+    console.log('📊 [DEBUG] Organization query result:', { org, orgError })
+
     if (orgError || !org) {
+      console.log('❌ [DEBUG] Organization not found:', { orgId, orgError })
       return NextResponse.json(
         { error: 'Organization not found' },
         { status: 404 }
