@@ -55,7 +55,7 @@ export default function ManageMembersPage({ params }: PageProps) {
 
   const loadOrganization = async (id: string) => {
     try {
-      const response = await fetch(`/api/super-admin/organizations/${id}`)
+      const response = await fetch(`/api/super-admin/organizations/${id}`, { credentials: 'include' })
       if (!response.ok) throw new Error('Failed to load organization')
       const data = await response.json()
       setOrganization(data)
@@ -67,7 +67,7 @@ export default function ManageMembersPage({ params }: PageProps) {
   const loadMembers = async (id: string) => {
     try {
       setIsLoading(true)
-      const response = await fetch(`/api/super-admin/organizations/${id}/members`)
+      const response = await fetch(`/api/super-admin/organizations/${id}/members`, { credentials: 'include' })
       if (!response.ok) throw new Error('Failed to load members')
       const data = await response.json()
       setMembers(data)
@@ -86,6 +86,7 @@ export default function ManageMembersPage({ params }: PageProps) {
       const response = await fetch(`/api/super-admin/organizations/${organizationId}/members`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           email: newMember.email,
           role: newMember.role,
@@ -115,6 +116,7 @@ export default function ManageMembersPage({ params }: PageProps) {
       const response = await fetch(`/api/super-admin/organizations/${organizationId}/members/${memberId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ role: newRole })
       })
 
@@ -133,7 +135,8 @@ export default function ManageMembersPage({ params }: PageProps) {
 
     try {
       const response = await fetch(`/api/super-admin/organizations/${organizationId}/members/${memberId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        credentials: 'include'
       })
 
       if (!response.ok) throw new Error('Failed to remove member')

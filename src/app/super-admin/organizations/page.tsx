@@ -51,7 +51,7 @@ export default function SuperAdminOrganizations() {
   const fetchOrganizations = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/super-admin/organizations')
+      const response = await fetch('/api/super-admin/organizations', { credentials: 'include' })
       if (!response.ok) throw new Error('Failed to fetch organizations')
 
       const data = await response.json()
@@ -69,7 +69,8 @@ export default function SuperAdminOrganizations() {
     try {
       setDeleting(true)
       const response = await fetch(`/api/super-admin/organizations/${selectedOrg.id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        credentials: 'include'
       })
 
       if (!response.ok) throw new Error('Failed to delete organization')

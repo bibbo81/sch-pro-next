@@ -41,7 +41,9 @@ export default function SuperAdminEditOrganization() {
   const fetchOrganization = async () => {
     try {
       setLoading(true)
-      const response = await fetch(`/api/super-admin/organizations/${organizationId}`)
+      const response = await fetch(`/api/super-admin/organizations/${organizationId}`, {
+        credentials: 'include'
+      })
 
       if (!response.ok) {
         throw new Error('Failed to fetch organization')
@@ -78,6 +80,7 @@ export default function SuperAdminEditOrganization() {
         headers: {
           'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify(formData)
       })
 

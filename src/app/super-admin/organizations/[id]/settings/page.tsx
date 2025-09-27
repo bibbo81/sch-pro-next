@@ -41,7 +41,7 @@ export default function OrganizationSettingsPage({ params }: PageProps) {
   const loadOrganization = async (id: string) => {
     try {
       setIsLoading(true)
-      const response = await fetch(`/api/super-admin/organizations/${id}`)
+      const response = await fetch(`/api/super-admin/organizations/${id}`, { credentials: 'include' })
       if (!response.ok) throw new Error('Failed to load organization')
       
       const data = await response.json()
@@ -67,6 +67,7 @@ export default function OrganizationSettingsPage({ params }: PageProps) {
       const response = await fetch(`/api/super-admin/organizations/${organizationId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(formData)
       })
 
@@ -85,7 +86,8 @@ export default function OrganizationSettingsPage({ params }: PageProps) {
     try {
       setIsSaving(true)
       const response = await fetch(`/api/super-admin/organizations/${organizationId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        credentials: 'include'
       })
 
       if (!response.ok) throw new Error('Failed to delete organization')
