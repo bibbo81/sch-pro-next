@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Invito a SCH Pro</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+        <h1 style="color: white; margin: 0; font-size: 28px;">SCH Pro</h1>
+        <p style="color: #f0f0f0; margin: 10px 0 0 0; font-size: 16px;">Piattaforma di Gestione Spedizioni</p>
+    </div>
+
+    <div style="background: white; padding: 30px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 10px 10px;">
+        <h2 style="color: #333; margin-top: 0;">Sei stato invitato in SCH Pro!</h2>
+
+        <p>Ciao,</p>
+
+        <p>Sei stato invitato a far parte della piattaforma <strong>SCH Pro</strong> per la gestione delle spedizioni e tracking logistico.</p>
+
+        <p>SCH Pro ti permetterà di:</p>
+        <ul style="padding-left: 20px;">
+            <li>Gestire e monitorare le spedizioni</li>
+            <li>Analizzare i costi logistici</li>
+            <li>Accedere ai documenti di trasporto</li>
+            <li>Collaborare con il tuo team</li>
+        </ul>
+
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="{{ .ConfirmationURL }}"
+               style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                      color: white;
+                      padding: 15px 30px;
+                      text-decoration: none;
+                      border-radius: 5px;
+                      display: inline-block;
+                      font-weight: bold;
+                      font-size: 16px;">
+                Accetta l'invito e accedi
+            </a>
+        </div>
+
+        <p style="font-size: 14px; color: #666; border-top: 1px solid #eee; padding-top: 20px; margin-top: 30px;">
+            Se non riesci a cliccare il pulsante, copia e incolla questo link nel tuo browser:<br>
+            <span style="word-break: break-all; color: #667eea;">{{ .ConfirmationURL }}</span>
+        </p>
+
+        <p style="font-size: 12px; color: #999; margin-top: 20px;">
+            Questo invito è valido per 24 ore. Se non hai richiesto questo invito, puoi ignorare questa email.
+        </p>
+    </div>
+
+    <div style="text-align: center; margin-top: 20px; font-size: 12px; color: #999;">
+        <p>SCH Pro - Piattaforma di Gestione Spedizioni<br>
+        {{ .SiteURL }}</p>
+    </div>
+</body>
+</html>

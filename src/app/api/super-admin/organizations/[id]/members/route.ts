@@ -121,9 +121,24 @@ export async function POST(
       const authUser = existingAuthUser?.users?.find(u => u.email === email)
 
       if (authUser) {
-        // User exists in auth, just add to organization
+        // User exists in auth, add to organization and send notification
         userId = authUser.id
         console.log('✅ Found existing user in auth:', authUser.email)
+
+        // Send notification email to existing user about new organization access
+        try {
+          await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+            redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://sch-pro-next.vercel.app'}/login?invited=true&existing=true`,
+            data: {
+              organization_invite: true,
+              full_name: fullName || authUser.user_metadata?.full_name
+            }
+          })
+          console.log('✅ Notification email sent to existing user')
+        } catch (emailError) {
+          console.error('⚠️ Failed to send notification email:', emailError)
+          // Continue anyway, user is still added to organization
+        }
       } else {
         // Create a new user account and send invitation email
         const { data: newUser, error: userError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
