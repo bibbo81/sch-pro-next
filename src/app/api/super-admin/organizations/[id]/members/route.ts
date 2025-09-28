@@ -53,7 +53,7 @@ export async function GET(
         user: userData?.user ? {
           id: userData.user.id,
           email: userData.user.email,
-          full_name: userData.user.user_metadata?.full_name || userData.user.email?.split('@')[0] || '',
+          full_name: userData.user.user_metadata?.full_name || userData.user.user_metadata?.data?.full_name || userData.user.email?.split('@')[0] || '',
           created_at: userData.user.created_at,
           last_sign_in_at: userData.user.last_sign_in_at
         } : null
@@ -80,11 +80,18 @@ export async function POST(
     const supabaseAdmin = await createSupabaseAdmin()
     const { id: orgId } = await context.params
     const body = await request.json()
-    const { email, role = 'member', restrictToOwnRecords = false } = body
+    const { email, fullName, role = 'member', restrictToOwnRecords = false } = body
 
     if (!email) {
       return NextResponse.json(
         { error: 'Email is required' },
+        { status: 400 }
+      )
+    }
+
+    if (!fullName) {
+      return NextResponse.json(
+        { error: 'Full name is required' },
         { status: 400 }
       )
     }
@@ -115,10 +122,12 @@ export async function POST(
         )
       }
     } else {
-      // Create a new user account
-      const { data: newUser, error: userError } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        email_confirm: true
+      // Create a new user account and send invitation email
+      const { data: newUser, error: userError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://sch-pro-next.vercel.app'}/login?invited=true`,
+        data: {
+          full_name: fullName
+        }
       })
 
       if (userError || !newUser.user) {
@@ -180,7 +189,7 @@ export async function POST(
         user: userData?.user ? {
           id: userData.user.id,
           email: userData.user.email,
-          full_name: userData.user.user_metadata?.full_name || userData.user.email?.split('@')[0] || ''
+          full_name: userData.user.user_metadata?.full_name || userData.user.user_metadata?.data?.full_name || userData.user.email?.split('@')[0] || ''
         } : null
       }
     })

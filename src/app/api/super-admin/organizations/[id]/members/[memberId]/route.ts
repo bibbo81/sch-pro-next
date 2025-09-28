@@ -86,7 +86,7 @@ export async function PUT(
         user: userData?.user ? {
           id: userData.user.id,
           email: userData.user.email,
-          full_name: userData.user.user_metadata?.full_name || userData.user.email?.split('@')[0] || ''
+          full_name: userData.user.user_metadata?.full_name || userData.user.user_metadata?.data?.full_name || userData.user.email?.split('@')[0] || ''
         } : null
       }
     })

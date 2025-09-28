@@ -38,6 +38,7 @@ export default function ManageMembersPage({ params }: PageProps) {
   const [showAddMember, setShowAddMember] = useState(false)
   const [newMember, setNewMember] = useState({
     email: '',
+    fullName: '',
     role: 'member',
     restrictToOwnRecords: false
   })
@@ -89,6 +90,7 @@ export default function ManageMembersPage({ params }: PageProps) {
         credentials: 'include',
         body: JSON.stringify({
           email: newMember.email,
+          fullName: newMember.fullName,
           role: newMember.role,
           restrictToOwnRecords: newMember.restrictToOwnRecords
         })
@@ -100,7 +102,7 @@ export default function ManageMembersPage({ params }: PageProps) {
       }
 
       setMessage('Member added successfully')
-      setNewMember({ email: '', role: 'member', restrictToOwnRecords: false })
+      setNewMember({ email: '', fullName: '', role: 'member', restrictToOwnRecords: false })
       setShowAddMember(false)
       loadMembers(organizationId)
       setTimeout(() => setMessage(''), 3000)
@@ -215,6 +217,16 @@ export default function ManageMembersPage({ params }: PageProps) {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
+              <Label htmlFor="fullName">Full Name</Label>
+              <Input
+                id="fullName"
+                type="text"
+                value={newMember.fullName}
+                onChange={(e) => setNewMember(prev => ({ ...prev, fullName: e.target.value }))}
+                placeholder="e.g. Francesca Giorgetti"
+              />
+            </div>
+            <div>
               <Label htmlFor="email">Email Address</Label>
               <Input
                 id="email"
@@ -246,7 +258,7 @@ export default function ManageMembersPage({ params }: PageProps) {
               <Label htmlFor="restrict">Restrict to own records only</Label>
             </div>
             <div className="flex gap-2">
-              <Button onClick={handleAddMember} disabled={isAddingMember || !newMember.email}>
+              <Button onClick={handleAddMember} disabled={isAddingMember || !newMember.email || !newMember.fullName}>
                 <Plus className="h-4 w-4 mr-2" />
                 {isAddingMember ? 'Adding...' : 'Add Member'}
               </Button>
