@@ -8,11 +8,16 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    console.log('🔄 GET organization details request received')
     await requireSuperAdmin()
+    console.log('✅ Super admin authenticated')
+
     const supabase = await createSupabaseServer()
     const { id: orgId } = await params
+    console.log('🎯 Organization ID:', orgId)
 
     // Get organization with basic information first
+    console.log('🔄 Fetching organization details...')
     const { data: org, error: orgError } = await supabase
       .from('organizations')
       .select(`
@@ -23,14 +28,26 @@ export async function GET(
       .eq('id', orgId)
       .single() as any
 
-    if (orgError || !org) {
+    if (orgError) {
+      console.error('❌ Error fetching organization:', orgError)
       return NextResponse.json(
         { error: 'Organization not found' },
         { status: 404 }
       )
     }
 
+    if (!org) {
+      console.warn('⚠️ Organization not found for ID:', orgId)
+      return NextResponse.json(
+        { error: 'Organization not found' },
+        { status: 404 }
+      )
+    }
+
+    console.log('✅ Organization found:', org.name)
+
     // Get members separately to avoid complex joins
+    console.log('🔄 Fetching organization members...')
     const { data: members, error: membersError } = await supabase
       .from('organization_members')
       .select(`
@@ -42,17 +59,37 @@ export async function GET(
       `)
       .eq('organization_id', orgId) as any
 
+    if (membersError) {
+      console.error('❌ Error fetching members:', membersError)
+    } else {
+      console.log('✅ Members fetched:', members?.length || 0)
+    }
+
     // Get shipment count
-    const { count: shipmentsCount } = await supabase
+    console.log('🔄 Fetching shipments count...')
+    const { count: shipmentsCount, error: shipmentsError } = await supabase
       .from('shipments')
       .select('*', { count: 'exact', head: true })
       .eq('organization_id', orgId) as any
 
+    if (shipmentsError) {
+      console.error('❌ Error fetching shipments count:', shipmentsError)
+    } else {
+      console.log('✅ Shipments count:', shipmentsCount || 0)
+    }
+
     // Get products count
-    const { count: productsCount } = await supabase
+    console.log('🔄 Fetching products count...')
+    const { count: productsCount, error: productsError } = await supabase
       .from('products')
       .select('*', { count: 'exact', head: true })
       .eq('organization_id', orgId) as any
+
+    if (productsError) {
+      console.error('❌ Error fetching products count:', productsError)
+    } else {
+      console.log('✅ Products count:', productsCount || 0)
+    }
 
     const processedOrg = {
       id: org.id,
@@ -71,7 +108,7 @@ export async function GET(
     console.error('Error in GET /api/super-admin/organizations/[id]:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Internal server error' },
-      { status: 401 }
+      { status: error instanceof Error && error.message.includes('Super admin required') ? 401 : 500 }
     )
   }
 }
