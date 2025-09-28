@@ -20,14 +20,7 @@ export async function GET(
         role,
         restrict_to_own_records,
         created_at,
-        user_id,
-        users:user_id (
-          id,
-          email,
-          full_name,
-          created_at,
-          last_sign_in_at
-        )
+        user_id
       `)
       .eq('organization_id', orgId)
       .order('created_at', { ascending: false }) as any
@@ -42,21 +35,30 @@ export async function GET(
 
     console.log('✅ Members fetched successfully:', members?.length || 0)
 
-    // Process members data
-    const processedMembers = members?.map(member => ({
-      id: member.id,
-      user_id: member.user_id,
-      role: member.role,
-      restrict_to_own_records: member.restrict_to_own_records,
-      created_at: member.created_at,
-      user: member.users ? {
-        id: member.users.id,
-        email: member.users.email,
-        full_name: member.users.full_name,
-        created_at: member.users.created_at,
-        last_sign_in_at: member.users.last_sign_in_at
-      } : null
-    })) || []
+    // Process members data and fetch user details from auth.users
+    const processedMembers = await Promise.all((members || []).map(async (member) => {
+      // Get user details from auth.users
+      const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserById(member.user_id)
+
+      if (userError) {
+        console.error('❌ Error fetching user data for user:', member.user_id, userError)
+      }
+
+      return {
+        id: member.id,
+        user_id: member.user_id,
+        role: member.role,
+        restrict_to_own_records: member.restrict_to_own_records,
+        created_at: member.created_at,
+        user: userData?.user ? {
+          id: userData.user.id,
+          email: userData.user.email,
+          full_name: userData.user.user_metadata?.full_name || userData.user.email?.split('@')[0] || '',
+          created_at: userData.user.created_at,
+          last_sign_in_at: userData.user.last_sign_in_at
+        } : null
+      }
+    }))
 
     return NextResponse.json(processedMembers)
   } catch (error) {
@@ -144,12 +146,7 @@ export async function POST(
         role,
         restrict_to_own_records,
         created_at,
-        user_id,
-        users:user_id (
-          id,
-          email,
-          full_name
-        )
+        user_id
       `)
       .single() as any
 
@@ -169,6 +166,9 @@ export async function POST(
       { organizationId: orgId, email, role }
     )
 
+    // Get user details from auth.users
+    const { data: userData } = await supabaseAdmin.auth.admin.getUserById(userId)
+
     return NextResponse.json({
       success: true,
       member: {
@@ -177,7 +177,11 @@ export async function POST(
         role: newMember.role,
         restrict_to_own_records: newMember.restrict_to_own_records,
         created_at: newMember.created_at,
-        user: newMember.users
+        user: userData?.user ? {
+          id: userData.user.id,
+          email: userData.user.email,
+          full_name: userData.user.user_metadata?.full_name || userData.user.email?.split('@')[0] || ''
+        } : null
       }
     })
   } catch (error) {

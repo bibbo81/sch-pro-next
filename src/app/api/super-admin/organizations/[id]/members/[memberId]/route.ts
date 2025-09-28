@@ -52,12 +52,7 @@ export async function PUT(
         role,
         restrict_to_own_records,
         created_at,
-        user_id,
-        users:user_id (
-          id,
-          email,
-          full_name
-        )
+        user_id
       `)
       .single() as any
 
@@ -77,6 +72,9 @@ export async function PUT(
       { organizationId: orgId, role, restrictToOwnRecords }
     )
 
+    // Get user details from auth.users
+    const { data: userData } = await supabaseAdmin.auth.admin.getUserById(updatedMember.user_id)
+
     return NextResponse.json({
       success: true,
       member: {
@@ -85,7 +83,11 @@ export async function PUT(
         role: updatedMember.role,
         restrict_to_own_records: updatedMember.restrict_to_own_records,
         created_at: updatedMember.created_at,
-        user: updatedMember.users
+        user: userData?.user ? {
+          id: userData.user.id,
+          email: userData.user.email,
+          full_name: userData.user.user_metadata?.full_name || userData.user.email?.split('@')[0] || ''
+        } : null
       }
     })
   } catch (error) {
@@ -112,10 +114,7 @@ export async function DELETE(
       .from('organization_members')
       .select(`
         user_id,
-        role,
-        users:user_id (
-          email
-        )
+        role
       `)
       .eq('id', memberId)
       .eq('organization_id', orgId)
@@ -159,15 +158,18 @@ export async function DELETE(
       }
     }
 
+    // Get user email for logging
+    const { data: userData } = await supabaseAdmin.auth.admin.getUserById(member.user_id)
+
     // Log the action
     await logSuperAdminAction(
       'remove_organization_member',
       'organization_member',
       memberId,
-      { 
-        organizationId: orgId, 
+      {
+        organizationId: orgId,
         userId: member.user_id,
-        email: member.users?.email,
+        email: userData?.user?.email,
         role: member.role
       }
     )
