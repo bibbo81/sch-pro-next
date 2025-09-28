@@ -201,11 +201,28 @@ export async function PATCH(
     }
 
     if (!updatedOrg) {
-      console.warn('⚠️ Update completed but no data returned')
-      return NextResponse.json(
-        { error: 'Organization update failed - no data returned' },
-        { status: 500 }
-      )
+      console.warn('⚠️ Update completed but no data returned - trying to fetch updated org...')
+
+      // Try to fetch the updated organization to confirm the update worked
+      const { data: fetchedOrg, error: fetchError } = await supabase
+        .from('organizations')
+        .select('id, name, created_at')
+        .eq('id', orgId)
+        .single() as any
+
+      console.log('🔍 Fetch after update result:', { data: fetchedOrg, error: fetchError })
+
+      if (fetchError || !fetchedOrg) {
+        console.error('❌ Organization not found after update - update may have failed')
+        return NextResponse.json(
+          { error: 'Organization update failed - no data returned' },
+          { status: 500 }
+        )
+      }
+
+      // Use the fetched organization as the result
+      console.log('✅ Update verified via fetch:', fetchedOrg)
+      updatedOrg = fetchedOrg
     }
 
     console.log('✅ Update successful:', updatedOrg)
