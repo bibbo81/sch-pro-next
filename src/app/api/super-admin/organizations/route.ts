@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireSuperAdmin, logSuperAdminAction } from '@/lib/auth-super-admin'
 import { createSupabaseServer } from '@/lib/auth'
 
+
 // GET /api/super-admin/organizations - Get all organizations
 export async function GET(request: NextRequest) {
   try {
@@ -16,7 +17,7 @@ export async function GET(request: NextRequest) {
         name,
         created_at
       `)
-      .order('created_at', { ascending: false }) as any
+      .order('created_at', { ascending: false })
 
     if (error) {
       console.error('Error fetching organizations:', error)
@@ -38,7 +39,7 @@ export async function GET(request: NextRequest) {
         const { count } = await supabase
           .from('organization_members')
           .select('*', { count: 'exact', head: true })
-          .eq('organization_id', org.id) as any
+          .eq('organization_id', org.id)
         return { orgId: org.id, count: count || 0 }
       })
     )
@@ -49,7 +50,7 @@ export async function GET(request: NextRequest) {
         const { count } = await supabase
           .from('shipments')
           .select('*', { count: 'exact', head: true })
-          .eq('organization_id', org.id) as any
+          .eq('organization_id', org.id)
         return { orgId: org.id, count: count || 0 }
       })
     )
@@ -76,7 +77,7 @@ export async function GET(request: NextRequest) {
     console.error('Error in GET /api/super-admin/organizations:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Internal server error' },
-      { status: 401 }
+      { status: error instanceof Error && error.message.includes('Super admin required') ? 401 : 500 }
     )
   }
 }
@@ -107,11 +108,10 @@ export async function POST(request: NextRequest) {
     const { data: newOrg, error: orgError } = await supabase
       .from('organizations')
       .insert({
-        name: organizationName,
-        description: organizationDescription
-      } as any)
+        name: organizationName
+      })
       .select()
-      .single() as any
+      .single()
 
     if (orgError || !newOrg) {
       console.error('Error creating organization:', orgError)
@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
       console.error('Error creating admin user:', authError)
 
       // Cleanup - delete the organization if user creation failed
-      await supabase.from('organizations').delete().eq('id', newOrg.id) as any
+      await supabase.from('organizations').delete().eq('id', newOrg.id)
 
       return NextResponse.json(
         { error: authError?.message || 'Failed to create admin user' },
@@ -151,14 +151,14 @@ export async function POST(request: NextRequest) {
         organization_id: newOrg.id,
         role: 'admin',
         restrict_to_own_records: false
-      } as any)
+      })
 
     if (memberError) {
       console.error('Error adding user to organization:', memberError)
 
       // Cleanup - delete user and organization
       await supabase.auth.admin.deleteUser(authData.user.id)
-      await supabase.from('organizations').delete().eq('id', newOrg.id) as any
+      await supabase.from('organizations').delete().eq('id', newOrg.id)
 
       return NextResponse.json(
         { error: 'Failed to add user to organization' },
@@ -190,7 +190,7 @@ export async function POST(request: NextRequest) {
     console.error('Error in POST /api/super-admin/organizations:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Internal server error' },
-      { status: 401 }
+      { status: error instanceof Error && error.message.includes('Super admin required') ? 401 : 500 }
     )
   }
 }
