@@ -137,6 +137,14 @@ export async function POST(
         if (userError) {
           console.error('Error creating user:', userError)
 
+          // Handle email rate limit exceeded
+          if (userError.message?.includes('email rate limit exceeded') || userError.message?.includes('over_email_send_rate_limit')) {
+            return NextResponse.json(
+              { error: 'Email rate limit exceeded. Please wait a few minutes before sending more invitations.' },
+              { status: 429 }
+            )
+          }
+
           // Handle specific case where user exists but we didn't find them
           if (userError.message?.includes('already been registered') || userError.status === 422) {
             return NextResponse.json(
