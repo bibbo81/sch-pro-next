@@ -4,7 +4,7 @@ import { createSupabaseServer } from '@/lib/auth'
 
 
 // GET /api/super-admin/organizations - Get all organizations
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     await requireSuperAdmin()
     const supabase = await createSupabaseServer()
@@ -89,7 +89,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const {
       organizationName,
-      organizationDescription,
       adminEmail,
       adminPassword,
       adminName
@@ -105,13 +104,13 @@ export async function POST(request: NextRequest) {
     const supabase = await createSupabaseServer()
 
     // 1. Create the organization
-    const { data: newOrg, error: orgError } = await supabase
+    const { data: newOrg, error: orgError } = await (supabase
       .from('organizations')
       .insert({
         name: organizationName
-      })
+      } as any)
       .select()
-      .single()
+      .single() as any)
 
     if (orgError || !newOrg) {
       console.error('Error creating organization:', orgError)
@@ -135,7 +134,7 @@ export async function POST(request: NextRequest) {
       console.error('Error creating admin user:', authError)
 
       // Cleanup - delete the organization if user creation failed
-      await supabase.from('organizations').delete().eq('id', newOrg.id)
+      await (supabase.from('organizations').delete().eq('id', (newOrg as any).id) as any)
 
       return NextResponse.json(
         { error: authError?.message || 'Failed to create admin user' },
@@ -144,21 +143,21 @@ export async function POST(request: NextRequest) {
     }
 
     // 3. Add user as admin member of the organization
-    const { error: memberError } = await supabase
+    const { error: memberError } = await (supabase
       .from('organization_members')
       .insert({
         user_id: authData.user.id,
-        organization_id: newOrg.id,
+        organization_id: (newOrg as any).id,
         role: 'admin',
         restrict_to_own_records: false
-      })
+      } as any) as any)
 
     if (memberError) {
       console.error('Error adding user to organization:', memberError)
 
       // Cleanup - delete user and organization
       await supabase.auth.admin.deleteUser(authData.user.id)
-      await supabase.from('organizations').delete().eq('id', newOrg.id)
+      await (supabase.from('organizations').delete().eq('id', (newOrg as any).id) as any)
 
       return NextResponse.json(
         { error: 'Failed to add user to organization' },
@@ -170,7 +169,7 @@ export async function POST(request: NextRequest) {
     await logSuperAdminAction(
       'create_organization',
       'organization',
-      newOrg.id,
+      (newOrg as any).id,
       {
         organizationName,
         adminEmail,
