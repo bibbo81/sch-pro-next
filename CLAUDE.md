@@ -113,3 +113,26 @@ All API routes follow this structure:
 - Excel import uses XLSX library for parsing
 - UI components use shadcn/ui pattern with Radix primitives
 - Authentication state is managed via Supabase SSR package
+
+## ⚠️ CRITICAL: Database Analysis Required
+
+**BEFORE making any changes that involve database tables:**
+
+1. **ALWAYS analyze the Supabase database structure first**
+2. **Check table schemas, column names, and data types**
+3. **Verify relationships and constraints**
+4. **Ensure all code aligns with the actual database structure**
+
+### How to analyze database structure:
+- Use Supabase dashboard to inspect table schemas
+- Check `src/types/database.types.ts` for generated types
+- Verify column existence before writing queries
+- Test queries against actual database structure
+
+### Common issues to avoid:
+- References to non-existent columns (e.g., `description` in organizations)
+- Incorrect data types or constraints
+- Missing foreign key relationships
+- RLS policy conflicts
+
+**Never assume database structure - always verify first to prevent runtime errors and deployment issues.**
