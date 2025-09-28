@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
 
 export default function LoginPage() {
@@ -9,8 +10,70 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
-  
+  const [isInvited, setIsInvited] = useState(false)
+  const [isSettingPassword, setIsSettingPassword] = useState(false)
+
   const supabase = createClient()
+  const searchParams = useSearchParams()
+
+  useEffect(() => {
+    // Check if this is an invited user
+    const invited = searchParams.get('invited')
+    const existing = searchParams.get('existing')
+
+    if (invited === 'true') {
+      setIsInvited(true)
+
+      // Check if user is already authenticated (from email link verification)
+      const checkAuth = async () => {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          console.log('User already authenticated from invitation:', user.email)
+          setEmail(user.email || '')
+          setSuccess(true)
+          setTimeout(() => {
+            window.location.href = '/dashboard'
+          }, 1000)
+        } else if (existing !== 'true') {
+          // New user needs to set password
+          setIsSettingPassword(true)
+          // If we can't get the user, at least clear the test email
+          setEmail('')
+        }
+      }
+
+      checkAuth()
+    }
+  }, [searchParams, supabase.auth])
+
+  const handlePasswordSetup = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setError(null)
+
+    try {
+      // For new invited users, update password
+      const { error } = await supabase.auth.updateUser({
+        password: password
+      })
+
+      if (error) {
+        console.error('Password setup error:', error)
+        setError(error.message)
+      } else {
+        console.log('Password set successfully')
+        setSuccess(true)
+        setTimeout(() => {
+          window.location.href = '/dashboard'
+        }, 1000)
+      }
+    } catch (err: any) {
+      console.error('Password setup catch error:', err)
+      setError('Errore nell\'impostazione della password')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -69,10 +132,28 @@ export default function LoginPage() {
       <div className="max-w-md w-full space-y-8 p-8">
         <div className="text-center">
           <h2 className="text-3xl font-extrabold text-foreground">SCH Pro</h2>
-          <p className="mt-2 text-sm text-muted-foreground">Accedi al tuo account</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {isSettingPassword
+              ? 'Completa la tua registrazione impostando una password'
+              : isInvited
+                ? 'Benvenuto! Accedi con le tue credenziali'
+                : 'Accedi al tuo account'
+            }
+          </p>
+          {isInvited && (
+            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+              <p className="text-blue-800 text-sm">
+                🎉 Sei stato invitato a SCH Pro!
+                {isSettingPassword
+                  ? ' Imposta una password per completare la registrazione.'
+                  : ' Benvenuto nella piattaforma.'
+                }
+              </p>
+            </div>
+          )}
         </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleLogin}>
+        <form className="mt-8 space-y-6" onSubmit={isSettingPassword ? handlePasswordSetup : handleLogin}>
           <div className="space-y-4">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-foreground">
@@ -86,24 +167,31 @@ export default function LoginPage() {
                 placeholder="Inserisci la tua email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                disabled={loading}
+                disabled={loading || isInvited}
+                readOnly={isInvited}
               />
             </div>
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-foreground">
-                Password
+                {isSettingPassword ? 'Imposta la tua password' : 'Password'}
               </label>
               <input
                 id="password"
                 type="password"
                 required
                 className="mt-1 appearance-none relative block w-full px-3 py-2 border border-input placeholder-muted-foreground text-foreground bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm"
-                placeholder="Inserisci la tua password"
+                placeholder={isSettingPassword ? 'Crea una password sicura' : 'Inserisci la tua password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={loading}
+                minLength={isSettingPassword ? 6 : undefined}
               />
+              {isSettingPassword && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Minimo 6 caratteri
+                </p>
+              )}
             </div>
           </div>
 
@@ -121,10 +209,10 @@ export default function LoginPage() {
             {loading ? (
               <span className="flex items-center">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground mr-2"></div>
-                Accesso in corso...
+                {isSettingPassword ? 'Impostazione password...' : 'Accesso in corso...'}
               </span>
             ) : (
-              'Accedi'
+              isSettingPassword ? 'Completa Registrazione' : 'Accedi'
             )}
           </button>
         </form>
