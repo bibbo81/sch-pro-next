@@ -171,6 +171,8 @@ export async function PATCH(
 
     // Update organization - only update the name field
     console.log('🔄 Executing UPDATE query...')
+    console.log('🔄 UPDATE command:', `UPDATE organizations SET name = '${name.trim()}' WHERE id = '${orgId}'`)
+
     const { data, error, count } = await supabase
       .from('organizations')
       .update({ name: name.trim() })
@@ -178,6 +180,7 @@ export async function PATCH(
       .select() as any
 
     console.log('📊 Update result - data:', data, 'error:', error, 'count:', count)
+    console.log('📊 Expected name:', name.trim(), 'vs returned name:', data?.[0]?.name)
 
     // If update succeeded but returned multiple rows, take the first one
     const updatedOrg = Array.isArray(data) ? data[0] : data
@@ -220,9 +223,19 @@ export async function PATCH(
         )
       }
 
-      // Use the fetched organization as the result
-      console.log('✅ Update verified via fetch:', fetchedOrg)
-      updatedOrg = fetchedOrg
+      // Check if the name actually changed
+      if (fetchedOrg.name === name.trim()) {
+        console.log('✅ Update verified via fetch - name was successfully updated:', fetchedOrg)
+        updatedOrg = fetchedOrg
+      } else {
+        console.error('❌ Update failed - name was not changed in database!')
+        console.error('❌ Expected:', name.trim(), 'Got:', fetchedOrg.name)
+        console.error('❌ This indicates RLS policies are blocking the UPDATE operation')
+        return NextResponse.json(
+          { error: 'Update failed - RLS policies may be blocking the operation' },
+          { status: 500 }
+        )
+      }
     }
 
     console.log('✅ Update successful:', updatedOrg)
