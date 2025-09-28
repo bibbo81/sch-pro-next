@@ -2,13 +2,13 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { Database } from '@/types/supabase'
 
-// ✅ FUNZIONE HELPER per creare client Supabase server-side
+// ✅ FUNZIONE HELPER per creare client Supabase server-side con service role
 async function createSupabaseServer() {
   const cookieStore = await cookies()
 
   return createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!, // Now working with proper RLS policies
+    process.env.SUPABASE_SERVICE_ROLE_KEY!, // Service role key for bypassing RLS
     {
       cookies: {
         get(name: string) {
@@ -29,6 +29,10 @@ async function createSupabaseServer() {
           }
         },
       },
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
     }
   )
 }
@@ -381,4 +385,20 @@ export async function signOut() {
 }
 
 // ✅ EXPORT DEI CLIENT HELPER (per uso in altri file)
-export { createSupabaseServer, createSupabaseClient }
+// ✅ FUNZIONE HELPER per creare client Supabase Admin (bypassa RLS completamente)
+async function createSupabaseAdmin() {
+  const { createClient } = await import('@supabase/supabase-js')
+
+  return createClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    }
+  )
+}
+
+export { createSupabaseServer, createSupabaseClient, createSupabaseAdmin }

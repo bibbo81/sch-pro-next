@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireSuperAdmin, logSuperAdminAction } from '@/lib/auth-super-admin'
-import { createSupabaseServer } from '@/lib/auth'
+import { createSupabaseServer, createSupabaseAdmin } from '@/lib/auth'
 
 // GET /api/super-admin/organizations/[id] - Get organization details
 export async function GET(
@@ -123,7 +123,9 @@ export async function PATCH(
     await requireSuperAdmin()
     console.log('✅ Super admin authenticated')
 
-    const supabase = await createSupabaseServer()
+    // Use admin client for UPDATE operations to bypass RLS
+    const supabaseAdmin = await createSupabaseAdmin()
+    const supabase = await createSupabaseServer() // Keep for reading with user context
     const { id: orgId } = await params
     const body = await request.json()
 
@@ -170,10 +172,10 @@ export async function PATCH(
     console.log('🔍 Double-check result:', { data: doubleCheck, error: doubleCheckError })
 
     // Update organization - only update the name field
-    console.log('🔄 Executing UPDATE query...')
+    console.log('🔄 Executing UPDATE query with Admin client (bypasses RLS)...')
     console.log('🔄 UPDATE command:', `UPDATE organizations SET name = '${name.trim()}' WHERE id = '${orgId}'`)
 
-    const { data, error, count } = await supabase
+    const { data, error, count } = await supabaseAdmin
       .from('organizations')
       .update({ name: name.trim() })
       .eq('id', orgId)
