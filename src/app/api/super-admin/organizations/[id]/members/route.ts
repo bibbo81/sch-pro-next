@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireSuperAdmin, logSuperAdminAction } from '@/lib/auth-super-admin'
-import { createSupabaseServer } from '@/lib/auth'
+import { createSupabaseServer, createSupabaseAdmin } from '@/lib/auth'
 
 // GET /api/super-admin/organizations/[id]/members - Get organization members
 export async function GET(
@@ -9,10 +9,11 @@ export async function GET(
 ) {
   try {
     await requireSuperAdmin()
-    const supabase = await createSupabaseServer()
+    const supabaseAdmin = await createSupabaseAdmin()
     const { id: orgId } = await params
 
-    const { data: members, error } = await supabase
+    console.log('🔄 Fetching organization members with Admin client...')
+    const { data: members, error } = await supabaseAdmin
       .from('organization_members')
       .select(`
         id,
@@ -29,14 +30,17 @@ export async function GET(
         )
       `)
       .eq('organization_id', orgId)
-      .order('created_at', { ascending: false })
+      .order('created_at', { ascending: false }) as any
 
     if (error) {
+      console.error('❌ Error fetching members:', error)
       return NextResponse.json(
         { error: 'Failed to fetch members' },
         { status: 500 }
       )
     }
+
+    console.log('✅ Members fetched successfully:', members?.length || 0)
 
     // Process members data
     const processedMembers = members?.map(member => ({
@@ -71,7 +75,7 @@ export async function POST(
 ) {
   try {
     await requireSuperAdmin()
-    const supabase = await createSupabaseServer()
+    const supabaseAdmin = await createSupabaseAdmin()
     const { id: orgId } = await context.params
     const body = await request.json()
     const { email, role = 'member', restrictToOwnRecords = false } = body
@@ -85,22 +89,22 @@ export async function POST(
 
     // First, check if user exists
     let userId: string
-    const { data: existingUser } = await supabase
+    const { data: existingUser } = await supabaseAdmin
       .from('users')
       .select('id')
       .eq('email', email)
-      .single()
+      .single() as any
 
     if (existingUser) {
       userId = existingUser.id
       
       // Check if user is already a member of this organization
-      const { data: existingMember } = await supabase
+      const { data: existingMember } = await supabaseAdmin
         .from('organization_members')
         .select('id')
         .eq('organization_id', orgId)
         .eq('user_id', userId)
-        .single()
+        .single() as any
 
       if (existingMember) {
         return NextResponse.json(
@@ -110,7 +114,7 @@ export async function POST(
       }
     } else {
       // Create a new user account
-      const { data: newUser, error: userError } = await supabase.auth.admin.createUser({
+      const { data: newUser, error: userError } = await supabaseAdmin.auth.admin.createUser({
         email,
         email_confirm: true
       })
@@ -127,7 +131,7 @@ export async function POST(
     }
 
     // Add user to organization
-    const { data: newMember, error: memberError } = await supabase
+    const { data: newMember, error: memberError } = await supabaseAdmin
       .from('organization_members')
       .insert({
         organization_id: orgId,
@@ -147,7 +151,7 @@ export async function POST(
           full_name
         )
       `)
-      .single()
+      .single() as any
 
     if (memberError) {
       console.error('Error adding member:', memberError)

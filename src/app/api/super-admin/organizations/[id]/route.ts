@@ -48,7 +48,7 @@ export async function GET(
 
     // Get members separately to avoid complex joins
     console.log('🔄 Fetching organization members...')
-    const { data: members, error: membersError } = await supabase
+    const { data: members, error: membersError } = await supabaseAdmin
       .from('organization_members')
       .select(`
         id,

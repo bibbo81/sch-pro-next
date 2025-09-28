@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireSuperAdmin, logSuperAdminAction } from '@/lib/auth-super-admin'
-import { createSupabaseServer } from '@/lib/auth'
+import { createSupabaseServer, createSupabaseAdmin } from '@/lib/auth'
 
 // PUT /api/super-admin/organizations/[id]/members/[memberId] - Update member role
 export async function PUT(
@@ -9,7 +9,7 @@ export async function PUT(
 ) {
   try {
     await requireSuperAdmin()
-    const supabase = await createSupabaseServer()
+    const supabaseAdmin = await createSupabaseAdmin()
     const { id: orgId, memberId } = await params
     const body = await request.json()
     const { role, restrictToOwnRecords } = body
@@ -22,12 +22,12 @@ export async function PUT(
     }
 
     // Check if member exists
-    const { data: existingMember } = await supabase
+    const { data: existingMember } = await supabaseAdmin
       .from('organization_members')
       .select('user_id')
       .eq('id', memberId)
       .eq('organization_id', orgId)
-      .single()
+      .single() as any
 
     if (!existingMember) {
       return NextResponse.json(
@@ -42,7 +42,7 @@ export async function PUT(
       updateData.restrict_to_own_records = restrictToOwnRecords
     }
 
-    const { data: updatedMember, error } = await supabase
+    const { data: updatedMember, error } = await supabaseAdmin
       .from('organization_members')
       .update(updateData)
       .eq('id', memberId)
@@ -59,7 +59,7 @@ export async function PUT(
           full_name
         )
       `)
-      .single()
+      .single() as any
 
     if (error) {
       console.error('Error updating member:', error)
@@ -104,11 +104,11 @@ export async function DELETE(
 ) {
   try {
     await requireSuperAdmin()
-    const supabase = await createSupabaseServer()
+    const supabaseAdmin = await createSupabaseAdmin()
     const { id: orgId, memberId } = await params
 
     // Get member details before deletion for logging
-    const { data: member } = await supabase
+    const { data: member } = await supabaseAdmin
       .from('organization_members')
       .select(`
         user_id,
@@ -119,7 +119,7 @@ export async function DELETE(
       `)
       .eq('id', memberId)
       .eq('organization_id', orgId)
-      .single()
+      .single() as any
 
     if (!member) {
       return NextResponse.json(
@@ -129,7 +129,7 @@ export async function DELETE(
     }
 
     // Remove member from organization
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await supabaseAdmin
       .from('organization_members')
       .delete()
       .eq('id', memberId)
@@ -144,15 +144,15 @@ export async function DELETE(
     }
 
     // Check if user has other organization memberships
-    const { data: otherMemberships } = await supabase
+    const { data: otherMemberships } = await supabaseAdmin
       .from('organization_members')
       .select('id')
-      .eq('user_id', member.user_id)
+      .eq('user_id', member.user_id) as any
 
     // If no other memberships, optionally delete the user account
     if (!otherMemberships || otherMemberships.length === 0) {
       try {
-        await supabase.auth.admin.deleteUser(member.user_id)
+        await supabaseAdmin.auth.admin.deleteUser(member.user_id)
       } catch (userDeleteError) {
         console.error('Error deleting user account:', userDeleteError)
         // Continue even if user deletion fails
