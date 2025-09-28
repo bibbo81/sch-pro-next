@@ -160,17 +160,38 @@ export async function PATCH(
     console.log('✅ Found organization:', existingOrg)
 
     // Update organization - only update the name field
-    const { data, error } = await supabase
+    console.log('🔄 Executing UPDATE query...')
+    const { data, error, count } = await supabase
       .from('organizations')
       .update({ name: name.trim() })
       .eq('id', orgId)
       .select()
       .single() as any
 
+    console.log('📊 Update result - data:', data, 'error:', error, 'count:', count)
+
     if (error) {
       console.error('❌ Error updating organization:', error)
+
+      // Handle specific PGRST116 error (no rows updated)
+      if (error.code === 'PGRST116') {
+        console.error('❌ PGRST116: No rows were updated. This could be due to RLS policies or the organization not existing.')
+        return NextResponse.json(
+          { error: 'Organization not found or cannot be updated' },
+          { status: 404 }
+        )
+      }
+
       return NextResponse.json(
         { error: 'Failed to update organization: ' + error.message },
+        { status: 500 }
+      )
+    }
+
+    if (!data) {
+      console.warn('⚠️ Update completed but no data returned')
+      return NextResponse.json(
+        { error: 'Organization update failed - no data returned' },
         { status: 500 }
       )
     }
