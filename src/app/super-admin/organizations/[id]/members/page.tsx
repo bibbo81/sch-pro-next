@@ -38,6 +38,7 @@ export default function ManageMembersPage({ params }: PageProps) {
   const [showAddMember, setShowAddMember] = useState(false)
   const [newMember, setNewMember] = useState({
     email: '',
+    fullName: '',
     role: 'member',
     restrictToOwnRecords: false
   })
@@ -91,6 +92,7 @@ export default function ManageMembersPage({ params }: PageProps) {
         credentials: 'include',
         body: JSON.stringify({
           email: newMember.email,
+          fullName: newMember.fullName || undefined,
           role: newMember.role,
           restrictToOwnRecords: newMember.restrictToOwnRecords
         })
@@ -102,7 +104,7 @@ export default function ManageMembersPage({ params }: PageProps) {
       }
 
       setMessage('Member added successfully')
-      setNewMember({ email: '', role: 'member', restrictToOwnRecords: false })
+      setNewMember({ email: '', fullName: '', role: 'member', restrictToOwnRecords: false })
       setShowAddMember(false)
       loadMembers(organizationId)
       setTimeout(() => setMessage(''), 3000)
@@ -256,6 +258,17 @@ export default function ManageMembersPage({ params }: PageProps) {
                 onChange={(e) => setNewMember(prev => ({ ...prev, email: e.target.value }))}
                 placeholder="user@example.com"
               />
+            </div>
+            <div>
+              <Label htmlFor="fullName">Full Name (Optional)</Label>
+              <Input
+                id="fullName"
+                type="text"
+                value={newMember.fullName}
+                onChange={(e) => setNewMember(prev => ({ ...prev, fullName: e.target.value }))}
+                placeholder="e.g. Francesca Giorgetti"
+              />
+              <p className="text-sm text-gray-500 mt-1">If not provided, user can set it on first login</p>
             </div>
             <div>
               <Label htmlFor="role">Role</Label>

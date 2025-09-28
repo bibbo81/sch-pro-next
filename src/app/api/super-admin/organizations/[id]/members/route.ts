@@ -116,23 +116,50 @@ export async function POST(
         )
       }
     } else {
-      // Create a new user account and send invitation email
-      const { data: newUser, error: userError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://sch-pro-next.vercel.app'}/login?invited=true`,
-        data: fullName ? {
-          full_name: fullName
-        } : {}
-      })
+      // Check if user already exists in auth.users
+      const { data: existingAuthUser } = await supabaseAdmin.auth.admin.listUsers()
+      const authUser = existingAuthUser?.users?.find(u => u.email === email)
 
-      if (userError || !newUser.user) {
-        console.error('Error creating user:', userError)
-        return NextResponse.json(
-          { error: 'Failed to create user account' },
-          { status: 500 }
-        )
+      if (authUser) {
+        // User exists in auth, just add to organization
+        userId = authUser.id
+        console.log('✅ Found existing user in auth:', authUser.email)
+      } else {
+        // Create a new user account and send invitation email
+        const { data: newUser, error: userError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+          redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://sch-pro-next.vercel.app'}/login?invited=true`,
+          data: fullName ? {
+            full_name: fullName
+          } : {}
+        })
+
+        if (userError) {
+          console.error('Error creating user:', userError)
+
+          // Handle specific case where user exists but we didn't find them
+          if (userError.message?.includes('already been registered') || userError.status === 422) {
+            return NextResponse.json(
+              { error: 'User with this email already exists. Please contact the administrator.' },
+              { status: 409 }
+            )
+          }
+
+          return NextResponse.json(
+            { error: 'Failed to create user account' },
+            { status: 500 }
+          )
+        }
+
+        if (!newUser.user) {
+          return NextResponse.json(
+            { error: 'Failed to create user account' },
+            { status: 500 }
+          )
+        }
+
+        userId = newUser.user.id
+        console.log('✅ Created new user:', newUser.user.email)
       }
-
-      userId = newUser.user.id
     }
 
     // Add user to organization
