@@ -38,11 +38,12 @@ export default function ManageMembersPage({ params }: PageProps) {
   const [showAddMember, setShowAddMember] = useState(false)
   const [newMember, setNewMember] = useState({
     email: '',
-    fullName: '',
     role: 'member',
     restrictToOwnRecords: false
   })
   const [isAddingMember, setIsAddingMember] = useState(false)
+  const [editingMember, setEditingMember] = useState<string | null>(null)
+  const [editingName, setEditingName] = useState('')
 
   useEffect(() => {
     const getParams = async () => {
@@ -90,7 +91,6 @@ export default function ManageMembersPage({ params }: PageProps) {
         credentials: 'include',
         body: JSON.stringify({
           email: newMember.email,
-          fullName: newMember.fullName,
           role: newMember.role,
           restrictToOwnRecords: newMember.restrictToOwnRecords
         })
@@ -102,7 +102,7 @@ export default function ManageMembersPage({ params }: PageProps) {
       }
 
       setMessage('Member added successfully')
-      setNewMember({ email: '', fullName: '', role: 'member', restrictToOwnRecords: false })
+      setNewMember({ email: '', role: 'member', restrictToOwnRecords: false })
       setShowAddMember(false)
       loadMembers(organizationId)
       setTimeout(() => setMessage(''), 3000)
@@ -142,12 +142,43 @@ export default function ManageMembersPage({ params }: PageProps) {
       })
 
       if (!response.ok) throw new Error('Failed to remove member')
-      
+
       setMessage('Member removed successfully')
       loadMembers(organizationId)
       setTimeout(() => setMessage(''), 3000)
     } catch (err) {
       setError('Failed to remove member')
+    }
+  }
+
+  const startEditingName = (memberId: string, currentName: string) => {
+    setEditingMember(memberId)
+    setEditingName(currentName)
+  }
+
+  const cancelEditingName = () => {
+    setEditingMember(null)
+    setEditingName('')
+  }
+
+  const handleUpdateMemberName = async (memberId: string) => {
+    try {
+      const response = await fetch(`/api/super-admin/organizations/${organizationId}/members/${memberId}/name`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ fullName: editingName })
+      })
+
+      if (!response.ok) throw new Error('Failed to update member name')
+
+      setMessage('Member name updated successfully')
+      setEditingMember(null)
+      setEditingName('')
+      loadMembers(organizationId)
+      setTimeout(() => setMessage(''), 3000)
+    } catch (err) {
+      setError('Failed to update member name')
     }
   }
 
@@ -217,16 +248,6 @@ export default function ManageMembersPage({ params }: PageProps) {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label htmlFor="fullName">Full Name</Label>
-              <Input
-                id="fullName"
-                type="text"
-                value={newMember.fullName}
-                onChange={(e) => setNewMember(prev => ({ ...prev, fullName: e.target.value }))}
-                placeholder="e.g. Francesca Giorgetti"
-              />
-            </div>
-            <div>
               <Label htmlFor="email">Email Address</Label>
               <Input
                 id="email"
@@ -258,7 +279,7 @@ export default function ManageMembersPage({ params }: PageProps) {
               <Label htmlFor="restrict">Restrict to own records only</Label>
             </div>
             <div className="flex gap-2">
-              <Button onClick={handleAddMember} disabled={isAddingMember || !newMember.email || !newMember.fullName}>
+              <Button onClick={handleAddMember} disabled={isAddingMember || !newMember.email}>
                 <Plus className="h-4 w-4 mr-2" />
                 {isAddingMember ? 'Adding...' : 'Add Member'}
               </Button>
@@ -279,16 +300,52 @@ export default function ManageMembersPage({ params }: PageProps) {
                 <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
                   <Mail className="h-5 w-5 text-gray-500" />
                 </div>
-                <div>
-                  <p className="font-medium">
-                    {member.user?.full_name || member.user?.email || 'Unknown User'}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    {member.user?.email || `User ID: ${member.user_id}`}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    Joined {new Date(member.created_at).toLocaleDateString()}
-                  </p>
+                <div className="flex-1">
+                  {editingMember === member.id ? (
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={editingName}
+                        onChange={(e) => setEditingName(e.target.value)}
+                        placeholder="Enter full name"
+                        className="max-w-xs"
+                      />
+                      <Button
+                        size="sm"
+                        onClick={() => handleUpdateMemberName(member.id)}
+                        disabled={!editingName.trim()}
+                      >
+                        Save
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={cancelEditingName}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <div>
+                        <p className="font-medium">
+                          {member.user?.full_name || member.user?.email || 'Unknown User'}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          {member.user?.email || `User ID: ${member.user_id}`}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Joined {new Date(member.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => startEditingName(member.id, member.user?.full_name || member.user?.email?.split('@')[0] || '')}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
               

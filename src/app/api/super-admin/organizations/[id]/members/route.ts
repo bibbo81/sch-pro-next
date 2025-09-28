@@ -89,12 +89,6 @@ export async function POST(
       )
     }
 
-    if (!fullName) {
-      return NextResponse.json(
-        { error: 'Full name is required' },
-        { status: 400 }
-      )
-    }
 
     // First, check if user exists
     let userId: string
@@ -125,9 +119,9 @@ export async function POST(
       // Create a new user account and send invitation email
       const { data: newUser, error: userError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
         redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://sch-pro-next.vercel.app'}/login?invited=true`,
-        data: {
+        data: fullName ? {
           full_name: fullName
-        }
+        } : {}
       })
 
       if (userError || !newUser.user) {
