@@ -159,16 +159,28 @@ export async function PATCH(
 
     console.log('✅ Found organization:', existingOrg)
 
+    // Test: Let's try to select the organization again right before update
+    console.log('🔍 Double-checking organization exists before update...')
+    const { data: doubleCheck, error: doubleCheckError } = await supabase
+      .from('organizations')
+      .select('id, name')
+      .eq('id', orgId)
+      .single() as any
+
+    console.log('🔍 Double-check result:', { data: doubleCheck, error: doubleCheckError })
+
     // Update organization - only update the name field
     console.log('🔄 Executing UPDATE query...')
     const { data, error, count } = await supabase
       .from('organizations')
       .update({ name: name.trim() })
       .eq('id', orgId)
-      .select()
-      .single() as any
+      .select() as any
 
     console.log('📊 Update result - data:', data, 'error:', error, 'count:', count)
+
+    // If update succeeded but returned multiple rows, take the first one
+    const updatedOrg = Array.isArray(data) ? data[0] : data
 
     if (error) {
       console.error('❌ Error updating organization:', error)
@@ -188,7 +200,7 @@ export async function PATCH(
       )
     }
 
-    if (!data) {
+    if (!updatedOrg) {
       console.warn('⚠️ Update completed but no data returned')
       return NextResponse.json(
         { error: 'Organization update failed - no data returned' },
@@ -196,7 +208,7 @@ export async function PATCH(
       )
     }
 
-    console.log('✅ Update successful:', data)
+    console.log('✅ Update successful:', updatedOrg)
 
     // Log the action
     await logSuperAdminAction(
@@ -208,7 +220,7 @@ export async function PATCH(
 
     return NextResponse.json({
       success: true,
-      organization: data
+      organization: updatedOrg
     })
   } catch (error) {
     console.error('❌ Error in PATCH /api/super-admin/organizations/[id]:', error)
