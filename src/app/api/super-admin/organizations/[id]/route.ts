@@ -13,6 +13,7 @@ export async function GET(
     console.log('✅ Super admin authenticated')
 
     const supabase = await createSupabaseServer()
+    const supabaseAdmin = await createSupabaseAdmin()
     const { id: orgId } = await params
     console.log('🎯 Organization ID:', orgId)
 
