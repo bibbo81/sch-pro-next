@@ -21,29 +21,57 @@ export default function LoginPage() {
     const invited = searchParams.get('invited')
     const existing = searchParams.get('existing')
 
-    if (invited === 'true') {
-      setIsInvited(true)
+    const checkInvitedUser = async () => {
+      // First, check URL parameters
+      if (invited === 'true') {
+        console.log('🎯 Detected invitation via URL parameter')
+        setIsInvited(true)
+      }
 
-      // Check if user is already authenticated (from email link verification)
-      const checkAuth = async () => {
-        const { data: { user } } = await supabase.auth.getUser()
-        if (user) {
-          console.log('User already authenticated from invitation:', user.email)
-          setEmail(user.email || '')
+      // Also check if user is authenticated from email verification
+      const { data: { user } } = await supabase.auth.getUser()
+      console.log('🔍 Current user state:', user)
+
+      if (user) {
+        console.log('✅ User authenticated:', user.email)
+        setEmail(user.email || '')
+
+        // Check if this user was just created (sign-up flow)
+        const createdAt = new Date(user.created_at)
+        const now = new Date()
+        const hoursSinceCreation = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60)
+
+        console.log('⏰ User created', hoursSinceCreation.toFixed(1), 'hours ago')
+
+        // If user was created recently (< 1 hour) and has no password confirmation, it's likely an invitation
+        if (hoursSinceCreation < 1 && !user.email_confirmed_at) {
+          console.log('🎉 Detected fresh invitation user!')
+          setIsInvited(true)
+          setIsSettingPassword(true)
+          return
+        }
+
+        // If user is authenticated and email confirmed, redirect to dashboard
+        if (user.email_confirmed_at) {
+          console.log('📍 Redirecting authenticated user to dashboard')
           setSuccess(true)
           setTimeout(() => {
             window.location.href = '/dashboard'
           }, 1000)
-        } else if (existing !== 'true') {
-          // New user needs to set password
-          setIsSettingPassword(true)
-          // If we can't get the user, at least clear the test email
-          setEmail('')
+          return
         }
       }
 
-      checkAuth()
+      // Handle explicit invitation flows
+      if (invited === 'true') {
+        if (user && existing !== 'true') {
+          setIsSettingPassword(true)
+          setEmail('')
+        }
+      }
     }
+
+    checkInvitedUser()
   }, [searchParams, supabase.auth])
 
   const handlePasswordSetup = async (e: React.FormEvent) => {
