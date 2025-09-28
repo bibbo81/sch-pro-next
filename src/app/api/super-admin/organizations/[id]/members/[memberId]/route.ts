@@ -127,6 +127,15 @@ export async function DELETE(
       )
     }
 
+    // Check if user has other organization memberships BEFORE deletion
+    const { data: otherMemberships } = await supabaseAdmin
+      .from('organization_members')
+      .select('id')
+      .eq('user_id', member.user_id)
+      .neq('id', memberId) as any // Exclude current membership
+
+    console.log(`🔍 User ${member.user_id} has ${otherMemberships?.length || 0} other memberships`)
+
     // Remove member from organization
     const { error: deleteError } = await supabaseAdmin
       .from('organization_members')
@@ -142,20 +151,22 @@ export async function DELETE(
       )
     }
 
-    // Check if user has other organization memberships
-    const { data: otherMemberships } = await supabaseAdmin
-      .from('organization_members')
-      .select('id')
-      .eq('user_id', member.user_id) as any
-
     // If no other memberships, optionally delete the user account
     if (!otherMemberships || otherMemberships.length === 0) {
+      console.log('🗑️ User has no other memberships, attempting to delete user account...')
       try {
-        await supabaseAdmin.auth.admin.deleteUser(member.user_id)
+        const { error: userDeleteError } = await supabaseAdmin.auth.admin.deleteUser(member.user_id)
+        if (userDeleteError) {
+          console.error('❌ Error deleting user account:', userDeleteError)
+        } else {
+          console.log('✅ User account deleted successfully')
+        }
       } catch (userDeleteError) {
-        console.error('Error deleting user account:', userDeleteError)
+        console.error('❌ Exception deleting user account:', userDeleteError)
         // Continue even if user deletion fails
       }
+    } else {
+      console.log('ℹ️ User has other memberships, keeping user account')
     }
 
     // Get user email for logging
