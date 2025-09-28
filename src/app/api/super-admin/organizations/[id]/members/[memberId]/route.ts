@@ -151,18 +151,32 @@ export async function DELETE(
       )
     }
 
-    // If no other memberships, optionally delete the user account
+    // If no other memberships, delete the user account and profile
     if (!otherMemberships || otherMemberships.length === 0) {
-      console.log('🗑️ User has no other memberships, attempting to delete user account...')
+      console.log('🗑️ User has no other memberships, attempting to delete user account and profile...')
       try {
+        // First, delete the user profile to avoid foreign key constraint
+        const { error: profileDeleteError } = await supabaseAdmin
+          .from('profiles')
+          .delete()
+          .eq('id', member.user_id)
+
+        if (profileDeleteError) {
+          console.error('⚠️ Error deleting user profile:', profileDeleteError)
+          // Continue anyway, maybe profile doesn't exist
+        } else {
+          console.log('✅ User profile deleted successfully')
+        }
+
+        // Then delete the user account
         const { error: userDeleteError } = await supabaseAdmin.auth.admin.deleteUser(member.user_id)
         if (userDeleteError) {
           console.error('❌ Error deleting user account:', userDeleteError)
         } else {
           console.log('✅ User account deleted successfully')
         }
-      } catch (userDeleteError) {
-        console.error('❌ Exception deleting user account:', userDeleteError)
+      } catch (error) {
+        console.error('❌ Exception during user/profile deletion:', error)
         // Continue even if user deletion fails
       }
     } else {
