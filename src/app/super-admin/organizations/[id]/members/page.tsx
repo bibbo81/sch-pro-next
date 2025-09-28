@@ -103,7 +103,7 @@ export default function ManageMembersPage({ params }: PageProps) {
         throw new Error(errorData.error || 'Failed to add member')
       }
 
-      setMessage('Member added successfully')
+      setMessage('Member added successfully. New users will receive an invitation email, existing users can access via normal login.')
       setNewMember({ email: '', fullName: '', role: 'member', restrictToOwnRecords: false })
       setShowAddMember(false)
       loadMembers(organizationId)
