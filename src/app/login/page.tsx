@@ -258,6 +258,40 @@ function LoginForm() {
           </button>
         </form>
 
+        {/* Password Reset Link for expired invitations */}
+        {isInvited && error && (
+          <div className="mt-6 text-center">
+            <p className="text-sm text-muted-foreground mb-2">
+              Non hai mai impostato una password?
+            </p>
+            <button
+              onClick={async () => {
+                if (!email) {
+                  setError('Inserisci prima la tua email nel campo sopra')
+                  return
+                }
+                setLoading(true)
+                try {
+                  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                    redirectTo: `${window.location.origin}/reset-password`,
+                  })
+                  if (error) throw error
+                  setError(null)
+                  setSuccess(true)
+                  alert(`Email di reset password inviata a ${email}. Controlla la tua casella di posta.`)
+                } catch (error: any) {
+                  setError(error.message)
+                } finally {
+                  setLoading(false)
+                }
+              }}
+              className="text-primary hover:underline font-medium text-sm"
+            >
+              Richiedi reset password →
+            </button>
+          </div>
+        )}
+
         {/* Debug info */}
         <div className="mt-8 p-4 bg-muted rounded text-xs text-muted-foreground">
           <h3 className="font-semibold mb-2 text-foreground">Debug Info:</h3>
