@@ -10,9 +10,46 @@ function ResetPasswordForm() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [sessionReady, setSessionReady] = useState(false)
 
   const supabase = createClient()
   const searchParams = useSearchParams()
+
+  // Exchange the recovery token for a session on mount
+  useEffect(() => {
+    const exchangeTokenForSession = async () => {
+      try {
+        // Get hash params from URL (Supabase puts tokens in the hash)
+        const hashParams = new URLSearchParams(window.location.hash.substring(1))
+        const accessToken = hashParams.get('access_token')
+        const refreshToken = hashParams.get('refresh_token')
+        const type = hashParams.get('type')
+
+        if (type === 'recovery' && accessToken) {
+          // Set the session using the tokens from the URL
+          const { error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken || ''
+          })
+
+          if (error) {
+            console.error('Session exchange error:', error)
+            setError('Link di reset non valido o scaduto')
+            return
+          }
+
+          setSessionReady(true)
+        } else {
+          setError('Link di reset password non valido')
+        }
+      } catch (err) {
+        console.error('Token exchange error:', err)
+        setError('Errore durante la verifica del link')
+      }
+    }
+
+    exchangeTokenForSession()
+  }, [supabase])
 
   const handlePasswordReset = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -47,6 +84,43 @@ function ResetPasswordForm() {
     } finally {
       setLoading(false)
     }
+  }
+
+  // Show loading while verifying the reset link
+  if (!sessionReady && !error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Verifica del link in corso...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Show error if link verification failed
+  if (!sessionReady && error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="max-w-md w-full space-y-8 p-8">
+          <div className="text-center">
+            <h2 className="text-3xl font-extrabold text-foreground mb-4">Link Non Valido</h2>
+            <div className="bg-destructive/15 border border-destructive/50 text-destructive px-4 py-3 rounded text-sm mb-6">
+              ❌ {error}
+            </div>
+            <p className="text-muted-foreground mb-6">
+              Il link potrebbe essere scaduto o già utilizzato. Richiedi un nuovo link dalla pagina di login.
+            </p>
+            <a
+              href="/login"
+              className="inline-block bg-primary text-primary-foreground px-6 py-2 rounded hover:bg-primary/90"
+            >
+              Torna al Login
+            </a>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   if (success) {
