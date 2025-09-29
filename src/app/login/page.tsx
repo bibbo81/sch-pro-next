@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
 
 function LoginForm() {
-  const [email, setEmail] = useState('fabrizio.cagnucci@gmail.com') // Pre-compilata per test
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -22,6 +22,17 @@ function LoginForm() {
     const existing = searchParams.get('existing')
 
     const checkInvitedUser = async () => {
+      // Check for URL errors (expired links, etc.)
+      const urlError = searchParams.get('error')
+      const errorDescription = searchParams.get('error_description')
+
+      if (urlError === 'access_denied' && errorDescription?.includes('expired')) {
+        console.log('⚠️ Invitation link has expired')
+        setError('Il link di invito è scaduto. Contatta l\'amministratore per un nuovo invito.')
+        setIsInvited(true) // Still show invitation form for manual login
+        return
+      }
+
       // First, check URL parameters
       if (invited === 'true') {
         console.log('🎯 Detected invitation via URL parameter')
@@ -169,12 +180,14 @@ function LoginForm() {
             }
           </p>
           {isInvited && (
-            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-              <p className="text-blue-800 text-sm">
-                🎉 Sei stato invitato a SCH Pro!
+            <div className={`mt-4 p-3 border rounded-md ${error ? 'bg-orange-50 border-orange-200' : 'bg-blue-50 border-blue-200'}`}>
+              <p className={`text-sm ${error ? 'text-orange-800' : 'text-blue-800'}`}>
+                {error ? '⚠️ Link scaduto! ' : '🎉 Sei stato invitato a SCH Pro! '}
                 {isSettingPassword
-                  ? ' Imposta una password per completare la registrazione.'
-                  : ' Benvenuto nella piattaforma.'
+                  ? 'Imposta una password per completare la registrazione.'
+                  : error
+                    ? 'Inserisci manualmente email e password se le hai già impostate.'
+                    : 'Benvenuto nella piattaforma.'
                 }
               </p>
             </div>
@@ -192,11 +205,11 @@ function LoginForm() {
                 type="email"
                 required
                 className="mt-1 appearance-none relative block w-full px-3 py-2 border border-input placeholder-muted-foreground text-foreground bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm"
-                placeholder="Inserisci la tua email"
+                placeholder={error ? "Inserisci l'email a cui è arrivato l'invito" : "Inserisci la tua email"}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                disabled={loading || isInvited}
-                readOnly={isInvited}
+                disabled={loading || (isInvited && !error)}
+                readOnly={isInvited && !error}
               />
             </div>
 
