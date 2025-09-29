@@ -2,7 +2,7 @@ import { getSuperAdminStats } from '@/lib/auth-super-admin'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Building2, Users, Package, TrendingUp, ArrowLeft, Plus, Settings } from 'lucide-react'
+import { Building2, Users, Package, TrendingUp, ArrowLeft, Plus, Settings, Activity } from 'lucide-react'
 
 export default async function SuperAdminDashboard() {
   const stats = await getSuperAdminStats()
@@ -101,6 +101,12 @@ export default async function SuperAdminDashboard() {
             <CardDescription>Configure system settings and monitoring</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
+            <Link href="/super-admin/monitoring" className="block">
+              <Button className="w-full">
+                <Activity className="mr-2 h-4 w-4" />
+                System Monitoring
+              </Button>
+            </Link>
             <Link href="/super-admin/audit" className="block">
               <Button variant="outline" className="w-full">
                 <Settings className="mr-2 h-4 w-4" />
