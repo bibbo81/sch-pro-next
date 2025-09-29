@@ -258,6 +258,32 @@ function LoginForm() {
           </button>
         </form>
 
+        {/* Password Reset Link - Always visible */}
+        <div className="mt-4 text-center">
+          <button
+            onClick={async () => {
+              const emailToReset = prompt('Inserisci la tua email per il reset password:', email || '')
+              if (!emailToReset) return
+
+              setLoading(true)
+              try {
+                const { error } = await supabase.auth.resetPasswordForEmail(emailToReset, {
+                  redirectTo: `${window.location.origin}/reset-password`,
+                })
+                if (error) throw error
+                alert(`Email di reset password inviata a ${emailToReset}. Controlla la tua casella di posta.`)
+              } catch (error: any) {
+                alert(`Errore: ${error.message}`)
+              } finally {
+                setLoading(false)
+              }
+            }}
+            className="text-primary hover:underline text-sm"
+          >
+            Password dimenticata?
+          </button>
+        </div>
+
         {/* Password Reset Link for expired invitations */}
         {isInvited && error && (
           <div className="mt-6 text-center">
