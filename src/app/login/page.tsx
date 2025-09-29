@@ -28,9 +28,9 @@ function LoginForm() {
 
       if (urlError === 'access_denied' && errorDescription?.includes('expired')) {
         console.log('⚠️ Invitation link has expired')
-        setError('Il link di invito è scaduto. Contatta l\'amministratore per un nuovo invito.')
+        setError('Il link di invito è scaduto. Inserisci email e password manualmente.')
         setIsInvited(true) // Still show invitation form for manual login
-        return
+        // Don't return here - let the user enter email manually
       }
 
       // First, check URL parameters
@@ -208,8 +208,8 @@ function LoginForm() {
                 placeholder={error ? "Inserisci l'email a cui è arrivato l'invito" : "Inserisci la tua email"}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                disabled={loading || (isInvited && !error)}
-                readOnly={isInvited && !error}
+                disabled={loading}
+                readOnly={false}
               />
             </div>
 
