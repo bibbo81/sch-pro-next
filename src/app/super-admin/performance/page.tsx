@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, TrendingUp, TrendingDown, Activity, AlertTriangle, Clock, Zap } from 'lucide-react'
+import { ArrowLeft, TrendingUp, TrendingDown, Activity, AlertTriangle, Clock, Zap, RefreshCw } from 'lucide-react'
 import Link from 'next/link'
 import {
   Chart as ChartJS,
@@ -72,15 +72,29 @@ export default function PerformancePage() {
   const [metrics, setMetrics] = useState<PerformanceMetrics | null>(null)
   const [loading, setLoading] = useState(false)
   const [timeRange, setTimeRange] = useState('24h')
+  const [error, setError] = useState<string | null>(null)
 
   const fetchMetrics = async () => {
     setLoading(true)
+    setError(null)
     try {
       const response = await fetch(`/api/super-admin/performance?timeRange=${timeRange}`)
+
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status} ${response.statusText}`)
+      }
+
       const data = await response.json()
+
+      if (data.error) {
+        throw new Error(data.error)
+      }
+
       setMetrics(data)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching performance metrics:', error)
+      setError(error.message || 'Failed to load performance metrics')
+      setMetrics(null)
     } finally {
       setLoading(false)
     }
@@ -96,6 +110,46 @@ export default function PerformancePage() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">Loading performance metrics...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="max-w-md w-full space-y-8 p-8">
+          <div className="text-center">
+            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900 mb-4">
+              <AlertTriangle className="h-6 w-6 text-red-600 dark:text-red-400" />
+            </div>
+            <h2 className="text-2xl font-bold text-foreground mb-4">Performance Data Unavailable</h2>
+            <div className="bg-red-50 dark:bg-red-950 border-2 border-red-500 text-red-700 dark:text-red-300 px-4 py-3 rounded text-sm mb-6">
+              <p className="font-semibold mb-2">Error:</p>
+              <p>{error}</p>
+            </div>
+            <div className="text-left text-sm text-muted-foreground space-y-2 mb-6">
+              <p className="font-semibold">Possible causes:</p>
+              <ul className="list-disc list-inside space-y-1 ml-4">
+                <li>Database migration not applied yet</li>
+                <li>Missing SUPABASE_SERVICE_ROLE_KEY environment variable</li>
+                <li>RLS policies not configured correctly</li>
+                <li>No performance data collected yet</li>
+              </ul>
+            </div>
+            <div className="flex gap-3 justify-center">
+              <Button onClick={fetchMetrics} disabled={loading}>
+                <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                Retry
+              </Button>
+              <Link href="/super-admin">
+                <Button variant="outline">
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back to Dashboard
+                </Button>
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     )
