@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth, createSupabaseServer } from '@/lib/auth'
+import { logPerformance } from '@/lib/performanceLogger'
 
 // GET - Lista spedizioni dell'organizzazione
 export async function GET(request: NextRequest) {
+  const startTime = Date.now()
+
   try {
     console.log('🔍 GET shipments')
-    
+
     // ✅ DESTRUCTURING CORRETTO
     const { user, organizationId } = await requireAuth()
     const supabase = await createSupabaseServer()
@@ -67,6 +70,16 @@ export async function GET(request: NextRequest) {
 
     console.log(`✅ Fetched ${shipments?.length || 0} shipments`)
 
+    // Log performance
+    logPerformance({
+      endpoint: '/api/shipments',
+      method: 'GET',
+      statusCode: 200,
+      responseTime: Date.now() - startTime,
+      userId: user.id,
+      organizationId
+    })
+
     return NextResponse.json({
       success: true,
       data: shipments || [],
@@ -80,7 +93,18 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('❌ GET /api/shipments error:', error)
-    
+
+    const statusCode = error instanceof Error && error.message.includes('Authentication') ? 401 : 500
+
+    // Log error performance
+    logPerformance({
+      endpoint: '/api/shipments',
+      method: 'GET',
+      statusCode,
+      responseTime: Date.now() - startTime,
+      errorMessage: error instanceof Error ? error.message : 'Internal server error'
+    })
+
     if (error instanceof Error && error.message.includes('Authentication')) {
       return NextResponse.json({
         success: false,
@@ -97,10 +121,12 @@ export async function GET(request: NextRequest) {
 
 // POST - Crea nuova spedizione
 export async function POST(request: NextRequest) {
+  const startTime = Date.now()
+
   try {
     const body = await request.json()
     console.log('📦 POST create shipment')
-    
+
     // ✅ DESTRUCTURING CORRETTO
     const { user, organizationId } = await requireAuth()
     const supabase = await createSupabaseServer()
@@ -189,6 +215,16 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ Shipment created:', shipment?.id)
 
+    // Log performance
+    logPerformance({
+      endpoint: '/api/shipments',
+      method: 'POST',
+      statusCode: 201,
+      responseTime: Date.now() - startTime,
+      userId: user.id,
+      organizationId
+    })
+
     // ✅ Se ci sono prodotti, aggiungili come items
     if (body.items && Array.isArray(body.items) && body.items.length > 0) {
       const itemsData = body.items.map((item: any) => ({
@@ -227,7 +263,22 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('❌ POST /api/shipments error:', error)
-    
+
+    let statusCode = 500
+    if (error instanceof Error) {
+      if (error.message.includes('Authentication')) statusCode = 401
+      if (error.message.includes('JSON')) statusCode = 400
+    }
+
+    // Log error performance
+    logPerformance({
+      endpoint: '/api/shipments',
+      method: 'POST',
+      statusCode,
+      responseTime: Date.now() - startTime,
+      errorMessage: error instanceof Error ? error.message : 'Internal server error'
+    })
+
     if (error instanceof Error) {
       if (error.message.includes('Authentication')) {
         return NextResponse.json({
@@ -253,10 +304,12 @@ export async function POST(request: NextRequest) {
 
 // PUT - Aggiorna spedizione esistente (bulk update)
 export async function PUT(request: NextRequest) {
+  const startTime = Date.now()
+
   try {
     const body = await request.json()
     console.log('🔄 PUT update shipment')
-    
+
     // ✅ DESTRUCTURING CORRETTO
     const { user, organizationId, membership } = await requireAuth()
     const supabase = await createSupabaseServer()
@@ -361,6 +414,16 @@ export async function PUT(request: NextRequest) {
 
     console.log('✅ Shipment updated successfully:', updatedShipment?.id)
 
+    // Log performance
+    logPerformance({
+      endpoint: '/api/shipments',
+      method: 'PUT',
+      statusCode: 200,
+      responseTime: Date.now() - startTime,
+      userId: user.id,
+      organizationId
+    })
+
     return NextResponse.json({
       success: true,
       data: updatedShipment,
@@ -369,7 +432,22 @@ export async function PUT(request: NextRequest) {
 
   } catch (error) {
     console.error('❌ PUT /api/shipments error:', error)
-    
+
+    let statusCode = 500
+    if (error instanceof Error) {
+      if (error.message.includes('Authentication')) statusCode = 401
+      if (error.message.includes('JSON')) statusCode = 400
+    }
+
+    // Log error performance
+    logPerformance({
+      endpoint: '/api/shipments',
+      method: 'PUT',
+      statusCode,
+      responseTime: Date.now() - startTime,
+      errorMessage: error instanceof Error ? error.message : 'Internal server error'
+    })
+
     if (error instanceof Error) {
       if (error.message.includes('Authentication')) {
         return NextResponse.json({

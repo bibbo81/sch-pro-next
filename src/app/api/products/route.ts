@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth, createSupabaseServer } from '@/lib/auth'  // ✅ IMPORT CORRETTO!
 import { Database } from '@/types/supabase'
+import { logPerformance } from '@/lib/performanceLogger'
 
 // ✅ TIPI ESPLICITI
 type Product = Database['public']['Tables']['products']['Row']
 type ProductInsert = Database['public']['Tables']['products']['Insert']
 
 export async function GET(request: NextRequest) {
+  const startTime = Date.now()
+
   try {
     console.log('🚀 API GET /api/products started')
-    
+
     const { organizationId, user } = await requireAuth()
     const supabase = await createSupabaseServer()
 
@@ -34,6 +37,16 @@ export async function GET(request: NextRequest) {
 
     console.log('✅ Products fetched:', products?.length || 0)
 
+    // Log performance
+    logPerformance({
+      endpoint: '/api/products',
+      method: 'GET',
+      statusCode: 200,
+      responseTime: Date.now() - startTime,
+      userId: user.id,
+      organizationId
+    })
+
     return NextResponse.json({
       success: true,
       data: products || [],
@@ -41,7 +54,18 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('❌ GET /api/products error:', error)
-    
+
+    const statusCode = error instanceof Error && (error.message.includes('organization') || error.message.includes('Authentication')) ? 401 : 500
+
+    // Log error performance
+    logPerformance({
+      endpoint: '/api/products',
+      method: 'GET',
+      statusCode,
+      responseTime: Date.now() - startTime,
+      errorMessage: error instanceof Error ? error.message : 'Internal server error'
+    })
+
     if (error instanceof Error) {
       if (error.message.includes('organization') || error.message.includes('Authentication')) {
         return NextResponse.json({
@@ -60,9 +84,11 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const startTime = Date.now()
+
   try {
     console.log('🚀 API POST /api/products started')
-    
+
     const { organizationId, user } = await requireAuth()
     const supabase = await createSupabaseServer()
     
@@ -149,6 +175,16 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ Product created successfully:', newProduct?.id)
 
+    // Log performance
+    logPerformance({
+      endpoint: '/api/products',
+      method: 'POST',
+      statusCode: 200,
+      responseTime: Date.now() - startTime,
+      userId: user.id,
+      organizationId
+    })
+
     return NextResponse.json({
       success: true,
       data: newProduct,
@@ -156,7 +192,22 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('❌ POST /api/products error:', error)
-    
+
+    let statusCode = 500
+    if (error instanceof Error) {
+      if (error.message.includes('organization') || error.message.includes('Authentication')) statusCode = 401
+      if (error.message.includes('JSON')) statusCode = 400
+    }
+
+    // Log error performance
+    logPerformance({
+      endpoint: '/api/products',
+      method: 'POST',
+      statusCode,
+      responseTime: Date.now() - startTime,
+      errorMessage: error instanceof Error ? error.message : 'Internal server error'
+    })
+
     if (error instanceof Error) {
       if (error.message.includes('organization') || error.message.includes('Authentication')) {
         return NextResponse.json({
