@@ -242,9 +242,9 @@ export default function SubscriptionsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-10">
+      <div className="border-b bg-white sticky top-0 z-10 shadow-sm">
         <div className="p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
