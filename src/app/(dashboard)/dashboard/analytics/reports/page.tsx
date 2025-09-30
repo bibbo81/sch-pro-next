@@ -33,7 +33,8 @@ import {
   XCircle,
   Edit,
   Trash2,
-  Loader2
+  Loader2,
+  Play
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -61,6 +62,7 @@ export default function ScheduledReportsPage() {
   const [loading, setLoading] = useState(true)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
+  const [generatingId, setGeneratingId] = useState<string | null>(null)
   const [newReport, setNewReport] = useState({
     name: '',
     description: '',
@@ -145,6 +147,37 @@ export default function ScheduledReportsPage() {
       }
     } catch (error) {
       console.error('Error toggling report:', error)
+    }
+  }
+
+  const handleGenerateReport = async (reportId: string) => {
+    setGeneratingId(reportId)
+    try {
+      const response = await fetch('/api/analytics/reports/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ report_id: reportId })
+      })
+
+      if (response.ok) {
+        // Download PDF
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `report_${new Date().toISOString().split('T')[0]}.pdf`
+        document.body.appendChild(a)
+        a.click()
+        window.URL.revokeObjectURL(url)
+        document.body.removeChild(a)
+      } else {
+        alert('Errore durante la generazione del report')
+      }
+    } catch (error) {
+      console.error('Error generating report:', error)
+      alert('Errore durante la generazione del report')
+    } finally {
+      setGeneratingId(null)
     }
   }
 
@@ -295,6 +328,24 @@ export default function ScheduledReportsPage() {
                   </div>
 
                   <div className="flex gap-2 ml-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleGenerateReport(report.id)}
+                      disabled={generatingId === report.id}
+                    >
+                      {generatingId === report.id ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Generazione...
+                        </>
+                      ) : (
+                        <>
+                          <Play className="w-4 h-4 mr-2" />
+                          Genera Ora
+                        </>
+                      )}
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"
