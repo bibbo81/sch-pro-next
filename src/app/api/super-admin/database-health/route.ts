@@ -108,18 +108,12 @@ async function getTableStats(supabase: any) {
     const { data, error } = await supabase.rpc('get_table_statistics')
 
     if (error) {
-      return {
-        tables: [],
-        error: error.message,
-      }
+      return []
     }
 
-    return data
+    return Array.isArray(data) ? data : []
   } catch (error: any) {
-    return {
-      error: error.message,
-      status: 'unavailable',
-    }
+    return []
   }
 }
 
@@ -129,18 +123,12 @@ async function getIndexUsage(supabase: any) {
     const { data, error } = await supabase.rpc('get_index_usage')
 
     if (error) {
-      return {
-        indexes: [],
-        error: error.message,
-      }
+      return []
     }
 
-    return data
+    return Array.isArray(data) ? data : []
   } catch (error: any) {
-    return {
-      error: error.message,
-      status: 'unavailable',
-    }
+    return []
   }
 }
 
@@ -194,17 +182,11 @@ async function getVacuumStats(supabase: any) {
     const { data, error } = await supabase.rpc('get_vacuum_stats')
 
     if (error) {
-      return {
-        tables: [],
-        error: error.message,
-      }
+      return []
     }
 
-    return data
+    return Array.isArray(data) ? data : []
   } catch (error: any) {
-    return {
-      error: error.message,
-      status: 'unavailable',
-    }
+    return []
   }
 }
