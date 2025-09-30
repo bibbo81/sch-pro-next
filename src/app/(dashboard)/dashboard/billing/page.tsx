@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Check, Sparkles, Zap, Crown, Loader2, ExternalLink } from 'lucide-react'
+import { Check, Sparkles, Zap, Crown, Loader2, ExternalLink, FileText } from 'lucide-react'
 import { loadStripe } from '@stripe/stripe-js'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
@@ -32,23 +32,45 @@ interface SubscriptionPlan {
   sort_order: number
 }
 
+interface CurrentSubscription {
+  id: string
+  plan: SubscriptionPlan
+  status: string
+  billing_cycle: string
+  current_period_end: string
+  trial_end: string | null
+}
+
 export default function BillingPage() {
   const [plans, setPlans] = useState<SubscriptionPlan[]>([])
+  const [currentSubscription, setCurrentSubscription] = useState<CurrentSubscription | null>(null)
   const [loading, setLoading] = useState(true)
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null)
+  const [changePlanLoading, setChangePlanLoading] = useState<string | null>(null)
   const [selectedBilling, setSelectedBilling] = useState<'monthly' | 'yearly'>('monthly')
 
   useEffect(() => {
-    fetchPlans()
+    fetchData()
   }, [])
 
-  const fetchPlans = async () => {
+  const fetchData = async () => {
     try {
-      const response = await fetch('/api/subscription-plans')
-      const data = await response.json()
-      setPlans(data.plans || [])
+      const [plansRes, subsRes] = await Promise.all([
+        fetch('/api/subscription-plans'),
+        fetch('/api/subscriptions/usage')
+      ])
+
+      const plansData = await plansRes.json()
+      const subsData = await subsRes.json()
+
+      setPlans(plansData.plans || [])
+
+      if (subsData.subscription) {
+        setCurrentSubscription(subsData.subscription)
+        setSelectedBilling(subsData.subscription.billing_cycle)
+      }
     } catch (error) {
-      console.error('Error fetching plans:', error)
+      console.error('Error fetching data:', error)
     } finally {
       setLoading(false)
     }
@@ -94,6 +116,63 @@ export default function BillingPage() {
       alert('Errore durante la creazione della sessione di checkout')
     } finally {
       setCheckoutLoading(null)
+    }
+  }
+
+  const handleChangePlan = async (plan: SubscriptionPlan) => {
+    if (!currentSubscription) {
+      // No subscription yet - create new one
+      handleSubscribe(plan)
+      return
+    }
+
+    if (plan.id === currentSubscription.plan.id) {
+      return // Same plan
+    }
+
+    if (!confirm(`Confermi il cambio di piano da ${currentSubscription.plan.name} a ${plan.name}?`)) {
+      return
+    }
+
+    setChangePlanLoading(plan.id)
+
+    try {
+      const response = await fetch(`/api/subscriptions/${currentSubscription.id}/change-plan`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          new_plan_id: plan.id,
+          billing_cycle: selectedBilling
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.error) {
+        alert(data.error)
+        return
+      }
+
+      // Show proration info
+      if (data.proration) {
+        const { is_upgrade, price_difference, old_plan, new_plan } = data.proration
+        alert(
+          `Piano cambiato con successo!\n\n` +
+          `Da: ${old_plan}\n` +
+          `A: ${new_plan}\n` +
+          `${is_upgrade ? 'Addebito' : 'Credito'}: ${formatPrice(price_difference)}\n\n` +
+          `${is_upgrade ? 'Il costo sarà proporzionato al tempo rimanente.' : 'Il credito sarà applicato al prossimo pagamento.'}`
+        )
+      }
+
+      // Refresh data
+      fetchData()
+
+    } catch (error: any) {
+      console.error('Error changing plan:', error)
+      alert('Errore durante il cambio di piano')
+    } finally {
+      setChangePlanLoading(null)
     }
   }
 
@@ -185,14 +264,21 @@ export default function BillingPage() {
           </button>
         </div>
 
-        <Button
-          variant="outline"
-          onClick={handleManageSubscription}
-          className="mt-4"
-        >
-          <ExternalLink className="w-4 h-4 mr-2" />
-          Gestisci Abbonamento
-        </Button>
+        <div className="flex gap-2 mt-4">
+          <Button
+            variant="outline"
+            onClick={handleManageSubscription}
+          >
+            <ExternalLink className="w-4 h-4 mr-2" />
+            Gestisci Abbonamento
+          </Button>
+          <Link href="/dashboard/billing/invoices">
+            <Button variant="outline">
+              <FileText className="w-4 h-4 mr-2" />
+              Visualizza Fatture
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {loading ? (
@@ -205,18 +291,28 @@ export default function BillingPage() {
             const price = selectedBilling === 'monthly' ? plan.price_monthly : plan.price_yearly
             const isPro = plan.slug === 'pro'
             const isFree = plan.slug === 'free'
+            const isCurrentPlan = currentSubscription?.plan.id === plan.id
+            const hasSubscription = !!currentSubscription
 
             return (
               <Card
                 key={plan.id}
                 className={`relative transition-all duration-300 hover:shadow-xl ${
                   isPro ? 'ring-2 ring-purple-500 scale-105' : ''
-                }`}
+                } ${isCurrentPlan ? 'ring-2 ring-green-500' : ''}`}
               >
-                {isPro && (
+                {isPro && !isCurrentPlan && (
                   <div className="absolute -top-4 left-1/2 -translate-x-1/2">
                     <Badge className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-1 shadow-lg">
                       🔥 Più Popolare
+                    </Badge>
+                  </div>
+                )}
+
+                {isCurrentPlan && (
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                    <Badge className="bg-green-500 text-white px-4 py-1 shadow-lg">
+                      ✓ Piano Attuale
                     </Badge>
                   </div>
                 )}
@@ -247,21 +343,23 @@ export default function BillingPage() {
 
                   {/* CTA Button */}
                   <Button
-                    onClick={() => handleSubscribe(plan)}
-                    disabled={isFree || checkoutLoading === plan.id}
+                    onClick={() => hasSubscription ? handleChangePlan(plan) : handleSubscribe(plan)}
+                    disabled={isCurrentPlan || checkoutLoading === plan.id || changePlanLoading === plan.id}
                     className={`w-full py-6 text-lg font-semibold ${
-                      isFree
+                      isCurrentPlan
                         ? 'bg-gray-400 cursor-not-allowed'
                         : `bg-gradient-to-r ${getPlanColor(plan.slug)} hover:opacity-90`
                     }`}
                   >
-                    {checkoutLoading === plan.id ? (
+                    {checkoutLoading === plan.id || changePlanLoading === plan.id ? (
                       <>
                         <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                         Caricamento...
                       </>
-                    ) : isFree ? (
+                    ) : isCurrentPlan ? (
                       'Piano Attuale'
+                    ) : hasSubscription ? (
+                      'Cambia Piano'
                     ) : (
                       `Inizia Prova di 10 Giorni`
                     )}
