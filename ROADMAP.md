@@ -99,13 +99,48 @@
   - [ ] Test invoice generation e Stripe hosted invoices
   - [ ] Test Customer Portal Stripe
 
-### 2.2 Analytics & Reporting
-- [ ] Dashboard metriche avanzate
-- [ ] Grafici utilizzo per organizzazione
-- [ ] Export dati (CSV, Excel, PDF)
-- [ ] Report automatici mensili
-- [ ] Trend analysis e forecasting
-- [ ] Custom dashboard builder
+### 2.2 Analytics & Reporting 🔧 IN CORSO (70% completato)
+- [x] **Database Schema** ✅
+  - [x] 5 tabelle create (analytics_metrics, scheduled_reports, report_history, custom_dashboards, dashboard_widgets)
+  - [x] 2 funzioni PostgreSQL (calculate_organization_metrics, get_trending_metrics)
+  - [x] RLS policies implementate
+  - [x] Indexes per performance
+- [x] **API Endpoints** ✅
+  - [x] GET /api/analytics/metrics - Metriche con trend comparison
+  - [x] GET/POST /api/analytics/reports - Gestione report schedulati
+  - [x] POST /api/analytics/export - Export CSV/Excel
+- [x] **Analytics Dashboard** (/dashboard/analytics) ✅
+  - [x] 4 KPI cards (spedizioni, prodotti, costi, avg cost)
+  - [x] Trend indicators con confronto periodo precedente
+  - [x] Pie chart distribuzione spedizioni per stato
+  - [x] Performance metrics (delivery rate, avg delivery time)
+  - [x] Selettore date range (7/30/90/365 giorni)
+  - [x] Integrazione Recharts per visualizzazioni
+- [x] **Data Export** ✅
+  - [x] Export CSV e Excel
+  - [x] Export shipments, products, costs, metrics
+  - [x] Date range filtering
+  - [x] Organization-scoped security
+- [x] **Trend Analysis & Forecasting** ✅
+  - [x] Confronto periodo corrente vs precedente
+  - [x] Calcolo percentuali di variazione
+  - [x] Indicatori visuali (TrendingUp/Down)
+- [ ] **Scheduled Reports Management UI** - DA FARE
+  - [ ] Pagina configurazione report automatici
+  - [ ] UI per scheduling (daily, weekly, monthly)
+  - [ ] Gestione recipients email
+- [ ] **Report History UI** - DA FARE
+  - [ ] Storico report generati
+  - [ ] Download report PDF
+  - [ ] Status tracking generazione
+- [ ] **Custom Dashboard Builder** - DA FARE
+  - [ ] Drag & drop interface
+  - [ ] Widget configurabili
+  - [ ] Save/load custom layouts
+- [ ] **Automated Report Generation** - DA FARE
+  - [ ] Cron job per invio automatico
+  - [ ] PDF generation
+  - [ ] Email delivery system
 
 ---
 
@@ -250,24 +285,26 @@
 
 ## **TRACKING PROGRESSO**
 
-**Completato:** 37/50+ features
+**Completato:** 45/60+ features
 - ✅ Fase 1.1: System Monitoring Dashboard
 - ✅ Fase 1.2: Performance Monitoring + Storage Monitoring
 - ✅ Fase 1.3: Database Health & Backup
 - ✅ Fase 2.1: Billing & Subscriptions (implementazione completa)
+- 🔧 Fase 2.2: Analytics & Reporting (70% completato)
 
-**In Corso:** Testing finale Fase 2.1
-**Prossimo:** Analytics & Reporting (Fase 2.2)
+**In Corso:** Analytics & Reporting (Fase 2.2)
+**Prossimo:** Completare Scheduled Reports UI + Custom Dashboard Builder
 
 **% Completamento Totale FASE 1:** 100% ✅
 **% Completamento Totale FASE 2.1:** 92% (11/12 features) ✅ - Solo testing mancante
-**% Completamento Totale Progetto:** ~62%
+**% Completamento Totale FASE 2.2:** 70% (5/7 features) 🔧 - Dashboard + Export completati
+**% Completamento Totale Progetto:** ~68%
 
 ---
 
 ## **📝 LESSONS LEARNED**
 
-### Supabase Table Permissions (CRITICAL)
+### 1. Supabase Table Permissions (CRITICAL)
 **Problema:** Nuove tabelle create via migration SQL non hanno automaticamente permessi per il service_role.
 
 **Soluzione:** Aggiungere sempre GRANT dopo CREATE TABLE:
@@ -279,6 +316,42 @@ GRANT ALL ON TABLE table_name TO authenticated;
 **Sintomi:** `permission denied for table` (error code 42501) anche con RLS disabilitato.
 
 **Riferimento:** Vedi `CLAUDE.md` sezione "Supabase Table Permissions" per template completo.
+
+---
+
+### 2. PostgreSQL Functions - Always Verify Column Names (CRITICAL)
+**Problema:** Le funzioni PostgreSQL falliscono se referenziano colonne che non esistono.
+
+**Soluzione:** Prima di creare funzioni che fanno query su tabelle:
+1. Verifica SEMPRE la struttura effettiva della tabella con query SELECT
+2. Non assumere nomi di colonne standard (es. `is_active` vs `active`)
+3. Controlla relazioni tra tabelle (alcuni campi potrebbero essere denormalizzati)
+4. Testa le funzioni con dati reali prima del deploy
+
+**Esempio da Analytics:**
+- ❌ Assunto: `delivered_at` → ✅ Realtà: `actual_delivery`, `date_of_arrival`, `arrival_date`
+- ❌ Assunto: `is_active` → ✅ Realtà: `active`
+- ❌ Assunto: JOIN con shipments per costs → ✅ Realtà: `organization_id` già presente
+
+**Best Practice:** Creare script di test che verificano:
+```javascript
+// check-table-columns.mjs
+const { data } = await supabase.from('table_name').select('*').limit(1)
+console.log('Columns:', Object.keys(data))
+```
+
+---
+
+### 3. Large Supabase Migrations - Apply in Chunks
+**Problema:** Copiare intere migration SQL di 400+ righe nel SQL Editor spesso fallisce silenziosamente.
+
+**Soluzione:** Applicare migrations statement per statement o in gruppi logici:
+1. Una CREATE TABLE alla volta con i suoi INDEX e GRANT
+2. Policies separate dopo tutte le tabelle
+3. Funzioni PostgreSQL separate alla fine
+4. Verificare creazione dopo ogni step
+
+**Tool utili:** Script Node.js per verificare esistenza tabelle dopo migration.
 
 ---
 
