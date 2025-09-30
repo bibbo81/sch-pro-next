@@ -8,9 +8,14 @@ export async function isSuperAdmin(): Promise<boolean> {
 
     if (!user) return false
 
-    // For now, we'll check if the user email matches the expected super admin
-    // In a real implementation, you'd check against the super_admins table
-    return user.email === 'fabrizio.cagnucci@gmail.com'
+    // Check against super_admins table
+    const { data: superAdmin } = await supabase
+      .from('super_admins')
+      .select('id')
+      .eq('user_id', user.id)
+      .single()
+
+    return !!superAdmin
   } catch (error) {
     console.error('Error checking super admin status:', error)
     return false
@@ -26,8 +31,14 @@ export async function requireSuperAdmin() {
     throw new Error('Authentication required')
   }
 
-  // Check if the user email matches the expected super admin
-  if (session.user.email !== 'fabrizio.cagnucci@gmail.com') {
+  // Check against super_admins table
+  const { data: superAdmin, error } = await supabase
+    .from('super_admins')
+    .select('id')
+    .eq('user_id', session.user.id)
+    .single()
+
+  if (error || !superAdmin) {
     throw new Error('Super admin access required')
   }
 
