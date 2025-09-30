@@ -163,13 +163,18 @@ export default function PerformancePage() {
     )
   }
 
+  // Check if we have zero data
+  const hasNoData = metrics.summary.totalRequests === 0
+
   // Prepare chart data
   const timeSeriesChartData = {
-    labels: metrics.timeSeries.map(d => new Date(d.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })),
+    labels: metrics.timeSeries.length > 0
+      ? metrics.timeSeries.map(d => new Date(d.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))
+      : ['No data'],
     datasets: [
       {
         label: 'Requests',
-        data: metrics.timeSeries.map(d => d.requests),
+        data: metrics.timeSeries.length > 0 ? metrics.timeSeries.map(d => d.requests) : [0],
         borderColor: 'rgb(59, 130, 246)',
         backgroundColor: 'rgba(59, 130, 246, 0.1)',
         fill: true,
@@ -177,7 +182,7 @@ export default function PerformancePage() {
       },
       {
         label: 'Errors',
-        data: metrics.timeSeries.map(d => d.errors),
+        data: metrics.timeSeries.length > 0 ? metrics.timeSeries.map(d => d.errors) : [0],
         borderColor: 'rgb(239, 68, 68)',
         backgroundColor: 'rgba(239, 68, 68, 0.1)',
         fill: true,
@@ -187,11 +192,13 @@ export default function PerformancePage() {
   }
 
   const responseTimeChartData = {
-    labels: metrics.timeSeries.map(d => new Date(d.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })),
+    labels: metrics.timeSeries.length > 0
+      ? metrics.timeSeries.map(d => new Date(d.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))
+      : ['No data'],
     datasets: [
       {
         label: 'Avg Response Time (ms)',
-        data: metrics.timeSeries.map(d => d.avgResponseTime),
+        data: metrics.timeSeries.length > 0 ? metrics.timeSeries.map(d => d.avgResponseTime) : [0],
         borderColor: 'rgb(34, 197, 94)',
         backgroundColor: 'rgba(34, 197, 94, 0.1)',
         fill: true,
@@ -201,11 +208,15 @@ export default function PerformancePage() {
   }
 
   const endpointChartData = {
-    labels: metrics.endpointBreakdown.slice(0, 10).map(e => e.endpoint.substring(0, 30)),
+    labels: metrics.endpointBreakdown.length > 0
+      ? metrics.endpointBreakdown.slice(0, 10).map(e => e.endpoint.substring(0, 30))
+      : ['No data'],
     datasets: [
       {
         label: 'Requests',
-        data: metrics.endpointBreakdown.slice(0, 10).map(e => e.requests),
+        data: metrics.endpointBreakdown.length > 0
+          ? metrics.endpointBreakdown.slice(0, 10).map(e => e.requests)
+          : [0],
         backgroundColor: 'rgba(59, 130, 246, 0.8)',
       },
     ],
@@ -248,6 +259,24 @@ export default function PerformancePage() {
           </Button>
         ))}
       </div>
+
+      {/* No Data Warning */}
+      {hasNoData && (
+        <Card className="mb-6 border-2 border-yellow-500 bg-yellow-50 dark:bg-yellow-950">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="h-5 w-5 text-yellow-600" />
+              <div>
+                <p className="font-semibold text-yellow-800 dark:text-yellow-200">No Performance Data Available</p>
+                <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
+                  There are no API performance logs for the selected time range.
+                  Performance data will appear here once API calls are logged to the system.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

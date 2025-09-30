@@ -49,7 +49,31 @@ export async function GET(request: Request) {
 
     if (error) {
       console.error('Error fetching performance logs:', error)
-      return NextResponse.json({ error: 'Failed to fetch logs' }, { status: 500 })
+      return NextResponse.json({
+        error: 'Failed to fetch logs',
+        details: error.message,
+        code: error.code
+      }, { status: 500 })
+    }
+
+    // If no logs, return empty metrics structure
+    if (!logs || logs.length === 0) {
+      return NextResponse.json({
+        summary: {
+          totalRequests: 0,
+          errorCount: 0,
+          errorRate: '0.00',
+          avgResponseTime: 0,
+          maxResponseTime: 0,
+          minResponseTime: 0,
+          p95ResponseTime: 0,
+          p99ResponseTime: 0,
+          timeRange,
+        },
+        endpointBreakdown: [],
+        timeSeries: [],
+        slowQueries: [],
+      })
     }
 
     // Calculate metrics
