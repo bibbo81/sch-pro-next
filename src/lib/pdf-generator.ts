@@ -48,7 +48,9 @@ export async function generateReportPDF(data: ReportData): Promise<Buffer> {
   // Shipments Section
   if (data.metrics.shipments) {
     doc.setFontSize(14)
-    doc.text('📦 Spedizioni', 20, yPosition)
+    doc.setFont(undefined, 'bold')
+    doc.text('SPEDIZIONI', 20, yPosition)
+    doc.setFont(undefined, 'normal')
     yPosition += 10
 
     const shipmentsData = [
@@ -73,7 +75,9 @@ export async function generateReportPDF(data: ReportData): Promise<Buffer> {
   // Products Section
   if (data.metrics.products) {
     doc.setFontSize(14)
-    doc.text('📋 Prodotti', 20, yPosition)
+    doc.setFont(undefined, 'bold')
+    doc.text('PRODOTTI', 20, yPosition)
+    doc.setFont(undefined, 'normal')
     yPosition += 10
 
     const productsData = [
@@ -96,7 +100,9 @@ export async function generateReportPDF(data: ReportData): Promise<Buffer> {
   // Costs Section
   if (data.metrics.costs) {
     doc.setFontSize(14)
-    doc.text('💰 Costi', 20, yPosition)
+    doc.setFont(undefined, 'bold')
+    doc.text('COSTI', 20, yPosition)
+    doc.setFont(undefined, 'normal')
     yPosition += 10
 
     const costsData = [
