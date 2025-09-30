@@ -18,7 +18,8 @@ import {
   LogOut,
   X,
   Home,
-  Users
+  Users,
+  Layout
 } from 'lucide-react'
 
 const navigation = [
@@ -29,6 +30,7 @@ const navigation = [
   { name: 'Spedizionieri', href: '/dashboard/carriers', icon: Truck },
   { name: 'Costi', href: '/dashboard/costs', icon: DollarSign },
   { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
+  { name: 'Dashboard Custom', href: '/dashboard/custom-dashboards', icon: Layout },
   { name: 'Utenti', href: '/dashboard/users', icon: Users },
 ]
 
