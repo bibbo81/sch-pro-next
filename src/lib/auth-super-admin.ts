@@ -3,18 +3,10 @@ import { createSupabaseServer, createSupabaseClient } from './auth'
 // Check if current user is a super admin
 export async function isSuperAdmin(): Promise<boolean> {
   try {
-    const supabase = await createSupabaseClient() // Use client for auth check
+    const supabase = await createSupabaseClient()
     const { data: { user } } = await supabase.auth.getUser()
 
-    if (!user) {
-      console.log('[isSuperAdmin] No user found')
-      return false
-    }
-
-    console.log('[isSuperAdmin] Checking user:', user.id, user.email)
-
-    // TEMPORARY: Check both database AND hardcoded email
-    const isHardcodedAdmin = user.email === 'fabrizio.cagnucci@gmail.com'
+    if (!user) return false
 
     // Check against super_admins table
     const { data: superAdmin, error } = await supabase
@@ -25,33 +17,24 @@ export async function isSuperAdmin(): Promise<boolean> {
 
     if (error) {
       console.error('[isSuperAdmin] Database error:', error)
-      // Fallback to hardcoded check if database fails
-      return isHardcodedAdmin
+      return false
     }
 
-    const result = !!superAdmin || isHardcodedAdmin
-    console.log('[isSuperAdmin] Result:', result, { superAdmin, isHardcodedAdmin })
-    return result
+    return !!superAdmin
   } catch (error) {
-    console.error('[isSuperAdmin] Error checking super admin status:', error)
+    console.error('[isSuperAdmin] Unexpected error:', error)
     return false
   }
 }
 
 // Require super admin access (throws error if not super admin)
 export async function requireSuperAdmin() {
-  const supabase = await createSupabaseServer() // Use server for API routes
+  const supabase = await createSupabaseServer()
   const { data: { session } } = await supabase.auth.getSession()
 
   if (!session?.user) {
-    console.error('[requireSuperAdmin] No session found')
     throw new Error('Authentication required')
   }
-
-  console.log('[requireSuperAdmin] Checking user:', session.user.id, session.user.email)
-
-  // TEMPORARY: Check both database AND hardcoded email for compatibility
-  const isHardcodedAdmin = session.user.email === 'fabrizio.cagnucci@gmail.com'
 
   // Check against super_admins table
   const { data: superAdmin, error } = await supabase
@@ -60,23 +43,15 @@ export async function requireSuperAdmin() {
     .eq('user_id', session.user.id)
     .maybeSingle()
 
-  console.log('[requireSuperAdmin] Query result:', { superAdmin, error, isHardcodedAdmin })
-
   if (error) {
     console.error('[requireSuperAdmin] Database error:', error)
-    // If database check fails but is hardcoded admin, allow access
-    if (!isHardcodedAdmin) {
-      throw new Error('Super admin access required - database error')
-    }
-  }
-
-  // Allow access if EITHER database check succeeds OR is hardcoded admin
-  if (!superAdmin && !isHardcodedAdmin) {
-    console.error('[requireSuperAdmin] User not authorized:', session.user.email)
     throw new Error('Super admin access required')
   }
 
-  console.log('[requireSuperAdmin] ✅ Super admin verified:', session.user.email)
+  if (!superAdmin) {
+    throw new Error('Super admin access required')
+  }
+
   return { user: session.user, isSuperAdmin: true }
 }
 
