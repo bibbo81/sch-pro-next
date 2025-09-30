@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
       plan_id,
       status = 'trial',
       billing_cycle = 'monthly',
-      trial_days = 14,
+      trial_days = 10,
       metadata = {}
     } = body
 

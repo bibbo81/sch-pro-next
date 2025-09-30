@@ -222,7 +222,7 @@ export default function BillingPage() {
             <ul className="list-disc list-inside space-y-1 ml-4">
               <li>Gestione completa piani e abbonamenti</li>
               <li>Tracking utilizzo e limiti per organizzazione</li>
-              <li>Trial period di 14 giorni</li>
+              <li>Trial period di 10 giorni</li>
               <li>Supporto cicli mensili e annuali</li>
             </ul>
             <p className="pt-2">

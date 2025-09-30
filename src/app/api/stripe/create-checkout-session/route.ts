@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
           organization_id: organizationId,
           billing_cycle
         },
-        trial_period_days: 14 // 14 days trial
+        trial_period_days: 10 // 10 days trial
       }
     })
 
