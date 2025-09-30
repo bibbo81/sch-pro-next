@@ -107,6 +107,12 @@ export default async function SuperAdminDashboard() {
                 System Monitoring
               </Button>
             </Link>
+            <Link href="/super-admin/performance" className="block">
+              <Button className="w-full">
+                <TrendingUp className="mr-2 h-4 w-4" />
+                Performance Analytics
+              </Button>
+            </Link>
             <Link href="/super-admin/audit" className="block">
               <Button variant="outline" className="w-full">
                 <Settings className="mr-2 h-4 w-4" />
