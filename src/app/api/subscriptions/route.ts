@@ -114,9 +114,16 @@ export async function POST(request: NextRequest) {
       : null
 
     const current_period_start = now.toISOString()
-    const current_period_end = billing_cycle === 'monthly'
-      ? new Date(now.getFullYear(), now.getMonth() + 1, now.getDate()).toISOString()
-      : new Date(now.getFullYear() + 1, now.getMonth(), now.getDate()).toISOString()
+
+    // Lifetime subscriptions have no end date (100 years in the future)
+    let current_period_end
+    if (billing_cycle === 'lifetime') {
+      current_period_end = new Date(now.getFullYear() + 100, now.getMonth(), now.getDate()).toISOString()
+    } else if (billing_cycle === 'monthly') {
+      current_period_end = new Date(now.getFullYear(), now.getMonth() + 1, now.getDate()).toISOString()
+    } else {
+      current_period_end = new Date(now.getFullYear() + 1, now.getMonth(), now.getDate()).toISOString()
+    }
 
     // Create subscription
     const { data: subscription, error } = await supabase

@@ -88,8 +88,9 @@ export default function SubscriptionsPage() {
   const [newSubscription, setNewSubscription] = useState({
     organization_id: '',
     plan_id: '',
-    billing_cycle: 'monthly' as 'monthly' | 'yearly',
-    trial_days: 10
+    billing_cycle: 'monthly' as 'monthly' | 'yearly' | 'lifetime',
+    trial_days: 10,
+    status: 'trial' as 'active' | 'trial'
   })
 
   useEffect(() => {
@@ -146,7 +147,8 @@ export default function SubscriptionsPage() {
           organization_id: '',
           plan_id: '',
           billing_cycle: 'monthly',
-          trial_days: 10
+          trial_days: 10,
+          status: 'trial'
         })
       } else {
         const error = await response.json()
@@ -498,7 +500,15 @@ export default function SubscriptionsPage() {
               <Label htmlFor="billing_cycle">Ciclo di Fatturazione *</Label>
               <Select
                 value={newSubscription.billing_cycle}
-                onValueChange={(value: 'monthly' | 'yearly') => setNewSubscription({ ...newSubscription, billing_cycle: value })}
+                onValueChange={(value: 'monthly' | 'yearly' | 'lifetime') => {
+                  const updates: any = { billing_cycle: value }
+                  // For lifetime, automatically set to active with no trial
+                  if (value === 'lifetime') {
+                    updates.status = 'active'
+                    updates.trial_days = 0
+                  }
+                  setNewSubscription({ ...newSubscription, ...updates })
+                }}
               >
                 <SelectTrigger id="billing_cycle">
                   <SelectValue />
@@ -506,21 +516,56 @@ export default function SubscriptionsPage() {
                 <SelectContent>
                   <SelectItem value="monthly">Mensile</SelectItem>
                   <SelectItem value="yearly">Annuale</SelectItem>
+                  <SelectItem value="lifetime">🎁 Lifetime (Gratuito Permanente)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="trial_days">Giorni di Prova</Label>
-              <Input
-                id="trial_days"
-                type="number"
-                min="0"
-                value={newSubscription.trial_days}
-                onChange={(e) => setNewSubscription({ ...newSubscription, trial_days: Number(e.target.value) })}
-              />
-              <p className="text-xs text-muted-foreground">0 = nessun trial period</p>
-            </div>
+            {newSubscription.billing_cycle !== 'lifetime' && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="status">Stato Iniziale *</Label>
+                  <Select
+                    value={newSubscription.status}
+                    onValueChange={(value: 'active' | 'trial') => setNewSubscription({ ...newSubscription, status: value })}
+                  >
+                    <SelectTrigger id="status">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="trial">Trial (Prova)</SelectItem>
+                      <SelectItem value="active">Active (Attivo)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {newSubscription.status === 'trial' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="trial_days">Giorni di Prova</Label>
+                    <Input
+                      id="trial_days"
+                      type="number"
+                      min="0"
+                      value={newSubscription.trial_days}
+                      onChange={(e) => setNewSubscription({ ...newSubscription, trial_days: Number(e.target.value) })}
+                    />
+                    <p className="text-xs text-muted-foreground">0 = nessun trial period</p>
+                  </div>
+                )}
+              </>
+            )}
+
+            {newSubscription.billing_cycle === 'lifetime' && (
+              <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                <p className="text-sm text-green-800 font-medium">
+                  ✨ Piano Lifetime selezionato
+                </p>
+                <p className="text-xs text-green-700 mt-1">
+                  L'organizzazione avrà accesso permanente e gratuito senza scadenza.
+                  Perfetto per partner e organizzazioni VIP.
+                </p>
+              </div>
+            )}
           </div>
 
           <DialogFooter>
