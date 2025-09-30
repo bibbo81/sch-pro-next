@@ -1,5 +1,6 @@
 'use client'
 
+// Subscriptions management page for super-admin
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
