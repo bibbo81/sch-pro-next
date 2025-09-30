@@ -35,8 +35,10 @@ import {
   Download,
   Calendar,
   BarChart3,
-  Loader2
+  Loader2,
+  FileText
 } from 'lucide-react'
+import Link from 'next/link'
 
 interface Metrics {
   shipments?: {
@@ -184,6 +186,13 @@ export default function AnalyticsPage() {
         </div>
 
         <div className="flex gap-2">
+          <Link href="/dashboard/analytics/reports">
+            <Button variant="outline">
+              <FileText className="w-4 h-4 mr-2" />
+              Report Automatici
+            </Button>
+          </Link>
+
           <Select value={dateRange} onValueChange={setDateRange}>
             <SelectTrigger className="w-[180px]">
               <Calendar className="w-4 h-4 mr-2" />
