@@ -247,7 +247,7 @@ export default function SubscriptionsPage() {
         <div className="p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Link href="/super-admin">
+              <Link href="/super-admin/billing">
                 <Button variant="ghost" size="icon">
                   <ArrowLeft className="w-4 h-4" />
                 </Button>
@@ -481,7 +481,19 @@ export default function SubscriptionsPage() {
               <Label htmlFor="plan">Piano *</Label>
               <Select
                 value={newSubscription.plan_id}
-                onValueChange={(value) => setNewSubscription({ ...newSubscription, plan_id: value })}
+                onValueChange={(value) => {
+                  const selectedPlan = plans.find(p => p.id === value)
+                  const updates: any = { plan_id: value }
+
+                  // If Partner plan (free/€0), auto-set to lifetime and active
+                  if (selectedPlan?.slug === 'partner' || selectedPlan?.price_monthly === 0) {
+                    updates.billing_cycle = 'lifetime'
+                    updates.status = 'active'
+                    updates.trial_days = 0
+                  }
+
+                  setNewSubscription({ ...newSubscription, ...updates })
+                }}
               >
                 <SelectTrigger id="plan">
                   <SelectValue placeholder="Seleziona piano" />
@@ -490,6 +502,7 @@ export default function SubscriptionsPage() {
                   {plans.map((plan) => (
                     <SelectItem key={plan.id} value={plan.id}>
                       {plan.name} - €{plan.price_monthly}/mese
+                      {plan.slug === 'partner' && ' 🎁'}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -500,6 +513,7 @@ export default function SubscriptionsPage() {
               <Label htmlFor="billing_cycle">Ciclo di Fatturazione *</Label>
               <Select
                 value={newSubscription.billing_cycle}
+                disabled={newSubscription.billing_cycle === 'lifetime'}
                 onValueChange={(value: 'monthly' | 'yearly' | 'lifetime') => {
                   const updates: any = { billing_cycle: value }
                   // For lifetime, automatically set to active with no trial
@@ -519,6 +533,11 @@ export default function SubscriptionsPage() {
                   <SelectItem value="lifetime">🎁 Lifetime (Gratuito Permanente)</SelectItem>
                 </SelectContent>
               </Select>
+              {newSubscription.billing_cycle === 'lifetime' && (
+                <p className="text-xs text-muted-foreground">
+                  Piano Partner selezionato - billing cycle impostato automaticamente
+                </p>
+              )}
             </div>
 
             {newSubscription.billing_cycle !== 'lifetime' && (

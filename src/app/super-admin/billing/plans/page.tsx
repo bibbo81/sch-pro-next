@@ -181,7 +181,7 @@ export default function BillingPlansPage() {
       <div className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-10">
         <div className="flex items-center justify-between p-6">
           <div className="flex items-center gap-4">
-            <Link href="/super-admin">
+            <Link href="/super-admin/billing">
               <Button variant="ghost" size="icon">
                 <ArrowLeft className="w-4 h-4" />
               </Button>
