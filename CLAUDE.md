@@ -136,3 +136,48 @@ All API routes follow this structure:
 - RLS policy conflicts
 
 **Never assume database structure - always verify first to prevent runtime errors and deployment issues.**
+
+## ⚠️ CRITICAL: Supabase Table Permissions
+
+**AFTER creating new tables in Supabase migrations:**
+
+### Required GRANT statements for every new table:
+
+```sql
+-- Always add these GRANT statements after CREATE TABLE
+GRANT ALL ON TABLE table_name TO service_role;
+GRANT ALL ON TABLE table_name TO authenticated;
+GRANT ALL ON TABLE table_name TO anon;  -- Only if table needs public access
+```
+
+### Why this is critical:
+- Supabase service role key **does NOT automatically** have permissions on new tables
+- Even with RLS disabled, explicit GRANTs are required
+- Without GRANTs, API routes using service_role will get `permission denied` errors (code 42501)
+- This applies to ALL tables created via SQL migrations
+
+### Migration template:
+
+```sql
+-- 1. Create table
+CREATE TABLE table_name (...);
+
+-- 2. Create indexes
+CREATE INDEX ...;
+
+-- 3. Enable RLS (optional)
+ALTER TABLE table_name ENABLE ROW LEVEL SECURITY;
+
+-- 4. Create policies (optional)
+CREATE POLICY ...;
+
+-- 5. ⚠️ CRITICAL: Grant permissions
+GRANT ALL ON TABLE table_name TO service_role;
+GRANT ALL ON TABLE table_name TO authenticated;
+```
+
+### Troubleshooting permission errors:
+If you get `permission denied for table` errors:
+1. Check if table exists: `SELECT * FROM table_name LIMIT 1;` in SQL Editor
+2. Add missing GRANTs using the template above
+3. Test with service_role endpoint before deploying

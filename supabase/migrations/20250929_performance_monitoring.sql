@@ -99,3 +99,13 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Create a scheduled job to clean old logs (requires pg_cron extension)
 -- This can be set up manually in Supabase dashboard if pg_cron is available
+
+-- ⚠️ CRITICAL: Grant permissions to service role
+GRANT ALL ON TABLE api_performance_logs TO service_role;
+GRANT ALL ON TABLE api_performance_logs TO authenticated;
+
+GRANT ALL ON TABLE system_metrics TO service_role;
+GRANT ALL ON TABLE system_metrics TO authenticated;
+
+GRANT ALL ON TABLE performance_summary TO service_role;
+GRANT ALL ON TABLE performance_summary TO authenticated;

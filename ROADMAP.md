@@ -205,4 +205,21 @@
 
 ---
 
+## **📝 LESSONS LEARNED**
+
+### Supabase Table Permissions (CRITICAL)
+**Problema:** Nuove tabelle create via migration SQL non hanno automaticamente permessi per il service_role.
+
+**Soluzione:** Aggiungere sempre GRANT dopo CREATE TABLE:
+```sql
+GRANT ALL ON TABLE table_name TO service_role;
+GRANT ALL ON TABLE table_name TO authenticated;
+```
+
+**Sintomi:** `permission denied for table` (error code 42501) anche con RLS disabilitato.
+
+**Riferimento:** Vedi `CLAUDE.md` sezione "Supabase Table Permissions" per template completo.
+
+---
+
 *Questo documento verrà aggiornato ad ogni milestone completato*
