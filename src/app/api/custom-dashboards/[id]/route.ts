@@ -45,7 +45,12 @@ export async function PATCH(
     const updateData: any = {}
     if (name !== undefined) updateData.name = name
     if (description !== undefined) updateData.description = description
-    if (layout !== undefined) updateData.layout = layout
+    if (layout !== undefined) {
+      // Format layout as JSONB if it's a string
+      updateData.layout = typeof layout === 'string'
+        ? { type: layout, columns: 12 }
+        : layout
+    }
     if (is_default !== undefined) {
       updateData.is_default = is_default
 

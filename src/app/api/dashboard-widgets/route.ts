@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
     const supabase = await createSupabaseServer()
     const body = await request.json()
 
-    const { dashboard_id, widget_type, title, config, position } = body
+    const { dashboard_id, widget_type, title, metric_type, data_config, position } = body
 
     if (!dashboard_id || !widget_type || !title) {
       return NextResponse.json(
@@ -35,7 +35,8 @@ export async function POST(request: NextRequest) {
         dashboard_id,
         widget_type,
         title,
-        config: config || {},
+        metric_type: metric_type || widget_type, // Use widget_type as default metric_type
+        data_config: data_config || {},
         position: position || { x: 0, y: 0, w: 4, h: 4 }
       })
       .select()

@@ -11,7 +11,7 @@ export async function PATCH(
     const supabase = await createSupabaseServer()
     const body = await request.json()
 
-    const { title, config, position } = body
+    const { title, data_config, position } = body
 
     // Verify widget belongs to organization dashboard
     const { data: widget } = await supabase
@@ -26,7 +26,7 @@ export async function PATCH(
 
     const updateData: any = {}
     if (title !== undefined) updateData.title = title
-    if (config !== undefined) updateData.config = config
+    if (data_config !== undefined) updateData.data_config = data_config
     if (position !== undefined) updateData.position = position
 
     const { data: updatedWidget, error } = await supabase

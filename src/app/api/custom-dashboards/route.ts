@@ -35,13 +35,27 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 })
     }
 
+    // Generate slug from name
+    const slug = name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+      + '-' + Date.now()
+
+    // Format layout as JSONB
+    const layoutConfig = {
+      type: layout || 'grid',
+      columns: 12
+    }
+
     const { data: dashboard, error } = await supabase
       .from('custom_dashboards')
       .insert({
         organization_id: organizationId,
         name,
         description,
-        layout: layout || 'grid',
+        slug,
+        layout: layoutConfig,
         is_default: false,
         created_by: user.id
       })
