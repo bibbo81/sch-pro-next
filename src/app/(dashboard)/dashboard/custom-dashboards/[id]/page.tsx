@@ -34,6 +34,11 @@ import {
   Loader2
 } from 'lucide-react'
 import Link from 'next/link'
+import WidgetKPI from '@/components/dashboard-widgets/WidgetKPI'
+import WidgetChart from '@/components/dashboard-widgets/WidgetChart'
+import WidgetShipments from '@/components/dashboard-widgets/WidgetShipments'
+import WidgetProducts from '@/components/dashboard-widgets/WidgetProducts'
+import WidgetCosts from '@/components/dashboard-widgets/WidgetCosts'
 
 interface Widget {
   id: string
@@ -142,11 +147,6 @@ export default function DashboardDetailPage() {
     }
   }
 
-  const getWidgetIcon = (type: string) => {
-    const widgetType = WIDGET_TYPES.find(w => w.value === type)
-    return widgetType ? widgetType.icon : BarChart3
-  }
-
   if (loading) {
     return (
       <div className="p-8 flex items-center justify-center">
@@ -210,39 +210,55 @@ export default function DashboardDetailPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {dashboard.dashboard_widgets.map((widget) => {
-            const Icon = getWidgetIcon(widget.widget_type)
+            const renderWidget = () => {
+              const commonProps = {
+                title: widget.title,
+                metric_type: widget.metric_type,
+                data_config: widget.data_config
+              }
+
+              switch (widget.widget_type) {
+                case 'kpi':
+                  return <WidgetKPI {...commonProps} />
+                case 'chart':
+                  return <WidgetChart {...commonProps} />
+                case 'shipments':
+                  return <WidgetShipments {...commonProps} />
+                case 'products':
+                  return <WidgetProducts {...commonProps} />
+                case 'costs':
+                  return <WidgetCosts {...commonProps} />
+                default:
+                  return (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-lg">{widget.title}</CardTitle>
+                        <CardDescription>
+                          <Badge variant="outline">{widget.widget_type}</Badge>
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-center py-8 text-gray-400">
+                          Tipo widget non supportato: {widget.widget_type}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+              }
+            }
+
             return (
-              <Card key={widget.id}>
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-2">
-                      <Icon className="w-5 h-5 text-blue-500" />
-                      <CardTitle className="text-lg">{widget.title}</CardTitle>
-                    </div>
-                    <div className="flex gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteWidget(widget.id)}
-                      >
-                        <Trash2 className="w-4 h-4 text-red-500" />
-                      </Button>
-                    </div>
-                  </div>
-                  <CardDescription>
-                    <Badge variant="outline">{widget.widget_type}</Badge>
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center py-8 text-gray-400">
-                    Widget Preview
-                    <br />
-                    <span className="text-xs">
-                      Tipo: {widget.widget_type}
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
+              <div key={widget.id} className="relative">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="absolute top-2 right-2 z-10"
+                  onClick={() => handleDeleteWidget(widget.id)}
+                >
+                  <Trash2 className="w-4 h-4 text-red-500" />
+                </Button>
+                {renderWidget()}
+              </div>
             )
           })}
         </div>
