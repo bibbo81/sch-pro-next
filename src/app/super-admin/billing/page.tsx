@@ -63,29 +63,23 @@ export default function BillingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
-      {/* Header */}
-      <div className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-10">
-        <div className="p-6">
-          <div className="flex items-center gap-4">
-            <Link href="/super-admin">
-              <Button variant="ghost" size="icon">
-                <ArrowLeft className="w-4 h-4" />
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                Billing & Subscriptions
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                Gestione completa piani e abbonamenti
-              </p>
-            </div>
-          </div>
+    <div className="container mx-auto py-8">
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-3xl font-bold">Billing & Subscriptions</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">
+            Gestione completa piani e abbonamenti
+          </p>
         </div>
+        <Link href="/super-admin">
+          <Button variant="outline">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Dashboard
+          </Button>
+        </Link>
       </div>
 
-      <div className="p-6 max-w-7xl mx-auto space-y-6">
+      <div className="space-y-6">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card className="border-l-4 border-l-purple-500">
@@ -161,8 +155,8 @@ export default function BillingPage() {
           <Card className="group hover:shadow-lg transition-all duration-300 hover:border-purple-200">
             <CardHeader>
               <div className="flex items-center gap-3">
-                <div className="p-3 bg-gradient-to-br from-purple-100 to-blue-100 rounded-lg group-hover:scale-110 transition-transform">
-                  <DollarSign className="w-6 h-6 text-purple-600" />
+                <div className="p-3 bg-primary/10 rounded-lg group-hover:scale-110 transition-transform">
+                  <DollarSign className="w-6 h-6 text-primary" />
                 </div>
                 <div>
                   <CardTitle>Subscription Plans</CardTitle>
@@ -175,7 +169,7 @@ export default function BillingPage() {
                 Crea, modifica ed elimina i piani di abbonamento. Configura prezzi, limiti e funzionalità per ciascun piano.
               </p>
               <Link href="/super-admin/billing/plans">
-                <Button className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
+                <Button className="w-full">
                   Gestisci Piani
                 </Button>
               </Link>
@@ -185,8 +179,8 @@ export default function BillingPage() {
           <Card className="group hover:shadow-lg transition-all duration-300 hover:border-blue-200">
             <CardHeader>
               <div className="flex items-center gap-3">
-                <div className="p-3 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-lg group-hover:scale-110 transition-transform">
-                  <CreditCard className="w-6 h-6 text-blue-600" />
+                <div className="p-3 bg-primary/10 rounded-lg group-hover:scale-110 transition-transform">
+                  <CreditCard className="w-6 h-6 text-primary" />
                 </div>
                 <div>
                   <CardTitle>Subscriptions</CardTitle>
@@ -199,7 +193,7 @@ export default function BillingPage() {
                 Visualizza tutti gli abbonamenti, monitora lo stato, gestisci trial e rinnovi. Analizza MRR e metriche di business.
               </p>
               <Link href="/super-admin/billing/subscriptions">
-                <Button className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700">
+                <Button className="w-full">
                   Gestisci Abbonamenti
                 </Button>
               </Link>
