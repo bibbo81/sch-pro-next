@@ -177,30 +177,23 @@ export default function BillingPlansPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="border-b bg-white sticky top-0 z-10 shadow-sm">
-        <div className="flex items-center justify-between p-6">
-          <div className="flex items-center gap-4">
-            <Link href="/super-admin/billing">
-              <Button variant="ghost" size="icon">
-                <ArrowLeft className="w-4 h-4" />
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                Gestione Piani
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                Configura i piani di abbonamento disponibili
-              </p>
-            </div>
-          </div>
-          <Button
-            onClick={() => setIsCreateOpen(true)}
-            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-          >
-            <Plus className="w-4 h-4 mr-2" />
+    <div className="container mx-auto py-8">
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-3xl font-bold">Gestione Piani</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">
+            Configura i piani di abbonamento disponibili
+          </p>
+        </div>
+        <div className="flex space-x-2">
+          <Link href="/super-admin/billing">
+            <Button variant="outline">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back
+            </Button>
+          </Link>
+          <Button onClick={() => setIsCreateOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
             Nuovo Piano
           </Button>
         </div>
