@@ -6,18 +6,30 @@ export async function isSuperAdmin(): Promise<boolean> {
     const supabase = await createSupabaseClient() // Use client for auth check
     const { data: { user } } = await supabase.auth.getUser()
 
-    if (!user) return false
+    if (!user) {
+      console.log('[isSuperAdmin] No user found')
+      return false
+    }
+
+    console.log('[isSuperAdmin] Checking user:', user.id, user.email)
 
     // Check against super_admins table
-    const { data: superAdmin } = await supabase
+    const { data: superAdmin, error } = await supabase
       .from('super_admins')
       .select('id')
       .eq('user_id', user.id)
-      .single()
+      .maybeSingle() // Use maybeSingle() instead of single()
 
-    return !!superAdmin
+    if (error) {
+      console.error('[isSuperAdmin] Database error:', error)
+      return false
+    }
+
+    const result = !!superAdmin
+    console.log('[isSuperAdmin] Result:', result, superAdmin)
+    return result
   } catch (error) {
-    console.error('Error checking super admin status:', error)
+    console.error('[isSuperAdmin] Error checking super admin status:', error)
     return false
   }
 }
@@ -28,20 +40,32 @@ export async function requireSuperAdmin() {
   const { data: { session } } = await supabase.auth.getSession()
 
   if (!session?.user) {
+    console.error('[requireSuperAdmin] No session found')
     throw new Error('Authentication required')
   }
+
+  console.log('[requireSuperAdmin] Checking user:', session.user.id, session.user.email)
 
   // Check against super_admins table
   const { data: superAdmin, error } = await supabase
     .from('super_admins')
     .select('id')
     .eq('user_id', session.user.id)
-    .single()
+    .maybeSingle() // Use maybeSingle() instead of single() to avoid error on 0 rows
 
-  if (error || !superAdmin) {
+  console.log('[requireSuperAdmin] Query result:', { superAdmin, error })
+
+  if (error) {
+    console.error('[requireSuperAdmin] Database error:', error)
+    throw new Error('Super admin access required - database error')
+  }
+
+  if (!superAdmin) {
+    console.error('[requireSuperAdmin] User not in super_admins table:', session.user.email)
     throw new Error('Super admin access required')
   }
 
+  console.log('[requireSuperAdmin] ✅ Super admin verified:', session.user.email)
   return { user: session.user, isSuperAdmin: true }
 }
 
