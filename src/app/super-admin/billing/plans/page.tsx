@@ -4,6 +4,17 @@ import { useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { ArrowLeft, Plus, Edit, Trash2, Check, X, Sparkles, TrendingUp, Crown, Zap } from 'lucide-react'
 import Link from 'next/link'
 
@@ -32,6 +43,21 @@ export default function BillingPlansPage() {
   const [plans, setPlans] = useState<SubscriptionPlan[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedBilling, setSelectedBilling] = useState<'monthly' | 'yearly'>('monthly')
+  const [isCreateOpen, setIsCreateOpen] = useState(false)
+  const [isCreating, setIsCreating] = useState(false)
+  const [newPlan, setNewPlan] = useState({
+    name: '',
+    slug: '',
+    description: '',
+    price_monthly: 0,
+    price_yearly: 0,
+    max_shipments_per_month: 100,
+    max_products: 100,
+    max_users: 5,
+    max_trackings_per_day: 50,
+    max_storage_mb: 1000,
+    api_calls_per_month: 10000
+  })
 
   useEffect(() => {
     fetchPlans()
@@ -91,6 +117,64 @@ export default function BillingPlansPage() {
     return value.toString()
   }
 
+  const handleCreatePlan = async () => {
+    setIsCreating(true)
+    try {
+      const response = await fetch('/api/subscription-plans', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newPlan.name,
+          slug: newPlan.slug,
+          description: newPlan.description,
+          price_monthly: newPlan.price_monthly,
+          price_yearly: newPlan.price_yearly,
+          limits: {
+            max_shipments_per_month: newPlan.max_shipments_per_month,
+            max_products: newPlan.max_products,
+            max_users: newPlan.max_users,
+            max_trackings_per_day: newPlan.max_trackings_per_day,
+            max_storage_mb: newPlan.max_storage_mb,
+            api_calls_per_month: newPlan.api_calls_per_month
+          },
+          features: {
+            tracking: true,
+            products: true,
+            analytics: newPlan.price_monthly > 0,
+            priority_support: newPlan.price_monthly > 50
+          }
+        })
+      })
+
+      if (response.ok) {
+        setIsCreateOpen(false)
+        fetchPlans()
+        // Reset form
+        setNewPlan({
+          name: '',
+          slug: '',
+          description: '',
+          price_monthly: 0,
+          price_yearly: 0,
+          max_shipments_per_month: 100,
+          max_products: 100,
+          max_users: 5,
+          max_trackings_per_day: 50,
+          max_storage_mb: 1000,
+          api_calls_per_month: 10000
+        })
+      } else {
+        const error = await response.json()
+        alert(`Errore: ${error.error}`)
+      }
+    } catch (error) {
+      console.error('Error creating plan:', error)
+      alert('Errore durante la creazione del piano')
+    } finally {
+      setIsCreating(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
       {/* Header */}
@@ -111,7 +195,10 @@ export default function BillingPlansPage() {
               </p>
             </div>
           </div>
-          <Button className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
+          <Button
+            onClick={() => setIsCreateOpen(true)}
+            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+          >
             <Plus className="w-4 h-4 mr-2" />
             Nuovo Piano
           </Button>
@@ -262,6 +349,154 @@ export default function BillingPlansPage() {
           </div>
         )}
       </div>
+
+      {/* Create Plan Dialog */}
+      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Crea Nuovo Piano</DialogTitle>
+            <DialogDescription>
+              Configura un nuovo piano di abbonamento con limiti e prezzi personalizzati
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Nome Piano *</Label>
+                <Input
+                  id="name"
+                  placeholder="es. Premium"
+                  value={newPlan.name}
+                  onChange={(e) => setNewPlan({ ...newPlan, name: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="slug">Slug *</Label>
+                <Input
+                  id="slug"
+                  placeholder="es. premium"
+                  value={newPlan.slug}
+                  onChange={(e) => setNewPlan({ ...newPlan, slug: e.target.value.toLowerCase() })}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="description">Descrizione</Label>
+              <Textarea
+                id="description"
+                placeholder="Descrizione del piano..."
+                value={newPlan.description}
+                onChange={(e) => setNewPlan({ ...newPlan, description: e.target.value })}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="price_monthly">Prezzo Mensile (€)</Label>
+                <Input
+                  id="price_monthly"
+                  type="number"
+                  min="0"
+                  value={newPlan.price_monthly}
+                  onChange={(e) => setNewPlan({ ...newPlan, price_monthly: Number(e.target.value) })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="price_yearly">Prezzo Annuale (€)</Label>
+                <Input
+                  id="price_yearly"
+                  type="number"
+                  min="0"
+                  value={newPlan.price_yearly}
+                  onChange={(e) => setNewPlan({ ...newPlan, price_yearly: Number(e.target.value) })}
+                />
+              </div>
+            </div>
+
+            <div className="border-t pt-4 mt-4">
+              <h4 className="font-semibold mb-3">Limiti Risorse</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="max_shipments">Spedizioni/Mese</Label>
+                  <Input
+                    id="max_shipments"
+                    type="number"
+                    min="-1"
+                    value={newPlan.max_shipments_per_month}
+                    onChange={(e) => setNewPlan({ ...newPlan, max_shipments_per_month: Number(e.target.value) })}
+                  />
+                  <p className="text-xs text-muted-foreground">-1 = illimitato</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="max_products">Prodotti Max</Label>
+                  <Input
+                    id="max_products"
+                    type="number"
+                    min="-1"
+                    value={newPlan.max_products}
+                    onChange={(e) => setNewPlan({ ...newPlan, max_products: Number(e.target.value) })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="max_users">Utenti Max</Label>
+                  <Input
+                    id="max_users"
+                    type="number"
+                    min="1"
+                    value={newPlan.max_users}
+                    onChange={(e) => setNewPlan({ ...newPlan, max_users: Number(e.target.value) })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="max_trackings">Tracking/Giorno</Label>
+                  <Input
+                    id="max_trackings"
+                    type="number"
+                    min="-1"
+                    value={newPlan.max_trackings_per_day}
+                    onChange={(e) => setNewPlan({ ...newPlan, max_trackings_per_day: Number(e.target.value) })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="max_storage">Storage (MB)</Label>
+                  <Input
+                    id="max_storage"
+                    type="number"
+                    min="-1"
+                    value={newPlan.max_storage_mb}
+                    onChange={(e) => setNewPlan({ ...newPlan, max_storage_mb: Number(e.target.value) })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="api_calls">API Calls/Mese</Label>
+                  <Input
+                    id="api_calls"
+                    type="number"
+                    min="-1"
+                    value={newPlan.api_calls_per_month}
+                    onChange={(e) => setNewPlan({ ...newPlan, api_calls_per_month: Number(e.target.value) })}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCreateOpen(false)} disabled={isCreating}>
+              Annulla
+            </Button>
+            <Button
+              onClick={handleCreatePlan}
+              disabled={!newPlan.name || !newPlan.slug || isCreating}
+              className="bg-gradient-to-r from-purple-600 to-blue-600"
+            >
+              {isCreating ? 'Creazione...' : 'Crea Piano'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -5,6 +5,22 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import {
   ArrowLeft,
   Plus,
@@ -47,14 +63,39 @@ interface Subscription {
   }
 }
 
+interface SubscriptionPlan {
+  id: string
+  name: string
+  slug: string
+  price_monthly: number
+  price_yearly: number
+}
+
+interface Organization {
+  id: string
+  name: string
+}
+
 export default function SubscriptionsPage() {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
+  const [plans, setPlans] = useState<SubscriptionPlan[]>([])
+  const [organizations, setOrganizations] = useState<Organization[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [isCreateOpen, setIsCreateOpen] = useState(false)
+  const [isCreating, setIsCreating] = useState(false)
+  const [newSubscription, setNewSubscription] = useState({
+    organization_id: '',
+    plan_id: '',
+    billing_cycle: 'monthly' as 'monthly' | 'yearly',
+    trial_days: 10
+  })
 
   useEffect(() => {
     fetchSubscriptions()
+    fetchPlans()
+    fetchOrganizations()
   }, [])
 
   const fetchSubscriptions = async () => {
@@ -66,6 +107,56 @@ export default function SubscriptionsPage() {
       console.error('Error fetching subscriptions:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchPlans = async () => {
+    try {
+      const response = await fetch('/api/subscription-plans')
+      const data = await response.json()
+      setPlans(data.plans || [])
+    } catch (error) {
+      console.error('Error fetching plans:', error)
+    }
+  }
+
+  const fetchOrganizations = async () => {
+    try {
+      const response = await fetch('/api/organizations')
+      const data = await response.json()
+      setOrganizations(data.organizations || [])
+    } catch (error) {
+      console.error('Error fetching organizations:', error)
+    }
+  }
+
+  const handleCreateSubscription = async () => {
+    setIsCreating(true)
+    try {
+      const response = await fetch('/api/subscriptions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newSubscription)
+      })
+
+      if (response.ok) {
+        setIsCreateOpen(false)
+        fetchSubscriptions()
+        setNewSubscription({
+          organization_id: '',
+          plan_id: '',
+          billing_cycle: 'monthly',
+          trial_days: 10
+        })
+      } else {
+        const error = await response.json()
+        alert(`Errore: ${error.error}`)
+      }
+    } catch (error) {
+      console.error('Error creating subscription:', error)
+      alert('Errore durante la creazione dell\'abbonamento')
+    } finally {
+      setIsCreating(false)
     }
   }
 
@@ -168,7 +259,10 @@ export default function SubscriptionsPage() {
                 </p>
               </div>
             </div>
-            <Button className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
+            <Button
+              onClick={() => setIsCreateOpen(true)}
+              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+            >
               <Plus className="w-4 h-4 mr-2" />
               Nuovo Abbonamento
             </Button>
@@ -350,6 +444,99 @@ export default function SubscriptionsPage() {
           </div>
         )}
       </div>
+
+      {/* Create Subscription Dialog */}
+      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Crea Nuovo Abbonamento</DialogTitle>
+            <DialogDescription>
+              Assegna un abbonamento a un'organizzazione
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="organization">Organizzazione *</Label>
+              <Select
+                value={newSubscription.organization_id}
+                onValueChange={(value) => setNewSubscription({ ...newSubscription, organization_id: value })}
+              >
+                <SelectTrigger id="organization">
+                  <SelectValue placeholder="Seleziona organizzazione" />
+                </SelectTrigger>
+                <SelectContent>
+                  {organizations.map((org) => (
+                    <SelectItem key={org.id} value={org.id}>
+                      {org.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="plan">Piano *</Label>
+              <Select
+                value={newSubscription.plan_id}
+                onValueChange={(value) => setNewSubscription({ ...newSubscription, plan_id: value })}
+              >
+                <SelectTrigger id="plan">
+                  <SelectValue placeholder="Seleziona piano" />
+                </SelectTrigger>
+                <SelectContent>
+                  {plans.map((plan) => (
+                    <SelectItem key={plan.id} value={plan.id}>
+                      {plan.name} - €{plan.price_monthly}/mese
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="billing_cycle">Ciclo di Fatturazione *</Label>
+              <Select
+                value={newSubscription.billing_cycle}
+                onValueChange={(value: 'monthly' | 'yearly') => setNewSubscription({ ...newSubscription, billing_cycle: value })}
+              >
+                <SelectTrigger id="billing_cycle">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="monthly">Mensile</SelectItem>
+                  <SelectItem value="yearly">Annuale</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="trial_days">Giorni di Prova</Label>
+              <Input
+                id="trial_days"
+                type="number"
+                min="0"
+                value={newSubscription.trial_days}
+                onChange={(e) => setNewSubscription({ ...newSubscription, trial_days: Number(e.target.value) })}
+              />
+              <p className="text-xs text-muted-foreground">0 = nessun trial period</p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCreateOpen(false)} disabled={isCreating}>
+              Annulla
+            </Button>
+            <Button
+              onClick={handleCreateSubscription}
+              disabled={!newSubscription.organization_id || !newSubscription.plan_id || isCreating}
+              className="bg-gradient-to-r from-purple-600 to-blue-600"
+            >
+              {isCreating ? 'Creazione...' : 'Crea Abbonamento'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
