@@ -37,7 +37,7 @@ import {
   BarChart3,
   Loader2,
   FileText,
-  FilePdf
+  FileDown
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -245,7 +245,7 @@ export default function AnalyticsPage() {
               </>
             ) : (
               <>
-                <FilePdf className="w-4 h-4 mr-2" />
+                <FileDown className="w-4 h-4 mr-2" />
                 Esporta PDF
               </>
             )}
