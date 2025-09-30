@@ -2,15 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth, createSupabaseServer } from '@/lib/auth'
 import Stripe from 'stripe'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-11-20.acacia'
-})
-
 /**
  * POST /api/stripe/create-checkout-session
  * Create a Stripe Checkout session for subscription
  */
 export async function POST(request: NextRequest) {
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+    apiVersion: '2024-11-20.acacia'
+  })
   try {
     const { user, organizationId } = await requireAuth()
     const supabase = await createSupabaseServer()

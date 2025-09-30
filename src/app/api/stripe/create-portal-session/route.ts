@@ -2,15 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth, createSupabaseServer } from '@/lib/auth'
 import Stripe from 'stripe'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-11-20.acacia'
-})
-
 /**
  * POST /api/stripe/create-portal-session
  * Create a Stripe Customer Portal session
  */
 export async function POST(request: NextRequest) {
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+    apiVersion: '2024-11-20.acacia'
+  })
   try {
     const { organizationId } = await requireAuth()
     const supabase = await createSupabaseServer()
