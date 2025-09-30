@@ -10,13 +10,7 @@ CREATE TABLE IF NOT EXISTS api_performance_logs (
   user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
   organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
   error_message TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-
-  -- Indexes for faster queries
-  INDEX idx_api_perf_endpoint (endpoint),
-  INDEX idx_api_perf_created_at (created_at DESC),
-  INDEX idx_api_perf_org (organization_id),
-  INDEX idx_api_perf_status (status_code)
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- System Resource Metrics
@@ -24,10 +18,7 @@ CREATE TABLE IF NOT EXISTS system_metrics (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   metric_type TEXT NOT NULL, -- 'cpu', 'memory', 'storage', 'database'
   metric_value JSONB NOT NULL, -- Flexible JSON structure for different metrics
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-
-  INDEX idx_system_metrics_type (metric_type),
-  INDEX idx_system_metrics_created_at (created_at DESC)
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Performance Summary (aggregated data)
@@ -43,11 +34,20 @@ CREATE TABLE IF NOT EXISTS performance_summary (
   p95_response_time_ms INTEGER,
   p99_response_time_ms INTEGER,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-
-  UNIQUE(date, endpoint),
-  INDEX idx_perf_summary_date (date DESC),
-  INDEX idx_perf_summary_endpoint (endpoint)
+  UNIQUE(date, endpoint)
 );
+
+-- Create indexes separately
+CREATE INDEX IF NOT EXISTS idx_api_perf_endpoint ON api_performance_logs(endpoint);
+CREATE INDEX IF NOT EXISTS idx_api_perf_created_at ON api_performance_logs(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_api_perf_org ON api_performance_logs(organization_id);
+CREATE INDEX IF NOT EXISTS idx_api_perf_status ON api_performance_logs(status_code);
+
+CREATE INDEX IF NOT EXISTS idx_system_metrics_type ON system_metrics(metric_type);
+CREATE INDEX IF NOT EXISTS idx_system_metrics_created_at ON system_metrics(created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_perf_summary_date ON performance_summary(date DESC);
+CREATE INDEX IF NOT EXISTS idx_perf_summary_endpoint ON performance_summary(endpoint);
 
 -- Enable Row Level Security
 ALTER TABLE api_performance_logs ENABLE ROW LEVEL SECURITY;
