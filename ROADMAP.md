@@ -61,7 +61,7 @@
 
 ## **FASE 2: Business Intelligence** 📊
 
-### 2.1 Billing & Subscriptions ✅ COMPLETATO
+### 2.1 Billing & Subscriptions 🔧 IN CORSO (83% completato)
 - [x] Schema database per piani abbonamento (5 tabelle + 2 funzioni)
 - [x] Gestione piani configurabili (API + UI super-admin)
 - [x] Tracking utilizzo e limiti (funzione get_organization_usage)
@@ -74,8 +74,18 @@
   - [x] Webhook endpoint configurato in produzione
   - [x] Sync automatico eventi Stripe → Database
   - [x] Gestione pagamenti ricorrenti (mensili/annuali)
-- [ ] Sistema fatturazione automatica - DA FARE
-- [ ] Upgrade/downgrade automatico - DA FARE
+- [x] **Upgrade/downgrade automatico** ✅
+  - [x] API endpoint per cambio piano con proration
+  - [x] UI in /dashboard/billing per cambio piano
+  - [x] Calcolo e preview proration
+  - [x] Gestione upgrade (immediato) e downgrade (con credito)
+- [x] **Sistema Fatture** ✅
+  - [x] API /api/invoices per elenco fatture
+  - [x] UI /dashboard/billing/invoices
+  - [x] Link a Stripe hosted invoices
+  - [x] Status tracking (pagata, in attesa, fallita)
+- [ ] Fix pulsanti Modifica/Dettagli in /super-admin/billing/subscriptions - DA FARE
+- [ ] Test completo fatturazione automatica - DA FARE
 
 ### 2.2 Analytics & Reporting
 - [ ] Dashboard metriche avanzate

@@ -86,6 +86,9 @@ export default function SubscriptionsPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
+  const [isEditOpen, setIsEditOpen] = useState(false)
+  const [selectedSubscription, setSelectedSubscription] = useState<Subscription | null>(null)
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false)
   const [newSubscription, setNewSubscription] = useState({
     organization_id: '',
     plan_id: '',
@@ -423,10 +426,24 @@ export default function SubscriptionsPage() {
                       </div>
 
                       <div className="flex gap-2 ml-4">
-                        <Button variant="outline" size="sm">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedSubscription(sub)
+                            setIsDetailsOpen(true)
+                          }}
+                        >
                           Dettagli
                         </Button>
-                        <Button variant="outline" size="sm">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedSubscription(sub)
+                            setIsEditOpen(true)
+                          }}
+                        >
                           Modifica
                         </Button>
                       </div>
@@ -589,6 +606,170 @@ export default function SubscriptionsPage() {
               className="bg-gradient-to-r from-purple-600 to-blue-600"
             >
               {isCreating ? 'Creazione...' : 'Crea Abbonamento'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Details Dialog */}
+      <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Dettagli Abbonamento</DialogTitle>
+            <DialogDescription>
+              Informazioni complete sull'abbonamento
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedSubscription && (
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Organizzazione</Label>
+                  <p className="font-medium">{selectedSubscription.organization.name}</p>
+                  <p className="text-xs text-muted-foreground">{selectedSubscription.organization.slug}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Piano</Label>
+                  <p className="font-medium">{selectedSubscription.plan.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {formatPrice(selectedSubscription.billing_cycle === 'monthly'
+                      ? selectedSubscription.plan.price_monthly
+                      : selectedSubscription.plan.price_yearly)}
+                    /{selectedSubscription.billing_cycle === 'monthly' ? 'mese' : 'anno'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Stato</Label>
+                  <div className="mt-1">
+                    <Badge className={getStatusColor(selectedSubscription.status)}>
+                      {getStatusIcon(selectedSubscription.status)}
+                      {selectedSubscription.status}
+                    </Badge>
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Ciclo di Fatturazione</Label>
+                  <p className="font-medium capitalize">{selectedSubscription.billing_cycle}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Periodo Corrente</Label>
+                  <p className="text-sm">
+                    {formatDate(selectedSubscription.current_period_start)} - {formatDate(selectedSubscription.current_period_end)}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {getDaysRemaining(selectedSubscription.current_period_end)} giorni rimanenti
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Creato il</Label>
+                  <p className="text-sm">{formatDate(selectedSubscription.created_at)}</p>
+                </div>
+              </div>
+
+              {selectedSubscription.trial_end && (
+                <div>
+                  <Label className="text-xs text-muted-foreground">Periodo di Prova</Label>
+                  <p className="text-sm">
+                    {selectedSubscription.trial_start && formatDate(selectedSubscription.trial_start)} - {formatDate(selectedSubscription.trial_end)}
+                  </p>
+                </div>
+              )}
+
+              {selectedSubscription.cancelled_at && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <Label className="text-xs text-red-700">Cancellato il</Label>
+                  <p className="text-sm text-red-800">{formatDate(selectedSubscription.cancelled_at)}</p>
+                </div>
+              )}
+
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <Label className="text-xs text-blue-700">ID Abbonamento</Label>
+                <p className="text-xs font-mono text-blue-800">{selectedSubscription.id}</p>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDetailsOpen(false)}>
+              Chiudi
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Modifica Abbonamento</DialogTitle>
+            <DialogDescription>
+              Modifica lo stato e le impostazioni dell'abbonamento
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedSubscription && (
+            <div className="space-y-4 py-4">
+              <div className="p-3 bg-gray-50 border rounded-lg">
+                <p className="text-sm font-medium">{selectedSubscription.organization.name}</p>
+                <p className="text-xs text-muted-foreground">{selectedSubscription.plan.name}</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-status">Stato</Label>
+                <Select
+                  defaultValue={selectedSubscription.status}
+                  onValueChange={async (value) => {
+                    try {
+                      const response = await fetch(`/api/subscriptions/${selectedSubscription.id}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ status: value })
+                      })
+
+                      if (response.ok) {
+                        fetchSubscriptions()
+                        setIsEditOpen(false)
+                        alert('Stato aggiornato con successo')
+                      } else {
+                        alert('Errore durante l\'aggiornamento')
+                      }
+                    } catch (error) {
+                      console.error('Error updating subscription:', error)
+                      alert('Errore durante l\'aggiornamento')
+                    }
+                  }}
+                >
+                  <SelectTrigger id="edit-status">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="trial">Trial</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                    <SelectItem value="suspended">Suspended</SelectItem>
+                    <SelectItem value="expired">Expired</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-xs text-yellow-800">
+                  ⚠️ Le modifiche avranno effetto immediato. Assicurati di confermare prima di procedere.
+                </p>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditOpen(false)}>
+              Chiudi
             </Button>
           </DialogFooter>
         </DialogContent>
