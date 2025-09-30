@@ -39,7 +39,8 @@ interface Widget {
   id: string
   widget_type: string
   title: string
-  config: any
+  metric_type: string
+  data_config: any
   position: { x: number; y: number; w: number; h: number }
 }
 
@@ -47,7 +48,7 @@ interface Dashboard {
   id: string
   name: string
   description: string | null
-  layout: string
+  layout: { type: string; columns: number } | string
   is_default: boolean
   dashboard_widgets: Widget[]
 }

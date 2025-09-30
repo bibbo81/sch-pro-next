@@ -29,7 +29,7 @@ interface Dashboard {
   id: string
   name: string
   description: string | null
-  layout: string
+  layout: { type: string; columns: number } | string
   is_default: boolean
   created_at: string
   dashboard_widgets: any[]
@@ -144,7 +144,8 @@ export default function CustomDashboardsPage() {
     setEditingDashboard(dashboard)
     setName(dashboard.name)
     setDescription(dashboard.description || '')
-    setLayout(dashboard.layout)
+    // Extract type from layout object if it's an object
+    setLayout(typeof dashboard.layout === 'string' ? dashboard.layout : dashboard.layout.type)
     setIsEditOpen(true)
   }
 
@@ -268,7 +269,11 @@ export default function CustomDashboardsPage() {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-gray-600">Layout:</span>
-                    <Badge variant="outline">{dashboard.layout}</Badge>
+                    <Badge variant="outline">
+                      {typeof dashboard.layout === 'string'
+                        ? dashboard.layout
+                        : dashboard.layout.type}
+                    </Badge>
                   </div>
 
                   <div className="flex items-center justify-between text-sm">
