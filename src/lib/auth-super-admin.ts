@@ -13,20 +13,24 @@ export async function isSuperAdmin(): Promise<boolean> {
 
     console.log('[isSuperAdmin] Checking user:', user.id, user.email)
 
+    // TEMPORARY: Check both database AND hardcoded email
+    const isHardcodedAdmin = user.email === 'fabrizio.cagnucci@gmail.com'
+
     // Check against super_admins table
     const { data: superAdmin, error } = await supabase
       .from('super_admins')
       .select('id')
       .eq('user_id', user.id)
-      .maybeSingle() // Use maybeSingle() instead of single()
+      .maybeSingle()
 
     if (error) {
       console.error('[isSuperAdmin] Database error:', error)
-      return false
+      // Fallback to hardcoded check if database fails
+      return isHardcodedAdmin
     }
 
-    const result = !!superAdmin
-    console.log('[isSuperAdmin] Result:', result, superAdmin)
+    const result = !!superAdmin || isHardcodedAdmin
+    console.log('[isSuperAdmin] Result:', result, { superAdmin, isHardcodedAdmin })
     return result
   } catch (error) {
     console.error('[isSuperAdmin] Error checking super admin status:', error)
@@ -46,22 +50,29 @@ export async function requireSuperAdmin() {
 
   console.log('[requireSuperAdmin] Checking user:', session.user.id, session.user.email)
 
+  // TEMPORARY: Check both database AND hardcoded email for compatibility
+  const isHardcodedAdmin = session.user.email === 'fabrizio.cagnucci@gmail.com'
+
   // Check against super_admins table
   const { data: superAdmin, error } = await supabase
     .from('super_admins')
     .select('id')
     .eq('user_id', session.user.id)
-    .maybeSingle() // Use maybeSingle() instead of single() to avoid error on 0 rows
+    .maybeSingle()
 
-  console.log('[requireSuperAdmin] Query result:', { superAdmin, error })
+  console.log('[requireSuperAdmin] Query result:', { superAdmin, error, isHardcodedAdmin })
 
   if (error) {
     console.error('[requireSuperAdmin] Database error:', error)
-    throw new Error('Super admin access required - database error')
+    // If database check fails but is hardcoded admin, allow access
+    if (!isHardcodedAdmin) {
+      throw new Error('Super admin access required - database error')
+    }
   }
 
-  if (!superAdmin) {
-    console.error('[requireSuperAdmin] User not in super_admins table:', session.user.email)
+  // Allow access if EITHER database check succeeds OR is hardcoded admin
+  if (!superAdmin && !isHardcodedAdmin) {
+    console.error('[requireSuperAdmin] User not authorized:', session.user.email)
     throw new Error('Super admin access required')
   }
 
