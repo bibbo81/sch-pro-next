@@ -43,3 +43,13 @@ next-env.d.ts
 
 # Claude Code local settings
 .claude/settings.local.json
+
+# Supabase temp files
+supabase/.temp/
+
+# Backup files
+*.bak
+
+# Test/debug scripts (optional - comment out if you want to commit them)
+# check-tables.mjs
+# test-write-permissions.mjs
