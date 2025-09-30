@@ -65,6 +65,47 @@ export type Database = {
           },
         ]
       }
+      analytics_metrics: {
+        Row: {
+          created_at: string | null
+          id: string
+          metric_date: string
+          metric_type: string
+          metrics: Json
+          organization_id: string
+          total_count: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          metric_date: string
+          metric_type: string
+          metrics?: Json
+          organization_id: string
+          total_count?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          metric_date?: string
+          metric_type?: string
+          metrics?: Json
+          organization_id?: string
+          total_count?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analytics_metrics_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       api_logs: {
         Row: {
           api_name: string
@@ -269,6 +310,109 @@ export type Database = {
           },
         ]
       }
+      custom_dashboards: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          description: string | null
+          id: string
+          is_default: boolean | null
+          is_public: boolean | null
+          layout: Json
+          name: string
+          organization_id: string
+          slug: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          description?: string | null
+          id?: string
+          is_default?: boolean | null
+          is_public?: boolean | null
+          layout?: Json
+          name: string
+          organization_id: string
+          slug: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          description?: string | null
+          id?: string
+          is_default?: boolean | null
+          is_public?: boolean | null
+          layout?: Json
+          name?: string
+          organization_id?: string
+          slug?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_dashboards_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dashboard_widgets: {
+        Row: {
+          chart_type: string | null
+          created_at: string | null
+          dashboard_id: string
+          data_config: Json
+          display_config: Json | null
+          id: string
+          metric_type: string
+          position: Json
+          refresh_interval: number | null
+          title: string
+          updated_at: string | null
+          widget_type: string
+        }
+        Insert: {
+          chart_type?: string | null
+          created_at?: string | null
+          dashboard_id: string
+          data_config?: Json
+          display_config?: Json | null
+          id?: string
+          metric_type: string
+          position?: Json
+          refresh_interval?: number | null
+          title: string
+          updated_at?: string | null
+          widget_type: string
+        }
+        Update: {
+          chart_type?: string | null
+          created_at?: string | null
+          dashboard_id?: string
+          data_config?: Json
+          display_config?: Json | null
+          id?: string
+          metric_type?: string
+          position?: Json
+          refresh_interval?: number | null
+          title?: string
+          updated_at?: string | null
+          widget_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dashboard_widgets_dashboard_id_fkey"
+            columns: ["dashboard_id"]
+            isOneToOne: false
+            referencedRelation: "custom_dashboards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoices: {
         Row: {
           amount: number
@@ -285,6 +429,8 @@ export type Database = {
           paid_at: string | null
           payment_method: string | null
           status: Database["public"]["Enums"]["invoice_status"]
+          stripe_invoice_id: string | null
+          stripe_payment_intent_id: string | null
           subscription_id: string
           updated_at: string | null
         }
@@ -303,6 +449,8 @@ export type Database = {
           paid_at?: string | null
           payment_method?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
+          stripe_invoice_id?: string | null
+          stripe_payment_intent_id?: string | null
           subscription_id: string
           updated_at?: string | null
         }
@@ -321,6 +469,8 @@ export type Database = {
           paid_at?: string | null
           payment_method?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
+          stripe_invoice_id?: string | null
+          stripe_payment_intent_id?: string | null
           subscription_id?: string
           updated_at?: string | null
         }
@@ -460,6 +610,7 @@ export type Database = {
           name: string
           settings: Json | null
           slug: string
+          stripe_customer_id: string | null
           updated_at: string | null
         }
         Insert: {
@@ -468,6 +619,7 @@ export type Database = {
           name: string
           settings?: Json | null
           slug: string
+          stripe_customer_id?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -476,6 +628,7 @@ export type Database = {
           name?: string
           settings?: Json | null
           slug?: string
+          stripe_customer_id?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -741,6 +894,152 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      report_history: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          error_message: string | null
+          file_size: number | null
+          file_url: string | null
+          format: string | null
+          generated_by: string | null
+          id: string
+          metrics_included: Json | null
+          organization_id: string
+          period_end: string
+          period_start: string
+          report_name: string
+          report_type: string
+          scheduled_report_id: string | null
+          status: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          file_size?: number | null
+          file_url?: string | null
+          format?: string | null
+          generated_by?: string | null
+          id?: string
+          metrics_included?: Json | null
+          organization_id: string
+          period_end: string
+          period_start: string
+          report_name: string
+          report_type: string
+          scheduled_report_id?: string | null
+          status?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          file_size?: number | null
+          file_url?: string | null
+          format?: string | null
+          generated_by?: string | null
+          id?: string
+          metrics_included?: Json | null
+          organization_id?: string
+          period_end?: string
+          period_start?: string
+          report_name?: string
+          report_type?: string
+          scheduled_report_id?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_history_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_history_scheduled_report_id_fkey"
+            columns: ["scheduled_report_id"]
+            isOneToOne: false
+            referencedRelation: "scheduled_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scheduled_reports: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          date_range: string | null
+          description: string | null
+          format: string | null
+          frequency: string
+          id: string
+          is_active: boolean | null
+          last_sent_at: string | null
+          metrics: Json
+          name: string
+          next_scheduled_at: string | null
+          organization_id: string
+          recipients: Json
+          report_type: string
+          schedule_day: number | null
+          schedule_time: string | null
+          timezone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          date_range?: string | null
+          description?: string | null
+          format?: string | null
+          frequency: string
+          id?: string
+          is_active?: boolean | null
+          last_sent_at?: string | null
+          metrics?: Json
+          name: string
+          next_scheduled_at?: string | null
+          organization_id: string
+          recipients?: Json
+          report_type: string
+          schedule_day?: number | null
+          schedule_time?: string | null
+          timezone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          date_range?: string | null
+          description?: string | null
+          format?: string | null
+          frequency?: string
+          id?: string
+          is_active?: boolean | null
+          last_sent_at?: string | null
+          metrics?: Json
+          name?: string
+          next_scheduled_at?: string | null
+          organization_id?: string
+          recipients?: Json
+          report_type?: string
+          schedule_day?: number | null
+          schedule_time?: string | null
+          timezone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_reports_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       security_audit_log: {
         Row: {
@@ -1378,6 +1677,9 @@ export type Database = {
           price_yearly: number
           slug: string
           sort_order: number | null
+          stripe_price_id_monthly: string | null
+          stripe_price_id_yearly: string | null
+          stripe_product_id: string | null
           updated_at: string | null
         }
         Insert: {
@@ -1393,6 +1695,9 @@ export type Database = {
           price_yearly?: number
           slug: string
           sort_order?: number | null
+          stripe_price_id_monthly?: string | null
+          stripe_price_id_yearly?: string | null
+          stripe_product_id?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -1408,6 +1713,9 @@ export type Database = {
           price_yearly?: number
           slug?: string
           sort_order?: number | null
+          stripe_price_id_monthly?: string | null
+          stripe_price_id_yearly?: string | null
+          stripe_product_id?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -1424,6 +1732,9 @@ export type Database = {
           organization_id: string
           plan_id: string
           status: Database["public"]["Enums"]["subscription_status"]
+          stripe_payment_method_id: string | null
+          stripe_price_id: string | null
+          stripe_subscription_id: string | null
           trial_end: string | null
           trial_start: string | null
           updated_at: string | null
@@ -1439,6 +1750,9 @@ export type Database = {
           organization_id: string
           plan_id: string
           status?: Database["public"]["Enums"]["subscription_status"]
+          stripe_payment_method_id?: string | null
+          stripe_price_id?: string | null
+          stripe_subscription_id?: string | null
           trial_end?: string | null
           trial_start?: string | null
           updated_at?: string | null
@@ -1454,6 +1768,9 @@ export type Database = {
           organization_id?: string
           plan_id?: string
           status?: Database["public"]["Enums"]["subscription_status"]
+          stripe_payment_method_id?: string | null
+          stripe_price_id?: string | null
+          stripe_subscription_id?: string | null
           trial_end?: string | null
           trial_start?: string | null
           updated_at?: string | null
@@ -1865,422 +2182,4 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
-          created_at?: string | null
-          id?: string
-          metrics?: Json | null
-          organization_id: string
-          subscription_id: string
-          tracking_date?: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          metrics?: Json | null
-          organization_id?: string
-          subscription_id?: string
-          tracking_date?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "usage_tracking_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "usage_tracking_subscription_id_fkey"
-            columns: ["subscription_id"]
-            isOneToOne: false
-            referencedRelation: "subscriptions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      user_preferences: {
-        Row: {
-          created_at: string | null
-          id: string
-          page: string
-          preferences: Json | null
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          page: string
-          preferences?: Json | null
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          page?: string
-          preferences?: Json | null
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
-      user_settings: {
-        Row: {
-          api_keys: Json | null
-          created_at: string | null
-          id: string
-          preferences: Json | null
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          api_keys?: Json | null
-          created_at?: string | null
-          id?: string
-          preferences?: Json | null
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          api_keys?: Json | null
-          created_at?: string | null
-          id?: string
-          preferences?: Json | null
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
-      vehicle_types: {
-        Row: {
-          created_at: string | null
-          default_cbm: number | null
-          default_kg: number | null
-          id: string
-          name: string
-          transport_mode_id: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          default_cbm?: number | null
-          default_kg?: number | null
-          id?: string
-          name: string
-          transport_mode_id?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          default_cbm?: number | null
-          default_kg?: number | null
-          id?: string
-          name?: string
-          transport_mode_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "vehicle_types_transport_mode_id_fkey"
-            columns: ["transport_mode_id"]
-            isOneToOne: false
-            referencedRelation: "transport_modes"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-    }
-    Views: {
-      dashboard_stats: {
-        Row: {
-          arrived: number | null
-          delayed: number | null
-          delivered: number | null
-          exception: number | null
-          in_transit: number | null
-          registered: number | null
-          total_trackings: number | null
-        }
-        Relationships: []
-      }
-    }
-    Functions: {
-      auth_uid_test: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          current_auth_uid: string
-          session_valid: boolean
-          user_exists: boolean
-        }[]
-      }
-      check_data_integrity: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      check_usage_limits: {
-        Args: { org_id: string }
-        Returns: Json
-      }
-      clean_old_performance_logs: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      create_shipment_from_tracking: {
-        Args: { p_tracking_id: string }
-        Returns: string
-      }
-      create_tracking_with_shipment: {
-        Args: {
-          p_carrier_code: string
-          p_destination_country: string
-          p_destination_port: string
-          p_eta?: string
-          p_origin_country: string
-          p_origin_port: string
-          p_tracking_number: string
-        }
-        Returns: {
-          shipment_id: string
-          tracking_id: string
-        }[]
-      }
-      get_cache_hit_ratio: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      get_connection_stats: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      get_deadlock_info: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      get_index_usage: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      get_long_running_queries: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      get_organization_usage: {
-        Args: { org_id: string; start_date?: string }
-        Returns: Json
-      }
-      get_table_statistics: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      get_user_organizations: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          auth_uid: string
-          organization_id: string
-          role: string
-          user_id: string
-        }[]
-      }
-      get_vacuum_stats: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      reattiva_tracking: {
-        Args: {
-          carrier: string
-          nuova_descrizione: string
-          nuovo_status: string
-          tracking: string
-          uid: string
-        }
-        Returns: undefined
-      }
-    }
-    Enums: {
-      billing_cycle: "monthly" | "yearly" | "lifetime"
-      document_type:
-        | "commercial_invoice"
-        | "packing_list"
-        | "bill_of_lading"
-        | "customs_clearance"
-        | "transport_invoice"
-        | "other"
-      invoice_status:
-        | "draft"
-        | "pending"
-        | "paid"
-        | "failed"
-        | "refunded"
-        | "void"
-      payment_method_type:
-        | "card"
-        | "bank_transfer"
-        | "paypal"
-        | "stripe"
-        | "other"
-      subscription_status:
-        | "active"
-        | "cancelled"
-        | "suspended"
-        | "trial"
-        | "expired"
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
-}
-
-type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
-
-type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
-
-export type Tables<
-  DefaultSchemaTableNameOrOptions extends
-    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-    | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-  }
-    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
-  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
-      Row: infer R
-    }
-    ? R
-    : never
-  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])
-    ? (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
-        Row: infer R
-      }
-      ? R
-      : never
-    : never
-
-export type TablesInsert<
-  DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-  }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Insert: infer I
-    }
-    ? I
-    : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Insert: infer I
-      }
-      ? I
-      : never
-    : never
-
-export type TablesUpdate<
-  DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-  }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Update: infer U
-    }
-    ? U
-    : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Update: infer U
-      }
-      ? U
-      : never
-    : never
-
-export type Enums<
-  DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema["Enums"]
-    | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-  }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
-> = DefaultSchemaEnumNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
-  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
-  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-    : never
-
-export type CompositeTypes<
-  PublicCompositeTypeNameOrOptions extends
-    | keyof DefaultSchema["CompositeTypes"]
-    | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-  }
-    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
-> = PublicCompositeTypeNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
-  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-    : never
-
-export const Constants = {
-  public: {
-    Enums: {
-      billing_cycle: ["monthly", "yearly", "lifetime"],
-      document_type: [
-        "commercial_invoice",
-        "packing_list",
-        "bill_of_lading",
-        "customs_clearance",
-        "transport_invoice",
-        "other",
-      ],
-      invoice_status: [
-        "draft",
-        "pending",
-        "paid",
-        "failed",
-        "refunded",
-        "void",
-      ],
-      payment_method_type: [
-        "card",
-        "bank_transfer",
-        "paypal",
-        "stripe",
-        "other",
-      ],
-      subscription_status: [
-        "active",
-        "cancelled",
-        "suspended",
-        "trial",
-        "expired",
-      ],
-    },
-  },
-} as const
+    
