@@ -2,7 +2,7 @@ import { getSuperAdminStats } from '@/lib/auth-super-admin'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Building2, Users, Package, TrendingUp, ArrowLeft, Plus, Settings, Activity, Database } from 'lucide-react'
+import { Building2, Users, Package, TrendingUp, ArrowLeft, Plus, Settings, Activity, Database, CreditCard, DollarSign } from 'lucide-react'
 
 export default async function SuperAdminDashboard() {
   const stats = await getSuperAdminStats()
@@ -73,7 +73,7 @@ export default async function SuperAdminDashboard() {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <Card>
           <CardHeader>
             <CardTitle>Organization Management</CardTitle>
@@ -90,6 +90,27 @@ export default async function SuperAdminDashboard() {
               <Button variant="outline" className="w-full">
                 <Building2 className="mr-2 h-4 w-4" />
                 View All Organizations
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Billing & Subscriptions</CardTitle>
+            <CardDescription>Manage subscription plans and billing</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <Link href="/super-admin/billing/plans" className="block">
+              <Button className="w-full">
+                <DollarSign className="mr-2 h-4 w-4" />
+                Subscription Plans
+              </Button>
+            </Link>
+            <Link href="/super-admin/billing/subscriptions" className="block">
+              <Button variant="outline" className="w-full">
+                <CreditCard className="mr-2 h-4 w-4" />
+                Manage Subscriptions
               </Button>
             </Link>
           </CardContent>

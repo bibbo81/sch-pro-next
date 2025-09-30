@@ -61,13 +61,16 @@
 
 ## **FASE 2: Business Intelligence** 📊
 
-### 2.1 Billing & Subscriptions
-- [ ] Schema database per piani abbonamento
-- [ ] Gestione piani configurabili
-- [ ] Tracking utilizzo e limiti
-- [ ] Sistema fatturazione automatica
-- [ ] Payment gateway integration
-- [ ] Upgrade/downgrade automatico
+### 2.1 Billing & Subscriptions ✅ COMPLETATO
+- [x] Schema database per piani abbonamento (5 tabelle + 2 funzioni)
+- [x] Gestione piani configurabili (API + UI super-admin)
+- [x] Tracking utilizzo e limiti (funzione get_organization_usage)
+- [x] Piani di default inseriti (Free, Pro, Enterprise)
+- [x] API REST complete per subscription management
+- [x] UI moderna per gestione piani e subscriptions
+- [ ] Sistema fatturazione automatica - DA FARE
+- [ ] Payment gateway integration (Stripe/PayPal) - DA FARE
+- [ ] Upgrade/downgrade automatico - DA FARE
 
 ### 2.2 Analytics & Reporting
 - [ ] Dashboard metriche avanzate
@@ -204,10 +207,11 @@
 - ✅ System Monitoring Dashboard - COMPLETATO
 - ✅ Performance Monitoring - COMPLETATO
 - ✅ Database Health - COMPLETATO
-- Billing & Subscriptions (PROSSIMO)
+- ✅ Billing & Subscriptions (Base) - COMPLETATO
+- 🔄 Payment Gateway Integration (PROSSIMO)
 
 ### 🟡 **MEDIA PRIORITÀ** (2-4 mesi)
-- Billing & Subscriptions
+- Payment Gateway & Auto-billing
 - Analytics & Reporting
 - Communication Center
 
@@ -220,16 +224,18 @@
 
 ## **TRACKING PROGRESSO**
 
-**Completato:** 23/50+ features
+**Completato:** 29/50+ features
 - ✅ Fase 1.1: System Monitoring Dashboard
 - ✅ Fase 1.2: Performance Monitoring + Storage Monitoring
 - ✅ Fase 1.3: Database Health & Backup
+- ✅ Fase 2.1: Billing & Subscriptions (Base)
 
-**In Corso:** Nessuna
-**Prossimo:** Fase 2.1 - Billing & Subscriptions
+**In Corso:** Payment Gateway Integration
+**Prossimo:** Analytics & Reporting
 
 **% Completamento Totale FASE 1:** 100% ✅
-**% Completamento Totale Progetto:** ~46%
+**% Completamento Totale FASE 2.1:** 66% (6/9 features)
+**% Completamento Totale Progetto:** ~52%
 
 ---
 
