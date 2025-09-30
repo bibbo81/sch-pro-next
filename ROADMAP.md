@@ -84,8 +84,20 @@
   - [x] UI /dashboard/billing/invoices
   - [x] Link a Stripe hosted invoices
   - [x] Status tracking (pagata, in attesa, fallita)
-- [ ] Fix pulsanti Modifica/Dettagli in /super-admin/billing/subscriptions - DA FARE
-- [ ] Test completo fatturazione automatica - DA FARE
+- [x] Fix pulsanti Modifica/Dettagli in /super-admin/billing/subscriptions ✅
+- [ ] **Testing Completo Sistema Billing** - DA FARE ALLA FINE
+  - [ ] Test Stripe Checkout con carte di test
+  - [ ] Test upgrade piano (Free → Pro → Enterprise)
+  - [ ] Test downgrade piano (Enterprise → Pro → Free)
+  - [ ] Verificare calcoli proration corretti
+  - [ ] Test fatturazione automatica (renewal mensile/annuale)
+  - [ ] Test webhook events (payment_succeeded, subscription_updated, etc.)
+  - [ ] Test trial period (10 giorni) e conversione
+  - [ ] Test cancellazione abbonamento
+  - [ ] Test Piano Partner (lifetime gratuito)
+  - [ ] Verificare usage limits enforcement
+  - [ ] Test invoice generation e Stripe hosted invoices
+  - [ ] Test Customer Portal Stripe
 
 ### 2.2 Analytics & Reporting
 - [ ] Dashboard metriche avanzate
@@ -238,18 +250,18 @@
 
 ## **TRACKING PROGRESSO**
 
-**Completato:** 34/50+ features
+**Completato:** 37/50+ features
 - ✅ Fase 1.1: System Monitoring Dashboard
 - ✅ Fase 1.2: Performance Monitoring + Storage Monitoring
 - ✅ Fase 1.3: Database Health & Backup
-- ✅ Fase 2.1: Billing & Subscriptions + Stripe Integration
+- ✅ Fase 2.1: Billing & Subscriptions (implementazione completa)
 
-**In Corso:** Nessuna
+**In Corso:** Testing finale Fase 2.1
 **Prossimo:** Analytics & Reporting (Fase 2.2)
 
 **% Completamento Totale FASE 1:** 100% ✅
-**% Completamento Totale FASE 2.1:** 83% (10/12 features) ✅
-**% Completamento Totale Progetto:** ~58%
+**% Completamento Totale FASE 2.1:** 92% (11/12 features) ✅ - Solo testing mancante
+**% Completamento Totale Progetto:** ~62%
 
 ---
 
