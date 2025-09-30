@@ -154,11 +154,11 @@ export default function SubscriptionsPage() {
         <div className="p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Button variant="ghost" size="icon" asChild>
-                <Link href="/super-admin">
+              <Link href="/super-admin">
+                <Button variant="ghost" size="icon">
                   <ArrowLeft className="w-4 h-4" />
-                </Link>
-              </Button>
+                </Button>
+              </Link>
               <div>
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
                   Gestione Abbonamenti
