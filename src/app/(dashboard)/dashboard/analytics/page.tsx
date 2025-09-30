@@ -36,7 +36,8 @@ import {
   Calendar,
   BarChart3,
   Loader2,
-  FileText
+  FileText,
+  FilePdf
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -73,6 +74,7 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true)
   const [dateRange, setDateRange] = useState('30')
   const [exporting, setExporting] = useState(false)
+  const [generatingPDF, setGeneratingPDF] = useState(false)
 
   useEffect(() => {
     fetchMetrics()
@@ -98,6 +100,44 @@ export default function AnalyticsPage() {
       console.error('Error fetching metrics:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleGeneratePDF = async () => {
+    setGeneratingPDF(true)
+    try {
+      const endDate = new Date().toISOString().split('T')[0]
+      const startDate = new Date(Date.now() - parseInt(dateRange) * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .split('T')[0]
+
+      const response = await fetch('/api/analytics/generate-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          start_date: startDate,
+          end_date: endDate
+        })
+      })
+
+      if (response.ok) {
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `Analytics_Report_${endDate}.pdf`
+        document.body.appendChild(a)
+        a.click()
+        window.URL.revokeObjectURL(url)
+        document.body.removeChild(a)
+      } else {
+        alert('Errore durante la generazione del report PDF')
+      }
+    } catch (error) {
+      console.error('Error generating PDF:', error)
+      alert('Errore durante la generazione del report PDF')
+    } finally {
+      setGeneratingPDF(false)
     }
   }
 
@@ -192,6 +232,24 @@ export default function AnalyticsPage() {
               Report Automatici
             </Button>
           </Link>
+
+          <Button
+            onClick={handleGeneratePDF}
+            disabled={generatingPDF}
+            variant="outline"
+          >
+            {generatingPDF ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Generazione PDF...
+              </>
+            ) : (
+              <>
+                <FilePdf className="w-4 h-4 mr-2" />
+                Esporta PDF
+              </>
+            )}
+          </Button>
 
           <Select value={dateRange} onValueChange={setDateRange}>
             <SelectTrigger className="w-[180px]">
