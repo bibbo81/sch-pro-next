@@ -36,7 +36,7 @@ export async function GET(
           sender_type,
           sender_id,
           created_at,
-          is_internal_note
+          is_internal
         )
       `)
       .eq('id', params.id)

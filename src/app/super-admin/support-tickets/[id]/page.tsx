@@ -23,7 +23,7 @@ interface TicketMessage {
   sender_type: string
   sender_id: string
   created_at: string
-  is_internal_note: boolean
+  is_internal: boolean
 }
 
 interface Ticket {
@@ -80,7 +80,7 @@ export default function SuperAdminTicketDetailPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: replyMessage,
-          is_internal_note: isInternalNote
+          is_internal_note: isInternalNote  // API parameter name
         })
       })
 
@@ -317,7 +317,7 @@ export default function SuperAdminTicketDetailPage() {
                   key={msg.id}
                   className={`border-l-4 pl-4 py-2 ${
                     msg.sender_type === 'agent'
-                      ? msg.is_internal_note
+                      ? msg.is_internal
                         ? 'border-purple-500 bg-purple-50'
                         : 'border-green-500'
                       : 'border-gray-300'
@@ -327,14 +327,14 @@ export default function SuperAdminTicketDetailPage() {
                     <span
                       className={`font-semibold ${
                         msg.sender_type === 'agent'
-                          ? msg.is_internal_note
+                          ? msg.is_internal
                             ? 'text-purple-600'
                             : 'text-green-600'
                           : 'text-gray-600'
                       }`}
                     >
                       {msg.sender_type === 'agent'
-                        ? msg.is_internal_note
+                        ? msg.is_internal
                           ? 'Nota Interna'
                           : 'Agente di Supporto'
                         : 'Cliente'}

@@ -38,7 +38,7 @@ export async function POST(
         message,
         sender_type: 'agent',
         sender_id: user.id,
-        is_internal_note: is_internal_note || false
+        is_internal: is_internal_note || false
       })
       .select()
       .single()
