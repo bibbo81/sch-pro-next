@@ -2,7 +2,11 @@
   "crons": [
     {
       "path": "/api/cron/shipsgo-refresh",
-      "schedule": "0 15 * * *"
+      "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/cron/shipsgo-refresh",
+      "schedule": "0 14 * * *"
     }
   ]
 }
