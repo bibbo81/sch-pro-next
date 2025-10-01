@@ -2,7 +2,8 @@ import { getSuperAdminStats } from '@/lib/auth-super-admin'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Building2, Users, Package, TrendingUp, ArrowLeft, Plus, Settings, Activity, Database, CreditCard, DollarSign } from 'lucide-react'
+import { Building2, Users, Package, TrendingUp, ArrowLeft, Plus, Settings, Activity, Database, CreditCard, DollarSign, MessageSquare, AlertCircle, Bell } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
 
 export default async function SuperAdminDashboard() {
   const stats = await getSuperAdminStats()
@@ -72,6 +73,36 @@ export default async function SuperAdminDashboard() {
         </Card>
       </div>
 
+      {/* Support Tickets Card */}
+      {stats.supportTickets.new24h > 0 && (
+        <Card className="mb-8 border-orange-300 bg-orange-50 dark:bg-orange-950">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Bell className="h-5 w-5 text-orange-600" />
+                <CardTitle className="text-orange-900 dark:text-orange-100">
+                  Nuovi Ticket di Supporto
+                </CardTitle>
+              </div>
+              <Badge variant="destructive" className="bg-orange-600">
+                {stats.supportTickets.new24h} nuovi
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-orange-800 dark:text-orange-200 mb-4">
+              Ci sono {stats.supportTickets.new24h} nuovi ticket aperti nelle ultime 24 ore che richiedono attenzione.
+            </p>
+            <Link href="/super-admin/support-tickets">
+              <Button className="bg-orange-600 hover:bg-orange-700">
+                <MessageSquare className="mr-2 h-4 w-4" />
+                Visualizza Tutti i Ticket
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <Card>
@@ -118,10 +149,57 @@ export default async function SuperAdminDashboard() {
 
         <Card>
           <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Communication & Support</CardTitle>
+                <CardDescription>Manage customer support tickets</CardDescription>
+              </div>
+              {stats.supportTickets.open > 0 && (
+                <Badge variant="secondary" className="ml-2">
+                  {stats.supportTickets.open} aperti
+                </Badge>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <Link href="/super-admin/support-tickets" className="block">
+              <Button className="w-full relative">
+                <MessageSquare className="mr-2 h-4 w-4" />
+                Support Tickets
+                {stats.supportTickets.new24h > 0 && (
+                  <Badge variant="destructive" className="ml-2 absolute -top-2 -right-2">
+                    {stats.supportTickets.new24h}
+                  </Badge>
+                )}
+              </Button>
+            </Link>
+
+            <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-blue-600">{stats.supportTickets.open}</div>
+                <p className="text-xs text-gray-600">Aperti</p>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-red-600">{stats.supportTickets.urgent}</div>
+                <p className="text-xs text-gray-600">Urgenti</p>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-gray-600">{stats.supportTickets.total}</div>
+                <p className="text-xs text-gray-600">Totali</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* System Management Section */}
+      <div className="grid grid-cols-1 gap-6 mb-8">
+        <Card>
+          <CardHeader>
             <CardTitle>System Management</CardTitle>
             <CardDescription>Configure system settings and monitoring</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-2">
             <Link href="/super-admin/monitoring" className="block">
               <Button className="w-full">
                 <Activity className="mr-2 h-4 w-4" />

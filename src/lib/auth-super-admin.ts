@@ -83,12 +83,32 @@ export async function getSuperAdminStats() {
 
     const uniqueActiveOrgs = new Set(activeOrgs?.map(s => s.organization_id) || [])
 
+    // Get support tickets stats
+    const { data: tickets } = await supabase
+      .from('support_tickets')
+      .select('id, status, priority, created_at')
+      .order('created_at', { ascending: false })
+
+    const openTickets = tickets?.filter(t => t.status === 'open') || []
+    const urgentTickets = tickets?.filter(t => t.priority === 'urgent' && t.status !== 'closed') || []
+
+    // Get tickets from last 24 hours
+    const oneDayAgo = new Date()
+    oneDayAgo.setDate(oneDayAgo.getDate() - 1)
+    const newTickets = tickets?.filter(t => new Date(t.created_at) >= oneDayAgo) || []
+
     return {
       totalOrganizations: orgs?.length || 0,
       totalUsers: usersCount || 0,
       activeOrganizations30d: uniqueActiveOrgs.size,
       organizations: orgs || [],
-      recentOrganizations: orgs?.slice(0, 5) || []
+      recentOrganizations: orgs?.slice(0, 5) || [],
+      supportTickets: {
+        total: tickets?.length || 0,
+        open: openTickets.length,
+        urgent: urgentTickets.length,
+        new24h: newTickets.length
+      }
     }
   } catch (error) {
     console.error('Error getting super admin stats:', error)
