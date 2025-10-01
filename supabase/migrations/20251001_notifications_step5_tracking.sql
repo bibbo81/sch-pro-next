@@ -19,7 +19,7 @@ BEGIN
       s.created_by
     INTO v_shipment
     FROM shipments s
-    WHERE s.id = NEW.shipment_id;
+    WHERE s.id = NEW.shipment_id;/
 
     -- Get all members of the organization to notify
     SELECT ARRAY_AGG(user_id)

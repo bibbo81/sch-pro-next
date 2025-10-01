@@ -9,7 +9,6 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { Button } from '@/components/ui/button'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { useRouter } from 'next/navigation'
 
 interface Notification {
@@ -129,7 +128,7 @@ export default function NotificationBell({ type, icon }: NotificationBellProps) 
           )}
         </div>
 
-        <ScrollArea className="h-[400px]">
+        <div className="max-h-[400px] overflow-y-auto">
           {notifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
               {getIcon()}
@@ -170,7 +169,7 @@ export default function NotificationBell({ type, icon }: NotificationBellProps) 
               ))}
             </div>
           )}
-        </ScrollArea>
+        </div>
 
         <div className="p-2 border-t">
           <Button
