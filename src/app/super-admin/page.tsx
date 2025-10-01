@@ -104,7 +104,7 @@ export default async function SuperAdminDashboard() {
       )}
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <Card>
           <CardHeader>
             <CardTitle>Organization Management</CardTitle>
@@ -123,6 +123,32 @@ export default async function SuperAdminDashboard() {
                 View All Organizations
               </Button>
             </Link>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>User Management</CardTitle>
+            <CardDescription>Manage users across all organizations</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <Link href="/super-admin/users" className="block">
+              <Button className="w-full">
+                <Users className="mr-2 h-4 w-4" />
+                View All Users
+              </Button>
+            </Link>
+
+            <div className="grid grid-cols-2 gap-2 mt-4 pt-4 border-t">
+              <div className="text-center">
+                <div className="text-xl font-bold text-green-600">{stats.totalUsers}</div>
+                <p className="text-xs text-gray-600">Utenti Totali</p>
+              </div>
+              <div className="text-center">
+                <div className="text-xl font-bold text-blue-600">{stats.totalOrganizations}</div>
+                <p className="text-xs text-gray-600">Organizzazioni</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
