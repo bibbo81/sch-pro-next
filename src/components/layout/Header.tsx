@@ -13,9 +13,10 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ThemeToggle } from '@/components/theme-toggle'
-import { Bell, Search, Settings, LogOut, User, Package, Ship, Activity } from 'lucide-react'
+import { Bell, Search, Settings, LogOut, User, Package, Ship, Activity, MessageSquare } from 'lucide-react'
 import { useState } from 'react'
 import { usePathname } from 'next/navigation'
+import NotificationBell from '@/components/notifications/NotificationBell'
 
 export function Header() {
   const { user, loading } = useAuth()
@@ -148,22 +149,9 @@ export function Header() {
           {/* Theme Toggle */}
           <ThemeToggle />
 
-          {/* Notifications */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="relative"
-            onClick={() => {
-              // TODO: Apri pannello notifiche
-              console.log('Open notifications panel')
-            }}
-            title="Notifiche"
-          >
-            <Bell className="w-5 h-5" />
-            <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-              3
-            </span>
-          </Button>
+          {/* Notification Bells */}
+          <NotificationBell type="tracking" icon={<Package className="h-5 w-5" />} />
+          <NotificationBell type="messages" icon={<MessageSquare className="h-5 w-5" />} />
 
           {/* User Menu */}
           <DropdownMenu>
