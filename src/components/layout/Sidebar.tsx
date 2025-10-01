@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { cn } from '@/lib/utils'
 import OrganizationSwitcher from '@/components/OrganizationSwitcher'
 import SuperAdminButton from '@/components/SuperAdminButton'
+import { useEffect, useState } from 'react'
 import {
   BarChart3,
   Package,
@@ -21,11 +22,14 @@ import {
   Users,
   Layout,
   MessageSquare,
-  BookOpen
+  BookOpen,
+  Bell
 } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
+  { name: 'Notifiche', href: '/dashboard/notifications', icon: Bell },
   { name: 'Tracking', href: '/dashboard/tracking', icon: Ship },
   { name: 'Spedizioni', href: '/dashboard/shipments', icon: Package },
   { name: 'Prodotti', href: '/dashboard/products', icon: Package },
@@ -48,6 +52,29 @@ interface SidebarProps {
 export function Sidebar({ isOpen, onClose, onSignOut, className }: SidebarProps) {
   const pathname = usePathname()
   const { user, signOut } = useAuth()
+  const [unreadCount, setUnreadCount] = useState(0)
+
+  // Fetch unread notification count
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      try {
+        const response = await fetch('/api/notifications/unread-count')
+        if (response.ok) {
+          const data = await response.json()
+          setUnreadCount(data.count || 0)
+        }
+      } catch (error) {
+        console.error('Error fetching unread count:', error)
+      }
+    }
+
+    if (isOpen) {
+      fetchUnreadCount()
+      // Refresh every 30 seconds when sidebar is open
+      const interval = setInterval(fetchUnreadCount, 30000)
+      return () => clearInterval(interval)
+    }
+  }, [isOpen])
 
   const handleSignOut = async () => {
     try {
@@ -102,28 +129,36 @@ export function Sidebar({ isOpen, onClose, onSignOut, className }: SidebarProps)
       <nav className="flex-1 px-6 py-6 space-y-2 overflow-y-auto max-h-[calc(100vh-200px)]">
         {navigation.map((item) => {
           const Icon = item.icon
-          const isActive = pathname === item.href || 
+          const isActive = pathname === item.href ||
             (item.href !== '/dashboard' && pathname.startsWith(item.href))
-          
+          const showBadge = (item.href === '/dashboard/notifications' || item.href === '/dashboard/support') && unreadCount > 0
+
           return (
             <Link
               key={item.name}
               href={item.href}
               onClick={handleLinkClick}
               className={cn(
-                "group flex items-center px-4 py-3 text-base font-medium rounded-xl transition-all duration-200",
+                "group flex items-center justify-between px-4 py-3 text-base font-medium rounded-xl transition-all duration-200",
                 isActive
                   ? "bg-primary/10 text-primary border-l-4 border-primary"
                   : "text-muted-foreground hover:bg-accent hover:text-foreground"
               )}
             >
-              <Icon
-                className={cn(
-                  "mr-4 h-6 w-6 flex-shrink-0",
-                  isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+              <div className="flex items-center">
+                <Icon
+                  className={cn(
+                    "mr-4 h-6 w-6 flex-shrink-0",
+                    isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
                 )}
               />
               {item.name}
+              </div>
+              {showBadge && (
+                <Badge variant="destructive" className="ml-auto">
+                  {unreadCount}
+                </Badge>
+              )}
             </Link>
           )
         })}
