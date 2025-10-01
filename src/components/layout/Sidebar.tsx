@@ -20,7 +20,8 @@ import {
   Home,
   Users,
   Layout,
-  MessageSquare
+  MessageSquare,
+  BookOpen
 } from 'lucide-react'
 
 const navigation = [
@@ -32,6 +33,7 @@ const navigation = [
   { name: 'Costi', href: '/dashboard/costs', icon: DollarSign },
   { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
   { name: 'Dashboard Custom', href: '/dashboard/custom-dashboards', icon: Layout },
+  { name: 'Help', href: '/dashboard/help', icon: BookOpen },
   { name: 'Supporto', href: '/dashboard/support', icon: MessageSquare },
   { name: 'Utenti', href: '/dashboard/users', icon: Users },
 ]
