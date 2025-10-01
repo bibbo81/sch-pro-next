@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { Sidebar } from '@/components/layout/Sidebar'
-import { Ship, Menu, LogOut } from 'lucide-react'
+import { Ship, Menu, LogOut, Package, MessageSquare } from 'lucide-react'
+import NotificationBell from '@/components/notifications/NotificationBell'
 
 interface DashboardLayoutProps {
   children: React.ReactNode
@@ -95,8 +96,12 @@ function DashboardLayout({ children }: DashboardLayoutProps) {
             </div>
           </div>
 
-          {/* User Info */}
+          {/* User Info and Notifications */}
           <div className="flex items-center space-x-3">
+            {/* Notification Bells */}
+            <NotificationBell type="tracking" icon={<Package className="h-5 w-5" />} />
+            <NotificationBell type="messages" icon={<MessageSquare className="h-5 w-5" />} />
+
             <div className="hidden sm:block">
               <p className="text-sm font-medium text-foreground">{user.email}</p>
               <p className="text-xs text-muted-foreground">Online</p>
