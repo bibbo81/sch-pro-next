@@ -1,13 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { Bell, MessageSquare, Package } from 'lucide-react'
+import { useEffect, useState, useRef } from 'react'
+import { Bell, MessageSquare, Package, X } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
 import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
 
@@ -33,20 +28,32 @@ export default function NotificationBell({ type, icon }: NotificationBellProps) 
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [isOpen, setIsOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     fetchNotifications()
-    // Refresh every 30 seconds
     const interval = setInterval(fetchNotifications, 30000)
     return () => clearInterval(interval)
   }, [type])
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false)
+      }
+    }
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isOpen])
 
   const fetchNotifications = async () => {
     try {
       const response = await fetch('/api/notifications?limit=10&unread_only=false')
       const data = await response.json()
 
-      // Filter by type
       const filteredNotifications = (data.notifications || []).filter((n: Notification) => {
         if (type === 'messages') {
           return n.notification_type === 'ticket_response' || n.notification_type === 'ticket_status'
@@ -94,96 +101,97 @@ export default function NotificationBell({ type, icon }: NotificationBellProps) 
   }
 
   const getEmptyMessage = () => {
-    return type === 'messages'
-      ? 'Nessun messaggio'
-      : 'Nessun aggiornamento tracking'
+    return type === 'messages' ? 'Nessun messaggio' : 'Nessun aggiornamento tracking'
   }
 
   return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="relative"
-        >
-          {getIcon()}
-          {unreadCount > 0 && (
-            <Badge
-              variant="destructive"
-              className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
-            >
-              {unreadCount > 9 ? '9+' : unreadCount}
-            </Badge>
-          )}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-80 p-0" align="end">
-        <div className="flex items-center justify-between p-4 border-b">
-          <h3 className="font-semibold">
-            {type === 'messages' ? 'Messaggi' : 'Tracking'}
-          </h3>
-          {unreadCount > 0 && (
-            <Badge variant="secondary">{unreadCount} nuovi</Badge>
-          )}
-        </div>
+    <div className="relative" ref={dropdownRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="relative p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
+      >
+        {getIcon()}
+        {unreadCount > 0 && (
+          <span className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center bg-red-500 text-white text-xs rounded-full font-medium">
+            {unreadCount > 9 ? '9+' : unreadCount}
+          </span>
+        )}
+      </button>
 
-        <div className="max-h-[400px] overflow-y-auto">
-          {notifications.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
-              {getIcon()}
-              <p className="mt-2 text-sm">{getEmptyMessage()}</p>
+      {isOpen && (
+        <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
+          <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+            <h3 className="font-semibold text-gray-900 dark:text-gray-100">
+              {type === 'messages' ? 'Messaggi' : 'Tracking'}
+            </h3>
+            <div className="flex items-center gap-2">
+              {unreadCount > 0 && (
+                <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-xs font-medium rounded-full">
+                  {unreadCount} nuovi
+                </span>
+              )}
+              <button onClick={() => setIsOpen(false)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
+                <X className="h-4 w-4" />
+              </button>
             </div>
-          ) : (
-            <div className="divide-y">
-              {notifications.map((notification) => (
-                <div
-                  key={notification.id}
-                  className={`p-4 hover:bg-accent cursor-pointer transition-colors ${
-                    !notification.is_read ? 'bg-blue-50/50 dark:bg-blue-950/20' : ''
-                  }`}
-                  onClick={() => handleNotificationClick(notification)}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">
-                        {notification.title}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                        {notification.message}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {new Date(notification.created_at).toLocaleString('it-IT', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </p>
+          </div>
+
+          <div className="max-h-[400px] overflow-y-auto">
+            {notifications.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8 text-gray-500">
+                {getIcon()}
+                <p className="mt-2 text-sm">{getEmptyMessage()}</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                {notifications.map((notification) => (
+                  <div
+                    key={notification.id}
+                    className={`p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors ${
+                      !notification.is_read ? 'bg-blue-50 dark:bg-blue-950/20' : ''
+                    }`}
+                    onClick={() => handleNotificationClick(notification)}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate text-gray-900 dark:text-gray-100">
+                          {notification.title}
+                        </p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
+                          {notification.message}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {new Date(notification.created_at).toLocaleString('it-IT', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </p>
+                      </div>
+                      {!notification.is_read && (
+                        <div className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0 mt-1" />
+                      )}
                     </div>
-                    {!notification.is_read && (
-                      <div className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0 mt-1" />
-                    )}
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+                ))}
+              </div>
+            )}
+          </div>
 
-        <div className="p-2 border-t">
-          <Button
-            variant="ghost"
-            className="w-full"
-            onClick={() => {
-              router.push('/dashboard/notifications')
-              setIsOpen(false)
-            }}
-          >
-            Vedi tutte le notifiche
-          </Button>
+          <div className="p-2 border-t border-gray-200 dark:border-gray-700">
+            <button
+              onClick={() => {
+                router.push('/dashboard/notifications')
+                setIsOpen(false)
+              }}
+              className="w-full py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+            >
+              Vedi tutte le notifiche
+            </button>
+          </div>
         </div>
-      </PopoverContent>
-    </Popover>
+      )}
+    </div>
   )
 }
