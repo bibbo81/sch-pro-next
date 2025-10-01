@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Users, Search, Filter, Download, Ban, UserX, UserCheck, Shield, Activity } from 'lucide-react'
+import { Users, Search, Filter, Download, Ban, UserX, UserCheck, Shield, Activity, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 
 interface User {
@@ -139,14 +139,22 @@ export default function SuperAdminUsersPage() {
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <Users className="h-8 w-8" />
-            Gestione Utenti
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Gestione completa utenti cross-organizzazione
-          </p>
+        <div className="flex items-center gap-4">
+          <Link
+            href="/super-admin"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition"
+          >
+            <ArrowLeft className="h-6 w-6 text-gray-900 dark:text-white" />
+          </Link>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <Users className="h-8 w-8" />
+              Gestione Utenti
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">
+              Gestione completa utenti cross-organizzazione
+            </p>
+          </div>
         </div>
 
         <button
