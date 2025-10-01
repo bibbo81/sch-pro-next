@@ -2,7 +2,7 @@ import { getSuperAdminStats } from '@/lib/auth-super-admin'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Building2, Users, Package, TrendingUp, ArrowLeft, Plus, Settings, Activity, Database, CreditCard, DollarSign, MessageSquare, AlertCircle, Bell } from 'lucide-react'
+import { Building2, Users, Package, TrendingUp, ArrowLeft, Plus, Settings, Activity, Database, CreditCard, DollarSign, MessageSquare, AlertCircle, Bell, Cog } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 
 export default async function SuperAdminDashboard() {
@@ -248,6 +248,12 @@ export default async function SuperAdminDashboard() {
               <Button className="w-full">
                 <Activity className="mr-2 h-4 w-4" />
                 Database Health
+              </Button>
+            </Link>
+            <Link href="/super-admin/system-config" className="block">
+              <Button className="w-full bg-purple-600 hover:bg-purple-700 text-white">
+                <Cog className="mr-2 h-4 w-4" />
+                System Configuration
               </Button>
             </Link>
             <Link href="/super-admin/audit" className="block">
