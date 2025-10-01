@@ -1,5 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireSuperAdmin, createSupabaseServer } from '@/lib/auth'
+import { requireSuperAdmin } from '@/lib/auth-super-admin'
+import { createClient } from '@supabase/supabase-js'
+
+// Create service role client to bypass RLS
+function createServiceRoleClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    }
+  )
+}
 
 // GET /api/super-admin/support-tickets/[id] - Get single ticket
 export async function GET(
@@ -8,7 +23,7 @@ export async function GET(
 ) {
   try {
     const { user } = await requireSuperAdmin()
-    const supabase = await createSupabaseServer()
+    const supabase = createServiceRoleClient()
 
     const { data: ticket, error } = await supabase
       .from('support_tickets')
@@ -47,7 +62,7 @@ export async function PATCH(
 ) {
   try {
     const { user } = await requireSuperAdmin()
-    const supabase = await createSupabaseServer()
+    const supabase = createServiceRoleClient()
     const body = await request.json()
 
     const { status, priority, assigned_to } = body
@@ -95,7 +110,7 @@ export async function DELETE(
 ) {
   try {
     await requireSuperAdmin()
-    const supabase = await createSupabaseServer()
+    const supabase = createServiceRoleClient()
 
     // Delete all messages first
     await supabase

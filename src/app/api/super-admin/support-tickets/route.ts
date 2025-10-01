@@ -1,11 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireSuperAdmin, createSupabaseServer } from '@/lib/auth'
+import { requireSuperAdmin } from '@/lib/auth-super-admin'
+import { createClient } from '@supabase/supabase-js'
 
 // GET /api/super-admin/support-tickets - List all tickets (all organizations)
 export async function GET(request: NextRequest) {
   try {
     await requireSuperAdmin()
-    const supabase = await createSupabaseServer()
+
+    // Use service role client to bypass RLS
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
+    )
+
     const { searchParams } = new URL(request.url)
 
     const status = searchParams.get('status')

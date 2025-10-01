@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireSuperAdmin, createSupabaseServer } from '@/lib/auth'
+import { requireSuperAdmin } from '@/lib/auth-super-admin'
+import { createClient } from '@supabase/supabase-js'
 
 // POST /api/super-admin/support-tickets/[id]/messages - Add agent response
 export async function POST(
@@ -8,7 +9,19 @@ export async function POST(
 ) {
   try {
     const { user } = await requireSuperAdmin()
-    const supabase = await createSupabaseServer()
+
+    // Use service role client to bypass RLS
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
+    )
+
     const body = await request.json()
 
     const { message, is_internal_note } = body
