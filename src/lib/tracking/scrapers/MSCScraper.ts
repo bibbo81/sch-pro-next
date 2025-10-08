@@ -30,8 +30,8 @@ export class MSCScraper extends BaseCarrierScraper {
 
     const cleaned = trackingNumber.toUpperCase().trim()
 
-    // Container number: MSCU + 7 digits (MSC specific prefix)
-    const containerPattern = /^MSCU\d{7}$/
+    // Container number: MSC prefixes (MSCU, MEDU, TCLU, APZU) + 7 digits
+    const containerPattern = /^(MSCU|MEDU|TCLU|APZU)\d{7}$/
     if (containerPattern.test(cleaned)) return true
 
     // BL number: Various formats, typically 10-13 alphanumeric
@@ -76,14 +76,25 @@ export class MSCScraper extends BaseCarrierScraper {
   private async fetchTracking(trackingNumber: string): Promise<TrackingResult> {
     const url = `${this.config.baseUrl}`
 
+    // Enhanced headers to bypass anti-bot protection
     const response = await fetch(url, {
       method: 'POST',
       headers: {
+        'Accept': 'application/json, text/plain, */*',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Accept-Encoding': 'gzip, deflate, br',
         'Content-Type': 'application/json',
-        'User-Agent': this.config.userAgent!,
-        'Accept': 'application/json',
         'Origin': 'https://www.msc.com',
-        'Referer': 'https://www.msc.com/track-a-shipment',
+        'Referer': 'https://www.msc.com/en/track-a-shipment',
+        'User-Agent': this.config.userAgent!,
+        'Sec-Fetch-Dest': 'empty',
+        'Sec-Fetch-Mode': 'cors',
+        'Sec-Fetch-Site': 'same-origin',
+        'Sec-Ch-Ua': '"Google Chrome";v="119", "Chromium";v="119", "Not?A_Brand";v="24"',
+        'Sec-Ch-Ua-Mobile': '?0',
+        'Sec-Ch-Ua-Platform': '"macOS"',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache',
       },
       body: JSON.stringify({
         trackingNumber: trackingNumber.toUpperCase().trim(),

@@ -9,12 +9,12 @@
  */
 
 import { TrackingResult } from './BaseCarrierScraper'
-import { mscScraper } from './scrapers/MSCScraper'
+import { mscScraperV2 } from './scrapers/MSCScraperV2'
 import { createSupabaseServer } from '@/lib/auth'
 
 // Carrier code to scraper mapping
 const SCRAPER_MAP = {
-  msc: mscScraper,
+  msc: mscScraperV2,      // V2: Uses Playwright for browser automation
   // maersk: maerskScraper,  // TODO: Implement
   // cma_cgm: cmaCGMScraper, // TODO: Implement
   // cosco: coscoScraper,    // TODO: Implement
@@ -118,15 +118,22 @@ export class TrackingOrchestrator {
             organizationId,
             error instanceof Error ? error.message : 'Unknown error'
           )
-        }
-      }
 
-      // If user prefers web_scraping only, stop here and return error
-      if (preferredProvider === 'web_scraping') {
-        throw new Error(
-          `No web scraper available for carrier: ${detectedCarrier || 'unknown'}. ` +
-          `Try switching to "Automatico" mode to use fallback providers.`
-        )
+          // If user prefers web_scraping only and it failed, stop here
+          if (preferredProvider === 'web_scraping') {
+            throw new Error(
+              `Web scraping failed for carrier: ${detectedCarrier}. Error: ${error instanceof Error ? error.message : 'Unknown error'}`
+            )
+          }
+        }
+      } else {
+        // No scraper available for this carrier
+        if (preferredProvider === 'web_scraping') {
+          throw new Error(
+            `No web scraper available for carrier: ${detectedCarrier || 'unknown'}. ` +
+            `Try switching to "Automatico" mode to use fallback providers.`
+          )
+        }
       }
 
       // Step 4: Try Layer 2 (JSONCargo API)
@@ -332,8 +339,8 @@ export class TrackingOrchestrator {
   private detectCarrier(trackingNumber: string): string | undefined {
     const cleaned = trackingNumber.toUpperCase().trim()
 
-    // MSC: MSCU + 7 digits
-    if (/^MSCU\d{7}/.test(cleaned)) return 'msc'
+    // MSC: Multiple prefixes (MSCU, MEDU, TCLU, APZU, etc.) + 7 digits
+    if (/^(MSCU|MEDU|TCLU|APZU)\d{7}/.test(cleaned)) return 'msc'
 
     // Maersk: MAEU + 7 digits
     if (/^MAEU\d{7}/.test(cleaned)) return 'maersk'
