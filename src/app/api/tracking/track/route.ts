@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
 
     // Parse request body
     const body = await request.json()
-    const { tracking_number, carrier, force_refresh = false } = body
+    const { tracking_number, carrier, force_refresh = false, preferred_provider } = body
 
     // Validate tracking number
     if (!tracking_number || typeof tracking_number !== 'string') {
@@ -33,6 +33,7 @@ export async function POST(request: NextRequest) {
       carrier,
       forceRefresh: force_refresh,
       organizationId,
+      preferredProvider: preferred_provider, // 'web_scraping' | 'shipsgo' | undefined (auto)
     })
 
     // Return result

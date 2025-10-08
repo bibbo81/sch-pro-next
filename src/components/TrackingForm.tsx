@@ -1,17 +1,20 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useShipsGO } from '@/hooks/useShipsGO'
 
 interface TrackingFormProps {
   onAdd: (tracking: any) => void
   onBatchAdd: (trackings: any[]) => void
-  onCancel?: () => void // ✅ FIX: Aggiungi onCancel opzionale
+  onCancel?: () => void
 }
 
 export default function TrackingForm({ onAdd, onBatchAdd, onCancel }: TrackingFormProps) {
-  const { trackSingle, trackBatch, loading, error, creditsUsed, resetCredits } = useShipsGO()
-  
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [creditsUsed, setCreditsUsed] = useState(0)
+
+  const resetCredits = () => setCreditsUsed(0)
+
   const [formData, setFormData] = useState({
     tracking_number: '',
     tracking_numbers: '',
@@ -33,6 +36,7 @@ export default function TrackingForm({ onAdd, onBatchAdd, onCancel }: TrackingFo
 
   const [operation, setOperation] = useState<'single' | 'batch' | 'excel' | 'manual'>('single')
   const [forceNew, setForceNew] = useState(false)
+  const [preferredProvider, setPreferredProvider] = useState<'auto' | 'web_scraping' | 'shipsgo'>('auto')
   const [excelFile, setExcelFile] = useState<File | null>(null)
   const [showDetails, setShowDetails] = useState(false)
   const [carriers, setCarriers] = useState<any[]>([])
@@ -271,13 +275,30 @@ export default function TrackingForm({ onAdd, onBatchAdd, onCancel }: TrackingFo
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+    setLoading(true)
+    setError(null)
+
     try {
       switch (operation) {
         case 'single':
           if (!formData.tracking_number) return
-          const result = await trackSingle(formData.tracking_number, forceNew)
-          if (result.found && result.data) {
+
+          // ✅ NEW: Use new 3-layer tracking orchestrator endpoint
+          const response = await fetch('/api/tracking/track', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              tracking_number: formData.tracking_number,
+              force_refresh: forceNew,
+              preferred_provider: preferredProvider === 'auto' ? undefined : preferredProvider
+            })
+          })
+
+          const result = await response.json()
+
+          if (result.success && result.data) {
+            // Increment credits counter
+            setCreditsUsed(prev => prev + 1)
             const enrichedData = {
               ...result.data,
               reference_number: formData.reference_number,
@@ -288,14 +309,29 @@ export default function TrackingForm({ onAdd, onBatchAdd, onCancel }: TrackingFo
               total_volume_cbm: formData.total_volume_cbm ? parseFloat(formData.total_volume_cbm) : null,
               bl_number: formData.bl_number,
               flight_number: formData.flight_number,
-              is_api_tracked: true
+              is_api_tracked: true,
+              provider_used: result.meta?.provider // Track which provider was used
             }
             await onAdd(enrichedData)
-            
+
+            // Show success message with provider info
+            if (result.meta) {
+              const providerLabel = {
+                web_scraping: '🌐 Web Scraping',
+                jsoncargo: '📦 JSONCargo API',
+                shipsgo: '🚢 ShipsGo',
+                cache: '💾 Cache'
+              }[result.meta.provider] || result.meta.provider
+
+              alert(`✅ Tracking aggiunto con successo!\n\nProvider: ${providerLabel}\nResponse time: ${result.meta.response_time_ms}ms\nCached: ${result.meta.cached ? 'Sì' : 'No'}`)
+            }
+
             // ✅ FIX: Chiama onCancel se disponibile
             if (onCancel) {
               onCancel()
             }
+          } else {
+            throw new Error(result.error || 'Errore nel tracking')
           }
           break
 
@@ -305,21 +341,48 @@ export default function TrackingForm({ onAdd, onBatchAdd, onCancel }: TrackingFo
             .split('\n')
             .map(num => num.trim())
             .filter(num => num.length > 0)
-          
+
           if (trackingNumbers.length === 0) return
-          
-          const batchResult = await trackBatch(trackingNumbers, forceNew)
-          if (batchResult.data.length > 0) {
-            const enrichedBatch = batchResult.data.map(item => ({
-              ...item,
-              is_api_tracked: true
-            }))
-            await onBatchAdd(enrichedBatch)
-            
+
+          // ✅ NEW: Process batch through new orchestrator endpoint
+          const batchResults = []
+          for (const trackingNum of trackingNumbers) {
+            try {
+              const batchResponse = await fetch('/api/tracking/track', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  tracking_number: trackingNum,
+                  force_refresh: forceNew,
+                  preferred_provider: preferredProvider === 'auto' ? undefined : preferredProvider
+                })
+              })
+
+              const batchResult = await batchResponse.json()
+              if (batchResult.success && batchResult.data) {
+                batchResults.push({
+                  ...batchResult.data,
+                  is_api_tracked: true,
+                  provider_used: batchResult.meta?.provider
+                })
+                // Increment credits counter for each successful track
+                setCreditsUsed(prev => prev + 1)
+              }
+            } catch (err) {
+              console.error(`Error tracking ${trackingNum}:`, err)
+            }
+          }
+
+          if (batchResults.length > 0) {
+            await onBatchAdd(batchResults)
+            alert(`✅ Batch tracking completato!\n\n${batchResults.length}/${trackingNumbers.length} tracking aggiunti con successo.`)
+
             // ✅ FIX: Chiama onCancel se disponibile
             if (onCancel) {
               onCancel()
             }
+          } else {
+            throw new Error('Nessun tracking valido trovato nel batch')
           }
           break
 
@@ -383,7 +446,11 @@ export default function TrackingForm({ onAdd, onBatchAdd, onCancel }: TrackingFo
       setDetectedType(null)
     } catch (err) {
       console.error('Errore nel tracking:', err)
-      alert('Errore nel tracking: ' + (err instanceof Error ? err.message : 'Errore sconosciuto'))
+      const errorMessage = err instanceof Error ? err.message : 'Errore sconosciuto'
+      setError(errorMessage)
+      alert('Errore nel tracking: ' + errorMessage)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -426,21 +493,21 @@ export default function TrackingForm({ onAdd, onBatchAdd, onCancel }: TrackingFo
 
   const getDetectionMessage = () => {
     if (!detectedType) return null
-    
+
     if (operation === 'manual') {
       const modeMap: Record<string, string> = {
         'air_manual': '✈️ Suggerito: Modalità Aereo',
-        'road_manual': '🚛 Suggerito: Modalità Stradale', 
+        'road_manual': '🚛 Suggerito: Modalità Stradale',
         'sea_manual': '🚢 Suggerito: Modalità Marittima'
       }
       return modeMap[detectedType] || '🚢 Suggerito: Modalità Marittima'
     } else {
       const typeMap: Record<string, string> = {
-        'awb': '✈️ Rilevato: Aereo (AWB) - API ShipsGO',
-        'parcel': '📦 Rilevato: Pacco/Corriere - API ShipsGO',
-        'container': '🚢 Rilevato: Container/Mare - API ShipsGO'
+        'awb': '✈️ Rilevato: Aereo (AWB) - 3-Layer Tracking System',
+        'parcel': '📦 Rilevato: Pacco/Corriere - 3-Layer Tracking System',
+        'container': '🚢 Rilevato: Container/Mare - 3-Layer Tracking System'
       }
-      return typeMap[detectedType] || '🚢 Rilevato: Container/Mare - API ShipsGO'
+      return typeMap[detectedType] || '🚢 Rilevato: Container/Mare - 3-Layer Tracking System'
     }
   }
 
@@ -518,6 +585,85 @@ export default function TrackingForm({ onAdd, onBatchAdd, onCancel }: TrackingFo
         </div>
       )}
 
+      {/* Provider Selector - NON per manual e excel */}
+      {operation !== 'manual' && operation !== 'excel' && (
+        <div className="mb-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-md">
+          <label className="block text-sm font-medium text-gray-900 mb-3">
+            🎯 Seleziona Provider di Tracking
+          </label>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <button
+              type="button"
+              onClick={() => setPreferredProvider('auto')}
+              className={`p-3 rounded-lg border-2 transition-all ${
+                preferredProvider === 'auto'
+                  ? 'border-blue-500 bg-blue-100 shadow-md'
+                  : 'border-gray-300 bg-white hover:border-blue-300'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className="font-medium text-sm">🔄 Automatico</span>
+                {preferredProvider === 'auto' && (
+                  <span className="text-blue-600">✓</span>
+                )}
+              </div>
+              <p className="text-xs text-gray-600">
+                3-Layer: Web Scraping → JSONCargo → ShipsGo
+              </p>
+              <p className="text-xs text-green-600 font-medium mt-1">
+                💰 Economico (usa ShipsGo solo se necessario)
+              </p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setPreferredProvider('web_scraping')}
+              className={`p-3 rounded-lg border-2 transition-all ${
+                preferredProvider === 'web_scraping'
+                  ? 'border-green-500 bg-green-100 shadow-md'
+                  : 'border-gray-300 bg-white hover:border-green-300'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className="font-medium text-sm">🌐 Solo Scraping</span>
+                {preferredProvider === 'web_scraping' && (
+                  <span className="text-green-600">✓</span>
+                )}
+              </div>
+              <p className="text-xs text-gray-600">
+                Solo web scraping diretto (11 carriers)
+              </p>
+              <p className="text-xs text-green-600 font-medium mt-1">
+                ✅ GRATIS - Nessun credito utilizzato
+              </p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setPreferredProvider('shipsgo')}
+              className={`p-3 rounded-lg border-2 transition-all ${
+                preferredProvider === 'shipsgo'
+                  ? 'border-orange-500 bg-orange-100 shadow-md'
+                  : 'border-gray-300 bg-white hover:border-orange-300'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className="font-medium text-sm">🚢 Solo ShipsGo</span>
+                {preferredProvider === 'shipsgo' && (
+                  <span className="text-orange-600">✓</span>
+                )}
+              </div>
+              <p className="text-xs text-gray-600">
+                API ShipsGo (tutti i carriers)
+              </p>
+              <p className="text-xs text-orange-600 font-medium mt-1">
+                💳 A PAGAMENTO - Consuma crediti
+              </p>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Force New Toggle - NON per manual e excel */}
       {operation !== 'manual' && operation !== 'excel' && (
         <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
@@ -557,9 +703,14 @@ export default function TrackingForm({ onAdd, onBatchAdd, onCancel }: TrackingFo
             <svg className="h-5 w-5 text-blue-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
-            <p className="text-sm text-blue-700">
-              Live Tracking: i dati verranno recuperati automaticamente da ShipsGO
-            </p>
+            <div>
+              <p className="text-sm text-blue-700 font-medium">
+                🔄 Live Tracking: Sistema 3-Layer Attivo
+              </p>
+              <p className="text-xs text-blue-600 mt-1">
+                Layer 1: Web Scraping → Layer 2: JSONCargo → Layer 3: ShipsGo (fallback)
+              </p>
+            </div>
           </div>
         </div>
       )}
@@ -873,7 +1024,7 @@ MRKU2556409
               {operation === 'manual' ? (
                 <p className="text-orange-600 font-medium">📝 Inserimento manuale - Non tracciato via API</p>
               ) : (
-                <p className="text-green-600 font-medium">🔴 Live tracking - Tracciato via ShipsGO API</p>
+                <p className="text-green-600 font-medium">🔄 Live tracking - Sistema 3-Layer (Web Scraping → JSONCargo → ShipsGo)</p>
               )}
             </div>
             

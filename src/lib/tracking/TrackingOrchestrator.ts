@@ -38,10 +38,11 @@ export class TrackingOrchestrator {
       carrier?: string
       forceRefresh?: boolean
       organizationId?: string
+      preferredProvider?: 'web_scraping' | 'shipsgo'
     }
   ): Promise<OrchestatorResult> {
     const startTime = Date.now()
-    const { carrier, forceRefresh = false, organizationId } = options || {}
+    const { carrier, forceRefresh = false, organizationId, preferredProvider } = options || {}
 
     try {
       // Step 1: Check cache first (unless force refresh)
@@ -60,6 +61,28 @@ export class TrackingOrchestrator {
 
       // Step 2: Detect carrier if not provided
       const detectedCarrier = carrier || this.detectCarrier(trackingNumber)
+
+      // If user prefers ShipsGo only, skip to Layer 3
+      if (preferredProvider === 'shipsgo') {
+        const result = await this.trackWithShipsGo(trackingNumber)
+        await this.saveToCache(trackingNumber, result, organizationId)
+        await this.logRequest(
+          trackingNumber,
+          'shipsgo',
+          result.success ? 'success' : 'failed',
+          Date.now() - startTime,
+          detectedCarrier,
+          organizationId
+        )
+
+        return {
+          ...result,
+          provider: 'shipsgo',
+          fallbackUsed: false,
+          responseTime: Date.now() - startTime,
+          cached: false,
+        }
+      }
 
       // Step 3: Try Layer 1 (Web Scraping)
       if (detectedCarrier && this.hasScraperFor(detectedCarrier)) {
@@ -96,6 +119,14 @@ export class TrackingOrchestrator {
             error instanceof Error ? error.message : 'Unknown error'
           )
         }
+      }
+
+      // If user prefers web_scraping only, stop here and return error
+      if (preferredProvider === 'web_scraping') {
+        throw new Error(
+          `No web scraper available for carrier: ${detectedCarrier || 'unknown'}. ` +
+          `Try switching to "Automatico" mode to use fallback providers.`
+        )
       }
 
       // Step 4: Try Layer 2 (JSONCargo API)
@@ -370,38 +401,72 @@ export class TrackingOrchestrator {
 
   /**
    * Track with ShipsGo API (Layer 3)
-   * Uses existing ShipsGo integration
+   * Calls ShipsGo API directly
    */
   private async trackWithShipsGo(trackingNumber: string): Promise<TrackingResult> {
-    const response = await fetch('/api/shipsgo/track', {
+    const SHIPSGO_API_BASE = 'https://api.shipsgo.com/v2'
+    const SHIPSGO_API_KEY = process.env.SHIPSGO_API_KEY
+
+    if (!SHIPSGO_API_KEY) {
+      throw new Error('ShipsGo API key not configured')
+    }
+
+    const response = await fetch(`${SHIPSGO_API_BASE}/track`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tracking_number: trackingNumber }),
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${SHIPSGO_API_KEY}`,
+      },
+      body: JSON.stringify({
+        tracking_number: trackingNumber,
+        carrier_code: 'auto',
+      }),
     })
 
     if (!response.ok) {
-      throw new Error(`ShipsGo API error: ${response.statusText}`)
+      const error = await response.json().catch(() => ({}))
+      throw new Error(error.message || `ShipsGo API error: ${response.statusText}`)
     }
 
     const data = await response.json()
 
-    if (!data.success) {
-      throw new Error(data.error || 'ShipsGo tracking failed')
+    if (!data.data) {
+      throw new Error('No data received from ShipsGo')
     }
 
     // Map ShipsGo response to TrackingResult format
     return {
       success: true,
       trackingNumber,
-      carrier: data.data?.carrier_name || 'unknown',
-      status: data.data?.status || 'unknown',
-      origin: data.data?.origin_port ? { port: data.data.origin_port } : undefined,
-      destination: data.data?.destination_port ? { port: data.data.destination_port } : undefined,
-      eta: data.data?.eta ? new Date(data.data.eta) : undefined,
-      events: [],
-      scrapedAt: new Date(),
+      carrier: data.data.carrier_name || 'unknown',
+      status: this.mapShipsGoStatus(data.data.status),
+      origin: data.data.origin?.name ? { port: data.data.origin.name } : undefined,
+      destination: data.data.destination?.name ? { port: data.data.destination.name } : undefined,
+      vessel: data.data.vessel?.name ? { name: data.data.vessel.name } : undefined,
+      eta: data.data.estimated_arrival_time ? new Date(data.data.estimated_arrival_time) : undefined,
+      events: (data.data.events || []).map((e: any) => ({
+        date: new Date(e.timestamp),
+        location: e.location || '',
+        description: e.description || '',
+        status: e.status || '',
+      })),
       rawData: data.data,
+      scrapedAt: new Date(),
     }
+  }
+
+  /**
+   * Map ShipsGo status to standard status
+   */
+  private mapShipsGoStatus(status?: string): string {
+    if (!status) return 'unknown'
+    const normalized = status.toLowerCase()
+    if (normalized.includes('delivered')) return 'delivered'
+    if (normalized.includes('transit') || normalized.includes('sailing')) return 'in_transit'
+    if (normalized.includes('arrived')) return 'arrived'
+    if (normalized.includes('customs')) return 'customs_hold'
+    if (normalized.includes('exception') || normalized.includes('delay')) return 'delayed'
+    return normalized
   }
 }
 
