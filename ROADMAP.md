@@ -6,24 +6,27 @@
 
 ## 🎯 STATO SESSIONE CORRENTE
 
-**Data:** 02 Ottobre 2025
+**Data:** 02 Ottobre 2025 - 02:30
 **Completamento Globale:** 85.5% (313/366 features)
-**Prossimo Step:** Fase 6.1 - Ocean Tracking con Terminal49
+**Prossimo Step:** Fase 6.1 - Web Scraping Engine (MSC, Maersk, CMA CGM)
 
-### Decisioni Chiave Prese
+### Decisioni Chiave Finali Prese
 
 1. ✅ **Fase 6 priorità su Fase 5** - Tracking è core business
-2. ✅ **Terminal49 scelto vs VIZION** - Free tier 50 containers/mese vs no free tier
-3. ✅ **Google Workspace setup** - Dominio `sch-pro.app` acquistato
-4. ✅ **Email strategy definita** - `fabrizio.cagnucci@sch-pro.app` come primary
+2. ✅ **3-Layer Hybrid System** - Web Scraping (primary) → JSONCargo (fallback) → ShipsGo (ultimate)
+3. ✅ **11 carrier italiani prioritari** - MSC (40%), Maersk (15%), CMA CGM (12%), + 8 altri
+4. ✅ **Google Workspace setup** - Dominio `sch-pro.app` acquistato
+5. ✅ **Email strategy definita** - `fabrizio.cagnucci@sch-pro.app` come primary
+6. ✅ **Approccio ShipsGo replicato** - Web scraping come primary method (40-50% coverage)
+7. ✅ **Cost optimization** - $34-50/month vs $100-150 ShipsGo only (70-80% savings)
 
 ### Azioni Immediate da Completare
 
 - [ ] Completare setup Google Workspace con `fabrizio.cagnucci@sch-pro.app`
-- [ ] Registrare account Terminal49 usando email aziendale
+- [ ] Setup scraping server (DigitalOcean $20/mo o Railway $5-15/mo)
 - [ ] Applicare migration `20251002_tracking_providers.sql`
-- [ ] Implementare Terminal49Adapter.ts
-- [ ] Testare con 3-5 container numbers reali
+- [ ] Registrare account JSONCargo ($9/month unlimited)
+- [ ] Implementare primo scraper MSC (priority #1 - 40% market share Italia)
 
 ---
 
@@ -474,9 +477,9 @@
 
 ---
 
-## **FASE 6: Sistema Tracking Ibrido Multi-Modale** 🚛✈️🚢 PIANIFICATA (2% - solo research)
+## **FASE 6: Sistema Tracking Multi-Provider** 🚛✈️🚢 IN PARTENZA (0% - implementation ready)
 
-### 🎯 Strategia: Sistema Ibrido Cost-Effective con Free Tiers
+### 🎯 Strategia Finale: 3-Layer Hybrid System (90% Cost Reduction)
 
 #### Architettura Proposta
 ```
@@ -505,274 +508,296 @@
 └─────────────────────────────────────────┘
 ```
 
-### 6.1 FASE 1: Core Ocean Tracking (Settimane 1-2) 🚢 - NON INIZIATA (0/3 componenti)
-**Approccio:** VIZION Free Tier + Web Scraping Fallback
+### 🎯 Architettura: 3-Layer Hybrid System
 
-- [ ] **VIZION API Integration** (Primary - Free Tier) - 0/7 features
-  - [ ] Registrazione account VIZION (15 containers/mese gratis)
-  - [ ] Setup API key e environment variables
-  - [ ] Implementare `VizionAdapter.ts` con:
-    - Container tracking (numero container)
-    - B/L tracking (Bill of Lading)
-    - Booking reference tracking
-    - Real-time webhooks per aggiornamenti push
-  - [ ] Data normalization DCSA 2.2 standard
-  - [ ] Caching Redis (TTL: 1 ora)
-  - [ ] Test coverage principali carrier:
-    - Maersk Line
-    - MSC (Mediterranean Shipping)
-    - CMA CGM
-    - Hapag-Lloyd
-    - COSCO Shipping
-    - ONE (Ocean Network Express)
-    - Evergreen Line
-    - Yang Ming
-    - HMM (Hyundai Merchant Marine)
-    - ZIM Integrated Shipping
+**Strategia replicando l'approccio ShipsGo:**
+1. **Layer 1 (Primary):** Web Scraping - 11 carrier italiani prioritari (85% coverage, $0 costo per request)
+2. **Layer 2 (Fallback):** JSONCargo API - Unlimited tracking $9/month (backup universale)
+3. **Layer 3 (Ultimate Fallback):** ShipsGo - Già integrato (per casi edge e carrier non coperti)
 
-- [ ] **Web Scraping Fallback** (Secondary - Self-Hosted) - 0/6 features
-  - [ ] Setup Playwright automation engine
-  - [ ] Implementare scraper modulari per:
-    - Carrier regionali italiani (Grimaldi, GNV, Moby Lines)
-    - Carrier EU non coperti da VIZION free tier
-    - Backup per carrier principali quando VIZION down
-  - [ ] Anti-blocking strategies:
-    - User-agent rotation
-    - Request rate limiting
-    - Proxy rotation (opzionale)
-  - [ ] Cache aggressivo (3-6 ore per ridurre scraping)
-  - [ ] Error handling e retry logic
-
-- [ ] **Tracking Orchestrator** - 0/4 features
-  - [ ] Smart routing logic:
-    - VIZION come primary (se sotto 15 containers/mese)
-    - Web scraping come fallback automatico
-    - ShipsGo come ultimate fallback (esistente)
-  - [ ] Unified API response format
-  - [ ] Provider health check e automatic failover
-  - [ ] Metrics tracking per provider (success rate, latency)
-
-**Cost Year 1:** $0 (VIZION free tier) + $120-240 (self-hosted scraping server)
+**Costo totale:** $34-50/month vs $100-150 ShipsGo only = **70-80% savings**
 
 ---
 
-### 6.2 FASE 2: Parcel Integration (Settimane 3-4) 📦 - NON INIZIATA (0/3 componenti)
-**Approccio:** Karrio Self-Hosted + Direct Carrier APIs (Free Developer Tiers)
+### 6.1 Layer 1: Web Scraping Engine (Settimane 1-3) 🚢 - NON INIZIATA (0/11 carriers)
+**Priority:** TOP 11 carrier per mercato Italia (85% coverage)
 
-- [ ] **Karrio Self-Hosted Deployment** - 0/4 features
-  - [ ] Setup Docker container su infrastruttura propria
-  - [ ] Configurazione multi-tenant nativo
-  - [ ] Database setup per tracking data
-  - [ ] Admin dashboard per gestione carrier credentials
+#### Carrier Scrapers da implementare (priorità per market share Italia):
+- [ ] **MSC (Mediterranean Shipping)** - 40% market share Italia 🔴 CRITICAL
+  - [ ] Playwright scraper per tracking portal
+  - [ ] Container number + B/L tracking
+  - [ ] Parsing: vessel, ETA, origin/dest ports, events
+  - [ ] Anti-blocking: user-agent rotation + rate limiting
 
-- [ ] **Direct Carrier API Integration** (Free Developer Accounts) - 0/5 carriers
-  - [ ] **DHL API** (gratuita con limiti ragionevoli)
-    - Registrazione DHL Developer Portal
-    - Tracking API integration
-    - Sandbox testing
-  - [ ] **UPS API** (developer account gratuito)
-    - UPS Developer Kit
-    - Tracking and visibility API
-    - OAuth 2.0 authentication
-  - [ ] **FedEx API** (sandbox gratuito per sviluppo)
-    - FedEx Developer Resource Center
-    - Track API implementation
-    - Test con tracking numbers sandbox
-  - [ ] **TNT/FedEx Express** (se necessario)
-  - [ ] Altri corrieri regionali (Poste Italiane, BRT, GLS, etc.)
+- [ ] **Maersk Line** - 15% market share 🟠 HIGH
+  - [ ] Scraper con gestione login (se necessario)
+  - [ ] Container + booking reference support
+  - [ ] Parsing eventi milestone + location
 
-- [ ] **Karrio Configuration per SCH-PRO** - 0/4 features
-  - [ ] Multi-tenant setup per organizzazioni
-  - [ ] API proxy per unified tracking interface
-  - [ ] Credential vault per API keys cliente
-  - [ ] Rate limiting per evitare quota overflow
+- [ ] **CMA CGM** - 12% market share 🟠 HIGH
+  - [ ] Multi-format tracking support
+  - [ ] Gestione session cookies
 
-**Cost Year 1:** $0 (Karrio self-hosted + carrier free tiers) + $50-100 (infra hosting)
+- [ ] **COSCO Shipping** - 10% market share 🟡 MEDIUM
+- [ ] **Hapag-Lloyd** - 8% market share 🟡 MEDIUM
+- [ ] **ONE (Ocean Network Express)** - 6% market share 🟡 MEDIUM
+- [ ] **Evergreen Line** - 5% market share 🟢 LOW
+- [ ] **Yang Ming** - 3% market share 🟢 LOW
+- [ ] **HMM (Hyundai Merchant Marine)** - 3% market share 🟢 LOW
+- [ ] **ZIM Integrated Shipping** - 2% market share 🟢 LOW
+- [ ] **OOCL (Orient Overseas)** - 2% market share 🟢 LOW
 
----
+#### Infrastructure & Caching - 0/6 features
+- [ ] **Scraping Server Setup**
+  - [ ] DigitalOcean droplet ($20/month) o Railway ($5-15/month)
+  - [ ] Playwright + TypeScript environment
+  - [ ] Redis cache (TTL: 2-6 ore per ridurre scraping frequency)
+  - [ ] PM2 o Docker per process management
 
-### 6.3 FASE 3: Air Cargo Tracking (Settimane 5-6) ✈️ - NON INIZIATA (0/3 componenti)
-**Approccio:** Web Scraping + Partner API Evaluation
+- [ ] **Anti-Blocking Strategies**
+  - [ ] User-agent rotation (20+ real browser UAs)
+  - [ ] Request rate limiting (max 1 req/5sec per carrier)
+  - [ ] Proxy rotation (opzionale, $10/month se necessario)
+  - [ ] Retry logic con exponential backoff
 
-- [ ] **Web Scraping per AWB Tracking** - 0/10 airlines + 4 features
-  - [ ] Playwright automation per top 10 airline cargo:
-    - Lufthansa Cargo
-    - Emirates SkyCargo
-    - Air France-KLM Cargo
-    - British Airways World Cargo
-    - Cargolux
-    - Qatar Airways Cargo
-    - Cathay Pacific Cargo
-    - Singapore Airlines Cargo
-    - Korean Air Cargo
-    - Turkish Cargo
-  - [ ] Cache aggressivo (AWB status cambia meno frequentemente)
-  - [ ] Parsing HTML strutturato per milestone tracking
-  - [ ] Error handling per layout changes
+- [ ] **Error Handling & Monitoring**
+  - [ ] Automatic fallback a Layer 2 (JSONCargo) su failure
+  - [ ] Healthcheck endpoint per ogni scraper
+  - [ ] Error logging a Supabase (tracking_requests_log)
+  - [ ] Alert quando success rate < 80%
 
-- [ ] **Partner API Consideration** - 0/3 evaluations
-  - [ ] Valutare costi ShipsGo per air cargo (se conveniente)
-  - [ ] Ricerca alternative aggregator specializzati air cargo
-  - [ ] POC con 5-10 AWB reali per validazione
-
-- [ ] **Unified Air Cargo Interface** - 0/4 features
-  - [ ] AWB number tracking
-  - [ ] Flight information (numero volo, scali)
-  - [ ] Milestone tracking (accepted, loaded, departed, arrived, delivered)
-  - [ ] ETA/ATA per ogni leg
-
-**Cost Year 1:** $0 (web scraping) oppure ~$100-200 (se partner API necessario)
+**Cost:** $20-35/month (server + proxy opzionale)
 
 ---
 
-### 6.4 Database Schema Evolution 🗄️
+### 6.2 Layer 2: JSONCargo API Fallback (Settimana 4) 🌐 - NON INIZIATA (0/4 features)
+**Backup universale per quando web scraping fallisce**
 
-- [ ] **Nuova tabella: `tracking_providers`**
-  ```sql
-  CREATE TABLE tracking_providers (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name TEXT NOT NULL,
-    type TEXT NOT NULL, -- 'ocean', 'air', 'parcel'
-    provider TEXT NOT NULL, -- 'vizion', 'karrio', 'web_scraping', 'shipsgo'
-    is_active BOOLEAN DEFAULT true,
-    priority INTEGER DEFAULT 1, -- Lower = higher priority
-    free_tier_limit INTEGER,
-    cost_per_request NUMERIC(10,4),
-    success_rate NUMERIC(5,2),
-    avg_response_time_ms INTEGER,
-    created_at TIMESTAMPTZ DEFAULT NOW()
-  );
+- [ ] **JSONCargo Integration**
+  - [ ] Account signup ($9/month unlimited plan)
+  - [ ] API key setup + environment variables
+  - [ ] Implementare `JSONCargoAdapter.ts`
+  - [ ] Data normalization per compatibility con nostro schema
+
+- [ ] **Smart Fallback Logic**
+  - [ ] Trigger automatico quando scraper fallisce 2+ volte
+  - [ ] Cache response per ridurre chiamate (TTL: 3 ore)
+  - [ ] Monitoring utilizzo mensile
+  - [ ] Alert se prossimi al limite (se esistente)
+
+**Cost:** $9/month unlimited
+
+---
+
+### 6.3 Tracking Orchestrator (Settimana 5) 🧠 - NON INIZIATA (0/6 features)
+**Smart routing tra i 3 layer**
+
+- [ ] **TrackingOrchestrator.ts Implementation**
+  ```typescript
+  // Pseudocode logica
+  async trackShipment(trackingNumber: string, carrier?: string) {
+    // 1. Check cache DB first (0 cost)
+    const cached = await checkCache(trackingNumber)
+    if (cached && !isStale(cached)) return cached
+
+    // 2. Identify carrier (auto-detect se non specificato)
+    const detectedCarrier = carrier || detectCarrier(trackingNumber)
+
+    // 3. Layer 1: Try web scraping
+    if (hasScraperFor(detectedCarrier)) {
+      const result = await scrapeCarrier(detectedCarrier, trackingNumber)
+      if (result.success) {
+        await saveToCache(result)
+        return result
+      }
+    }
+
+    // 4. Layer 2: Fallback JSONCargo
+    const jsonCargoResult = await jsonCargoAPI.track(trackingNumber)
+    if (jsonCargoResult.success) {
+      await saveToCache(jsonCargoResult)
+      return jsonCargoResult
+    }
+
+    // 5. Layer 3: Ultimate fallback ShipsGo
+    const shipsGoResult = await shipsGoAPI.track(trackingNumber)
+    await saveToCache(shipsGoResult)
+    return shipsGoResult
+  }
   ```
 
-- [ ] **Nuova tabella: `tracking_requests_log`**
-  ```sql
-  CREATE TABLE tracking_requests_log (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    organization_id UUID REFERENCES organizations(id),
-    provider_id UUID REFERENCES tracking_providers(id),
-    tracking_number TEXT NOT NULL,
-    tracking_type TEXT NOT NULL, -- 'container', 'awb', 'parcel'
-    status TEXT NOT NULL, -- 'success', 'failed', 'fallback_used'
-    response_time_ms INTEGER,
-    error_message TEXT,
-    created_at TIMESTAMPTZ DEFAULT NOW()
-  );
-  ```
+- [ ] **Provider Health Monitoring**
+  - [ ] Success rate tracking per provider
+  - [ ] Average response time metrics
+  - [ ] Automatic circuit breaker (skip provider se down)
 
-- [ ] **Aggiornamento tabella `trackings`**
-  - Aggiungere colonna `provider_used TEXT` per trackability
-  - Aggiungere colonna `tracking_type TEXT` per distinguere ocean/air/parcel
-  - Aggiungere colonna `raw_data JSONB` per debug
+- [ ] **Carrier Auto-Detection**
+  - [ ] Regex patterns per identificare carrier da tracking number
+  - [ ] Esempio: `MAEU\d{10}` = Maersk, `MSCU\d{7}` = MSC
+
+- [ ] **Cost Optimization**
+  - [ ] Prioritize free layer (scraping) sempre
+  - [ ] Log every request con provider used
+  - [ ] Monthly cost report per organization
+
+**Cost:** $0 (logica interna)
 
 ---
 
-### 6.5 API Architecture 🔌
+### 6.4 Database Schema Evolution 🗄️ - PRONTA (migration già creata)
 
-- [ ] **Tracking Orchestrator API**
-  - [ ] `POST /api/tracking/universal` - Universal tracking endpoint
-    - Body: `{ tracking_number, type: 'ocean'|'air'|'parcel', carrier? }`
-    - Response: Normalized tracking data + provider used
-  - [ ] `GET /api/tracking/history` - Tracking history per organization
-  - [ ] `GET /api/tracking/providers/health` - Provider health status
+✅ **Migration già disponibile:** `supabase/migrations/20251002_tracking_providers.sql`
 
-- [ ] **Admin Endpoints**
-  - [ ] `GET /api/super-admin/tracking-providers` - Lista provider con stats
-  - [ ] `PATCH /api/super-admin/tracking-providers/[id]` - Update priority/config
-  - [ ] `GET /api/super-admin/tracking-analytics` - Usage analytics per provider
+Tabelle create:
+- `tracking_providers` - Configurazione provider (scraping, JSONCargo, ShipsGo)
+- `tracking_requests_log` - Log ogni chiamata per analytics e fallback tracking
+
+**Task rimanenti:**
+- [ ] Apply migration a Supabase production
+- [ ] Seed initial provider data (11 scrapers + JSONCargo + ShipsGo)
+- [ ] Test queries e indexes
 
 ---
 
-### 6.6 Success Metrics 📊
+### 6.5 API Routes Update (Settimana 6) 🔌 - NON INIZIATA (0/5 routes)
+
+- [ ] **Migrate existing ShipsGo routes to Orchestrator**
+  - [ ] `POST /api/tracking/track` - New unified endpoint (replaces /api/shipsgo/track)
+  - [ ] `POST /api/tracking/batch` - Batch tracking (replaces /api/shipsgo/batch)
+  - [ ] `POST /api/tracking/check` - Cache check (replaces /api/shipsgo/check)
+  - [ ] Keep legacy `/api/shipsgo/*` routes per backward compatibility (deprecation warning)
+
+- [ ] **New Management Endpoints**
+  - [ ] `GET /api/tracking/providers/health` - Health status di tutti i provider
+  - [ ] `GET /api/super-admin/tracking-stats` - Analytics utilizzo per provider
+
+---
+
+### 6.6 Cron Job Update (Settimana 7) ⏱️ - NON INIZIATA (0/3 features)
+
+- [ ] **Update Existing Cron:**
+  - [ ] Modify `src/app/api/cron/shipsgo-refresh/route.ts`
+  - [ ] Replace direct ShipsGo call con TrackingOrchestrator
+  - [ ] Keep 2x/day schedule (07:00 + 14:00 UTC)
+  - [ ] Add provider usage stats to cron summary
+
+**Existing cron già ottimo:** batch per organization, smart error handling, notification triggers
+
+---
+
+### 6.7 Success Metrics 📊
 
 #### Technical KPIs
-- **API Response Time:** < 2 seconds (95th percentile)
-- **Success Rate:** > 95% tracking requests successful
-- **Fallback Rate:** < 10% requests requiring fallback
-- **Cache Hit Rate:** > 70% (riduce calls esterni)
-- **Provider Uptime:** > 99.5% aggregate uptime
+- **Layer 1 Success Rate:** > 85% (web scraping)
+- **Layer 2 Usage:** < 10% fallback to JSONCargo
+- **Layer 3 Usage:** < 5% fallback to ShipsGo
+- **API Response Time:** < 3 seconds (95th percentile)
+- **Cache Hit Rate:** > 70% (riduce external calls)
+
+#### Cost KPIs (Multi-Tenant)
+- **Monthly Cost:** $34-50 flat (server + JSONCargo + proxy)
+- **Cost per Organization:** $0 (flat rate, non per-org)
+- **Savings vs ShipsGo Only:** 70-80% risparmio
+- **Year 1 Total:** ~$400-600 vs $1,200-1,800 ShipsGo only
 
 #### Business KPIs
-- **Cost per Tracking:** < $0.05 average
-- **Coverage:** 100% top 10 carriers per modalità (ocean/air/parcel)
-- **User Satisfaction:** > 4.5/5 tracking accuracy rating
-- **Monthly Active Trackings:** Target 1,000+ trackings/mese
-
-#### Cost Targets (Year 1)
-- **Ocean Tracking:** $0-240 (VIZION free + scraping infra)
-- **Parcel Tracking:** $0-100 (Karrio self-hosted + infra)
-- **Air Cargo Tracking:** $0-200 (scraping + optional API)
-- **Total Year 1:** $0-540 vs $3,600-12,000 (aggregator-only approach)
-- **Savings:** ~90% vs traditional aggregator integration
+- **Carrier Coverage Italia:** 85% con top 5, 100% con tutti 11
+- **Tracking Accuracy:** > 95% data accuracy
+- **User Satisfaction:** > 4.5/5 tracking reliability
 
 ---
 
-### 6.7 Implementation Timeline ⏱️
+### 6.8 Implementation Timeline ⏱️
 
-#### Week 1-2: Ocean Freight Foundation
-- [x] Research VIZION API documentation
-- [ ] VIZION account setup + API testing
-- [ ] Implement VizionAdapter.ts
-- [ ] Setup Playwright for web scraping
-- [ ] Implement 3-5 scraper modules
-- [ ] Test with 10+ real container numbers
-- [ ] Deploy orchestrator logic
+#### Week 1-2: Top 3 Scrapers (MSC, Maersk, CMA CGM)
+- [ ] Setup scraping server (DigitalOcean/Railway)
+- [ ] Playwright environment + Redis cache
+- [ ] Implement MSC scraper (priority #1)
+- [ ] Implement Maersk scraper
+- [ ] Implement CMA CGM scraper
+- [ ] Test con 20+ tracking numbers reali
 
-#### Week 3-4: Parcel Integration
-- [ ] Deploy Karrio Docker container
-- [ ] Configure DHL, UPS, FedEx developer accounts
-- [ ] Implement Karrio API proxy
-- [ ] Multi-tenant credential management
-- [ ] Test with 20+ parcel tracking numbers
-- [ ] Integration testing end-to-end
+#### Week 3: Remaining 8 Scrapers
+- [ ] COSCO, Hapag-Lloyd, ONE, Evergreen
+- [ ] Yang Ming, HMM, ZIM, OOCL
+- [ ] Unified scraper base class per code reuse
+- [ ] Error handling standardization
 
-#### Week 5-6: Air Cargo & Polish
-- [ ] Implement 5 airline scrapers
-- [ ] AWB tracking testing
-- [ ] Provider health monitoring dashboard
-- [ ] Fallback logic refinement
-- [ ] Performance optimization
-- [ ] Documentation completa
+#### Week 4: JSONCargo Integration
+- [ ] Account setup + API testing
+- [ ] Implement JSONCargoAdapter.ts
+- [ ] Fallback logic testing
+- [ ] Rate limit monitoring
+
+#### Week 5: Orchestrator Logic
+- [ ] Implement TrackingOrchestrator.ts
+- [ ] Smart routing between layers
+- [ ] Carrier auto-detection
+- [ ] Provider health monitoring
+
+#### Week 6: API Migration
+- [ ] New unified endpoints
+- [ ] Migrate frontend to new API
+- [ ] Backward compatibility routes
+- [ ] Integration testing
 
 #### Week 7: Production Launch
+- [ ] Update cron job
 - [ ] Gradual rollout per organization
-- [ ] Monitor error rates e fallback usage
-- [ ] Optimize caching strategies
+- [ ] Monitor success rates per layer
+- [ ] Cost tracking validation
 - [ ] User feedback collection
-- [ ] Iterate based on metrics
 
 ---
 
-### 6.8 Risk Mitigation Strategies ⚠️
-
-#### Risk: VIZION free tier esaurito (>15 containers/mese)
-**Mitigation:**
-- Automatic fallback a web scraping
-- Upgrade VIZION a paid tier (~$300/mese) solo se volumi lo giustificano
-- Quota monitoring con alerting
+### 6.9 Risk Mitigation Strategies ⚠️
 
 #### Risk: Web scraping bloccato da carrier websites
 **Mitigation:**
-- User-agent rotation
-- Request rate limiting aggressivo
-- Fallback a ShipsGo (esistente)
-- CAPTCHA solving service (opzionale, 2Captcha $3/1000)
+- User-agent rotation + request rate limiting
+- Proxy rotation (opzionale, $10/month)
+- Automatic fallback a Layer 2 (JSONCargo)
+- Ultimate fallback a ShipsGo (già esistente)
+- CAPTCHA solving service solo se necessario (2Captcha $3/1000)
 
-#### Risk: Karrio maintenance overhead
+#### Risk: JSONCargo API down o rate limited
 **Mitigation:**
-- Docker automated updates
-- Health check monitoring
-- Backup plan: Direct carrier API calls senza Karrio
+- Cache aggressivo (3-6 ore) per ridurre dipendenza
+- Automatic fallback a ShipsGo
+- Health check monitoring con alert
+- Backup plan: aumentare cache TTL a 12-24 ore temporaneamente
 
-#### Risk: Carrier API changes/deprecations
+#### Risk: Carrier website layout changes
 **Mitigation:**
-- Version pinning where possible
-- Automated testing suite per ogni carrier
-- Fallback mechanism sempre attivo
-- Provider health dashboard per early detection
+- Automated scraper testing (daily cron)
+- Alert quando success rate < 80% per un carrier
+- Fallback automatico a JSONCargo per quel carrier
+- Quick fix deployment entro 24-48h
+
+#### Risk: Costi scalabili con crescita utenti
+**Mitigation:**
+- Architettura multi-tenant con flat cost ($34-50/month)
+- Non dipendenza da per-request pricing
+- Cache-first pattern (70%+ cache hit rate target)
+- Cost monitoring dashboard per layer
 
 ---
 
-### 6.9 Future Enhancements (Post-MVP) 🚀
+### 6.10 Provider Comparison Table 📊
+
+| Provider | Tipo | Costi | Coverage | Pro | Contro |
+|----------|------|-------|----------|-----|--------|
+| **Web Scraping** | Layer 1 Primary | $20-35/mo flat | 11 carrier Italia (85%) | Zero costo per request, multi-tenant friendly | Manutenzione, anti-blocking |
+| **JSONCargo** | Layer 2 Fallback | $9/mo unlimited | 150+ carrier global | Unlimited, flat rate, multi-tenant | Latency, meno dettagli |
+| **ShipsGo** | Layer 3 Ultimate | ~$100-150/mo | 115+ carrier global | Comprehensive data, reliable | Credit-based, expensive |
+| **VIZION** | ❌ Scartato | $600+/mo | 99+ ocean carrier | Best ocean data, DCSA | No free tier, per-request |
+| **Terminal49** | ❌ Scartato | $500+/mo | 50+ ocean carrier | Good free tier (50/mo) | Per-request dopo free tier |
+
+**Scelta finale:** 3-Layer Hybrid = 70-80% cost savings vs ShipsGo only
+
+---
+
+### 6.11 Future Enhancements (Post-MVP) 🚀
 
 - [ ] **Machine Learning per ETA Prediction**
   - Predictive delivery estimates basati su historical data
@@ -796,43 +821,47 @@
   - Dynamic polling frequency (più frequente vicino a milestone)
   - Riduce API calls del 40-60%
 
+- [ ] **Parcel & Air Cargo Tracking** (Postponed to Phase 7)
+  - Karrio self-hosted per DHL, UPS, FedEx tracking
+  - Air cargo AWB tracking (Lufthansa, Emirates, etc.)
+  - Multi-modal unified interface
+
 ---
 
 ### 📚 Resources & Documentation
 
-#### VIZION API
-- **Website:** https://www.vizionapi.com/
-- **Documentation:** https://docs.vizionapi.com/
-- **Free Tier:** 15 containers/month
-- **Coverage:** 99% global ocean freight
-- **Features:** Push webhooks, DCSA compliant, <1h refresh
-
-#### Karrio
-- **Website:** https://karrio.io/
-- **GitHub:** https://github.com/karrioapi/karrio
-- **Documentation:** https://docs.karrio.io/
-- **Self-Hosted:** Docker deployment
-- **Carriers:** 50+ integrations (DHL, FedEx, UPS, USPS, etc.)
+#### JSONCargo API
+- **Website:** https://jsoncargo.com/
+- **Pricing:** $9/month unlimited tracking (best per multi-tenant)
+- **Coverage:** 150+ carriers ocean freight global
+- **Features:** REST API, comprehensive tracking data
 
 #### Playwright (Web Scraping)
 - **Website:** https://playwright.dev/
 - **Documentation:** https://playwright.dev/docs/intro
 - **Features:** Headless browser automation, anti-detection
 - **Language:** TypeScript/JavaScript native
+- **Use case:** Primary tracking method per 11 carrier italiani
 
-#### Carrier Developer Portals
-- **DHL API:** https://developer.dhl.com/
-- **UPS API:** https://developer.ups.com/
-- **FedEx API:** https://developer.fedex.com/
-- **Maersk API:** https://developer.maersk.com/
-- **Hapag-Lloyd API:** https://api-portal.hlag.com/
+#### ShipsGo API (Layer 3)
+- **Website:** https://www.shipsgo.com/
+- **Documentation:** API v2 già integrato
+- **Current usage:** Ultimate fallback per carrier non coperti
+- **Features:** 115+ carrier, push webhooks, 99% uptime
+
+#### Carrier Tracking Portals (per scrapers)
+- **MSC:** https://www.msc.com/track-a-shipment
+- **Maersk:** https://www.maersk.com/tracking
+- **CMA CGM:** https://www.cma-cgm.com/ebusiness/tracking
+- **COSCO:** https://elines.coscoshipping.com/ebusiness/cargotracking
+- **Hapag-Lloyd:** https://www.hapag-lloyd.com/en/online-business/track/track-by-container.html
 
 ---
 
-**Status:** 📋 PIANIFICATO - Implementazione inizia dopo completamento Phase 4.2
-**Priority:** 🟡 MEDIA - Post-MVP, ma fondamentale per scaling
-**Dependencies:** Nessuna dipendenza bloccante
-**Budget Approved:** $0-600/year (vs $3,600-12,000 alternative)
+**Status:** 🚀 PRONTO ALL'IMPLEMENTAZIONE - Migration DB pronta, piano finalizzato
+**Priority:** 🔴 ALTA - Fondamentale per ridurre costi operativi 70-80%
+**Dependencies:** Phase 4.2 completata ✅
+**Budget Approved:** $34-50/month ($400-600/year) vs $1,200-1,800 ShipsGo only
 
 ---
 
@@ -900,13 +929,16 @@
 | **4** | Advanced Management | **84%** | 52/62 | ✅ Completata |
 | **4.1** | Advanced User Management | 100% | 38/38 | ✅ |
 | **4.2** | System Configuration | 67% | 14/24 | ✅ |
-| **5** | Security & Compliance | **0%** | 0/11 | ⏸️ Non iniziata |
+| **5** | Security & Compliance | **0%** | 0/11 | ⏸️ Postponed |
 | **5.1** | Advanced Security | 0% | 0/6 | ⏸️ |
 | **5.2** | Compliance & Privacy | 0% | 0/5 | ⏸️ |
-| **6** | Sistema Tracking Ibrido | **2%** | 1/50+ | 📋 Pianificata |
-| **6.1** | Core Ocean Tracking | 0% | 0/17 | 📋 |
-| **6.2** | Parcel Integration | 0% | 0/13 | 📋 |
-| **6.3** | Air Cargo Tracking | 0% | 0/18 | 📋 |
+| **6** | Sistema Tracking Multi-Provider | **0%** | 0/80+ | 🚀 Pronta |
+| **6.1** | Layer 1: Web Scraping Engine | 0% | 0/33 | 🚀 Priority |
+| **6.2** | Layer 2: JSONCargo Fallback | 0% | 0/8 | 🚀 |
+| **6.3** | Tracking Orchestrator | 0% | 0/14 | 🚀 |
+| **6.4** | Database Schema Evolution | 50% | 1/2 | ✅ Migration creata |
+| **6.5** | API Routes Update | 0% | 0/7 | 📋 |
+| **6.6** | Cron Job Update | 0% | 0/4 | 📋 |
 
 ### Metriche Globali
 
@@ -1294,57 +1326,129 @@ Making shipment tracking simple and powerful.
 
 ---
 
-### 9. Terminal49 vs VIZION API Selection (CRITICAL)
+### 9. 3-Layer Hybrid Tracking System - Final Architecture Decision (CRITICAL)
 
-**Problema:** Scegliere provider tracking ocean freight per Fase 6 tra VIZION (più potente) e Terminal49 (più accessibile).
+**Problema:** Trovare soluzione tracking ocean freight cost-effective per multi-tenant SaaS con volumi crescenti.
 
-**Decisione:** Terminal49 per MVP, VIZION per scale.
+**Decisione Finale:** 3-Layer Hybrid System replicando approccio ShipsGo.
 
-#### Comparison Matrix
+#### Evolution delle Opzioni Valutate
 
-| Criterio | VIZION API | Terminal49 | Winner |
-|----------|------------|------------|--------|
-| **Free Tier** | ❌ Nessuno | ✅ 50 ships/mese | Terminal49 |
-| **Signup** | ❌ Demo sales | ✅ Self-service | Terminal49 |
-| **Pricing** | ~$5-8/container | $10/container | VIZION |
-| **Coverage** | 99% global | 100% N.America | VIZION |
-| **Data Quality** | 7k→60 milestones | Real-time direct | VIZION |
-| **Latency** | <6h | Real-time | Terminal49 |
-| **LFD Alerts** | Generic | US/Canada precise | Terminal49 |
-| **Customs** | ❌ No | ✅ Built-in | Terminal49 |
-| **Setup Time** | 2+ weeks | 5 minutes | Terminal49 |
+**Opzione A (Iniziale):** Terminal49 (free tier 50/mo) + web scraping backup
+- ❌ Terminal49 $10/container dopo free tier → expensive at scale
+- ❌ Coverage limitato USA/Canada
+- ❌ Per-request pricing non scalabile multi-tenant
 
-#### Strategia Raccomandata
+**Opzione B (Considerata):** VIZION ($5-8/container) + web scraping
+- ❌ No free tier, require sales demo (2+ settimane)
+- ❌ Per-request pricing = $600+/month at scale
+- ❌ Non adatto architettura multi-tenant flat cost
 
-**SHORT TERM (MVP - 0-6 mesi):** Terminal49
-- $0 costo (50 containers free)
-- Setup immediato (vs 2+ settimane VIZION sales)
-- Validazione business model zero risk
-- Perfect per North America imports
+**Opzione C (SCELTA FINALE):** 3-Layer Hybrid System
+- ✅ Layer 1: Web Scraping 11 carrier Italia (85% coverage, $0 per-request)
+- ✅ Layer 2: JSONCargo API ($9/month UNLIMITED)
+- ✅ Layer 3: ShipsGo fallback (già integrato)
+- ✅ Costo flat $34-50/month vs $100-150 ShipsGo only
+- ✅ **70-80% cost savings** vs single-provider approach
 
-**LONG TERM (Scale - 6+ mesi):** Add VIZION
-- Quando tracking >200 containers/mese
-- Terminal49 costa >$1,500/mese
-- VIZION cost savings 30-40% at scale
-- Hybrid: Terminal49 (US) + VIZION (global)
+#### Comparison Matrix - Final Decision
 
-**Break-even Point:**
+| Provider | Type | Cost | Coverage | Multi-Tenant | Scalability | Decision |
+|----------|------|------|----------|--------------|-------------|----------|
+| **Web Scraping** | Primary | $20-35/mo flat | 11 carrier (85% IT) | ✅ Perfect | ✅ Unlimited | ✅ LAYER 1 |
+| **JSONCargo** | Fallback | $9/mo unlimited | 150+ global | ✅ Perfect | ✅ Unlimited | ✅ LAYER 2 |
+| **ShipsGo** | Ultimate | ~$100-150/mo | 115+ global | ⚠️ Credit-based | ⚠️ Expensive | ✅ LAYER 3 |
+| **VIZION** | ❌ | $600+/mo | 99+ ocean | ❌ Per-request | ❌ Too expensive | ❌ REJECTED |
+| **Terminal49** | ❌ | $500+/mo after free | 50+ ocean | ❌ Per-request | ❌ Expensive scale | ❌ REJECTED |
+
+#### Strategia Implementazione
+
+**Week 1-3: Layer 1 Web Scraping**
+- Top 3 priority: MSC (40%), Maersk (15%), CMA CGM (12%)
+- 8 carrier addizionali: COSCO, Hapag-Lloyd, ONE, Evergreen, Yang Ming, HMM, ZIM, OOCL
+- Infrastructure: DigitalOcean/Railway ($20-35/month)
+- Cache Redis (TTL 2-6h)
+- Anti-blocking: user-agent rotation, rate limiting
+
+**Week 4: Layer 2 JSONCargo**
+- Signup: $9/month unlimited plan
+- Fallback automatico quando web scraping fallisce
+- 150+ carrier global coverage
+
+**Week 5-7: Orchestrator + API Migration**
+- TrackingOrchestrator.ts smart routing
+- Migrate existing `/api/shipsgo/*` routes
+- Update cron job auto-refresh
+- Production gradual rollout
+
+#### Cost Analysis - Multi-Tenant Architecture
+
+**Current (ShipsGo only):**
 ```
-<50 containers/mese:   Terminal49 ($0)
-50-200 containers:     Terminal49 ($10/ea)
->500 containers:       VIZION (~$5-8/ea) + Terminal49 backup
+Base: $100-150/month
+Per-request credit cost
+Not scalable multi-tenant
+Total Year 1: $1,200-1,800
 ```
 
-**Registration:**
+**New (3-Layer Hybrid):**
 ```
-1. https://app.terminal49.com/register
+Layer 1 (Scraping): $20-35/month flat
+Layer 2 (JSONCargo): $9/month flat
+Layer 3 (ShipsGo): $5-15/month (fallback only)
+Total: $34-50/month
+Total Year 1: $400-600
+SAVINGS: 70-80% ($800-1,200/year)
+```
+
+**Scalability:**
+- ✅ 10 organizations: $34-50/month total (flat cost)
+- ✅ 100 organizations: $34-50/month total (same!)
+- ✅ Per-organization cost: $0.34-0.50 at 100 orgs
+- ✅ Zero per-request charges on Layer 1 (85% traffic)
+
+#### Technical Approach - Replicando ShipsGo
+
+**ShipsGo's multi-source strategy (research findings):**
+- 40-50% web scraping (majority)
+- 20-30% EDI connections
+- 10-20% direct carrier APIs
+- 5-10% AIS data (vessel tracking)
+- 5-10% terminal APIs
+
+**Nostra implementazione (simplified):**
+- 85% web scraping (Layer 1 - top 11 carrier)
+- 10% JSONCargo API (Layer 2 - missing carriers)
+- 5% ShipsGo (Layer 3 - edge cases)
+
+**Cache-first pattern (already implemented):**
+```typescript
+// Existing useShipsGO.ts pattern mantained
+1. Check DB cache (0 cost) ✅
+2. Try Layer 1 scraping (0 cost per-request)
+3. Fallback Layer 2 JSONCargo (flat rate included)
+4. Ultimate fallback Layer 3 ShipsGo (1 credit)
+```
+
+#### Registration & Setup
+
+**JSONCargo:**
+```
+1. https://jsoncargo.com/pricing
 2. Email: fabrizio.cagnucci@sch-pro.app
-3. Get API key
-4. 50 free containers/month immediate
-5. No credit card required
+3. Plan: $9/month unlimited
+4. Get API key
 ```
 
-**Best Practice:** Start Terminal49 now, add VIZION when revenue justifies enterprise tool.
+**Scraping Server:**
+```
+1. DigitalOcean Droplet $20/mo OR Railway $5-15/mo
+2. Playwright + Redis setup
+3. Deploy 11 carrier scrapers
+4. Monitor success rate (target >85%)
+```
+
+**Best Practice:** Start with top 3 carrier scrapers (MSC, Maersk, CMA CGM) = 67% coverage Italia immediately, expand to 100% with remaining 8.
 
 ---
 
