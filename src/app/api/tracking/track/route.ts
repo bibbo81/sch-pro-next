@@ -36,6 +36,9 @@ export async function POST(request: NextRequest) {
       preferredProvider: preferred_provider, // 'web_scraping' | 'shipsgo' | undefined (auto)
     })
 
+    // Debug logging
+    console.log('🔍 Orchestrator result:', JSON.stringify(result, null, 2))
+
     // Return result
     return NextResponse.json({
       success: result.success,
