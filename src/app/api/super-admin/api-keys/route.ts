@@ -3,10 +3,14 @@ import { requireSuperAdmin } from '@/lib/auth-super-admin'
 import { createClient } from '@supabase/supabase-js'
 import crypto from 'crypto'
 
-// Simple encryption (in production, use Supabase Vault or AWS KMS)
-const ENCRYPTION_KEY = process.env.API_KEYS_ENCRYPTION_KEY || 'default-encryption-key-change-me-in-production'
+// SECURITY: Encryption key MUST be set via environment variable
+const ENCRYPTION_KEY = process.env.API_KEYS_ENCRYPTION_KEY
+if (!ENCRYPTION_KEY) {
+  console.error('CRITICAL: API_KEYS_ENCRYPTION_KEY is not set. API key operations will fail.')
+}
 
 function encrypt(text: string): string {
+  if (!ENCRYPTION_KEY) throw new Error('API_KEYS_ENCRYPTION_KEY environment variable is not set')
   const iv = crypto.randomBytes(16)
   const key = crypto.scryptSync(ENCRYPTION_KEY, 'salt', 32)
   const cipher = crypto.createCipheriv('aes-256-cbc', key, iv)
@@ -16,6 +20,7 @@ function encrypt(text: string): string {
 }
 
 function decrypt(text: string): string {
+  if (!ENCRYPTION_KEY) throw new Error('API_KEYS_ENCRYPTION_KEY environment variable is not set')
   const parts = text.split(':')
   const iv = Buffer.from(parts[0], 'hex')
   const encryptedText = parts[1]

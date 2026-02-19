@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireAuth } from '@/lib/auth'
 
 const SHIPSGO_API_BASE = 'https://api.shipsgo.com/v2'
 const SHIPSGO_API_KEY = process.env.SHIPSGO_API_KEY
 
 export async function POST(request: NextRequest) {
   try {
+    await requireAuth()
     const { tracking_numbers } = await request.json()
 
     if (!tracking_numbers || !Array.isArray(tracking_numbers)) {

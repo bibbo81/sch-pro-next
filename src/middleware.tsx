@@ -36,17 +36,24 @@ export async function middleware(request: NextRequest) {
   )
 
   const { data: { session } } = await supabase.auth.getSession()
-  
-  // Protezione per dashboard e API protette
-  const requiresAuth = pathname.startsWith('/dashboard') ||
-                      pathname.startsWith('/api/shipments') ||
-                      pathname.startsWith('/api/products') ||
-                      pathname.startsWith('/api/trackings') ||
-                      pathname.startsWith('/api/users') ||
-                      pathname.startsWith('/api/organizations') ||
-                      pathname.startsWith('/super-admin') ||
-                      pathname.startsWith('/api/protected')
-  
+
+  // SECURITY: Protect ALL API routes and dashboard pages by default.
+  // Only explicitly exempt routes that handle their own auth:
+  const isPublicApiRoute =
+    pathname.startsWith('/api/cron/') ||          // Uses CRON_SECRET bearer token
+    pathname === '/api/stripe/webhook' ||          // Uses Stripe signature verification
+    pathname === '/api/vehicle-types' ||            // Public static reference data
+    pathname === '/api/carriers' ||                 // Public static reference data
+    pathname === '/api/transport-modes' ||          // Public static reference data
+    pathname === '/api/subscription-plans'          // Public read-only plans
+
+  const requiresAuth = (
+    pathname.startsWith('/dashboard') ||
+    pathname.startsWith('/super-admin') ||
+    pathname.startsWith('/settings') ||
+    (pathname.startsWith('/api/') && !isPublicApiRoute)
+  )
+
   if (!session && requiresAuth) {
     // Per le API, ritorna 401 invece di redirect
     if (pathname.startsWith('/api/')) {

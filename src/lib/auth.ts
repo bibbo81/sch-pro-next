@@ -71,14 +71,13 @@ async function createSupabaseClient() {
 // ✅ MAIN AUTH FUNCTION - Richiede autenticazione e restituisce user + organization
 export async function requireAuth() {
   const supabase = await createSupabaseServer()
-  
-  const { data: { session } } = await supabase.auth.getSession()
-  
-  if (!session?.user) {
+
+  // SECURITY: Use getUser() instead of getSession() to validate JWT server-side
+  const { data: { user }, error: userError } = await supabase.auth.getUser()
+
+  if (userError || !user) {
     throw new Error('Authentication required')
   }
-
-  console.log('✅ User authenticated (server):', session.user.email)
 
   // ✅ CAST LA QUERY SELECT COME ANY
   const { data: membership, error: membershipError } = await supabase
@@ -93,46 +92,36 @@ export async function requireAuth() {
         name
       )
     `)
-    .eq('user_id', session.user.id)
-    .maybeSingle() as any  // ✅ FORZA IL TIPO!
+    .eq('user_id', user.id)
+    .maybeSingle() as any
 
   if (membershipError) {
-    console.error('❌ Error fetching organization membership:', membershipError)
     throw new Error('Failed to fetch user organization')
   }
 
   if (!membership) {
-    console.warn('⚠️ No organization membership found for user:', session.user.email)
-    
     try {
-      console.log('🔄 Auto-creating organization for new user...')
-      
       const orgData = {
-        name: `${session.user.email?.split('@')[0] || 'User'} Organization`,
+        name: `${user.email?.split('@')[0] || 'User'} Organization`,
       }
 
-      // ✅ CAST ANCHE LA QUERY INSERT
       const { data: newOrg, error: orgError } = await supabase
         .from('organizations')
         .insert(orgData as any)
         .select('id, name')
-        .single() as any  // ✅ FORZA IL TIPO!
+        .single() as any
 
       if (orgError || !newOrg) {
-        console.error('❌ Failed to create organization:', orgError)
         throw new Error('Failed to create organization')
       }
 
-      console.log('✅ Created new organization:', newOrg)
-
       const memberData = {
-        user_id: session.user.id,
+        user_id: user.id,
         organization_id: newOrg.id,
         role: 'admin',
         restrict_to_own_records: false
       }
 
-      // ✅ CAST ANCHE QUESTA QUERY
       const { data: newMembership, error: memberError } = await supabase
         .from('organization_members')
         .insert(memberData as any)
@@ -146,28 +135,22 @@ export async function requireAuth() {
             name
           )
         `)
-        .single() as any  // ✅ FORZA IL TIPO!
+        .single() as any
 
       if (memberError || !newMembership) {
-        console.error('❌ Failed to create membership:', memberError)
         throw new Error('Failed to create membership')
       }
 
-      console.log('✅ Auto-created organization membership:', newMembership)
-      
       return {
-        user: session.user,
+        user,
         membership: newMembership,
         organizationId: newOrg.id,
         organizationName: newOrg.name
       }
     } catch (autoCreateError) {
-      console.error('❌ Failed to auto-create organization:', autoCreateError)
       throw new Error('Unable to access or create organization')
     }
   }
-
-  console.log('✅ User organization membership found:', membership)
 
   // ✅ Ora membership ha il tipo corretto grazie al cast
   const orgData = Array.isArray(membership.organizations) 
@@ -175,7 +158,7 @@ export async function requireAuth() {
     : membership.organizations
 
   return {
-    user: session.user,
+    user,
     membership,
     organizationId: membership.organization_id,
     organizationName: orgData?.name || 'Unknown Organization'
@@ -186,10 +169,9 @@ export async function requireAuth() {
 export async function getCurrentUser() {
   try {
     const supabase = await createSupabaseClient()
-    const { data: { session } } = await supabase.auth.getSession()
-    return session?.user || null
-  } catch (error) {
-    console.error('❌ Error getting current user:', error)
+    const { data: { user } } = await supabase.auth.getUser()
+    return user || null
+  } catch {
     return null
   }
 }
@@ -199,13 +181,9 @@ export async function getCurrentSession() {
   try {
     const supabase = await createSupabaseClient()
     const { data: { session }, error } = await supabase.auth.getSession()
-    if (error) {
-      console.error('❌ Error getting session:', error)
-      return null
-    }
+    if (error) return null
     return session
-  } catch (error) {
-    console.error('❌ Error getting current session:', error)
+  } catch {
     return null
   }
 }
@@ -215,8 +193,7 @@ export async function isAuthenticated(): Promise<boolean> {
   try {
     const user = await getCurrentUser()
     return !!user
-  } catch (error) {
-    console.error('❌ Error checking authentication:', error)
+  } catch {
     return false
   }
 }
@@ -225,9 +202,9 @@ export async function isAuthenticated(): Promise<boolean> {
 export async function getCurrentUserOrganization() {
   try {
     const supabase = await createSupabaseServer()
-    const { data: { session } } = await supabase.auth.getSession()
-    
-    if (!session?.user) {
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
       return null
     }
 
@@ -243,30 +220,24 @@ export async function getCurrentUserOrganization() {
           name
         )
       `)
-      .eq('user_id', session.user.id)
+      .eq('user_id', user.id)
       .maybeSingle() as any
 
-    if (error) {
-      console.error('❌ Error fetching user organization:', error)
+    if (error || !membership) {
       return null
     }
 
-    if (!membership) {
-      return null
-    }
-
-    const orgData = Array.isArray(membership.organizations) 
-      ? membership.organizations[0] 
+    const orgData = Array.isArray(membership.organizations)
+      ? membership.organizations[0]
       : membership.organizations
 
     return {
-      user: session.user,
+      user,
       membership,
       organizationId: membership.organization_id,
       organizationName: orgData?.name || 'Unknown Organization'
     }
-  } catch (error) {
-    console.error('❌ Error getting current user organization:', error)
+  } catch {
     return null
   }
 }

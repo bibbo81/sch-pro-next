@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServer } from '@/lib/auth'
 
-// Secret activation codes (in production, store these in environment variables)
-const ACTIVATION_CODES = [
-  'SUPER_ADMIN_2024_ACTIVATE_XYZ789',
-  'EMERGENCY_ACCESS_ADMIN_2024',
-  'OWNER_MASTER_KEY_2024'
-]
+// SECURITY: Activation codes must be set via environment variable
+// Set SUPER_ADMIN_ACTIVATION_CODES as comma-separated values in .env
+const ACTIVATION_CODES = process.env.SUPER_ADMIN_ACTIVATION_CODES
+  ? process.env.SUPER_ADMIN_ACTIVATION_CODES.split(',').map(c => c.trim())
+  : []
 
 // POST /api/super-admin/activate - Activate super admin for current user
 export async function POST(request: NextRequest) {

@@ -1,8 +1,10 @@
 // src/app/api/excel/import/route.ts
 import { NextRequest, NextResponse } from 'next/server'
+import { requireAuth } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
   try {
+    await requireAuth()
     const formData = await request.formData()
     const file = formData.get('file') as File
     
