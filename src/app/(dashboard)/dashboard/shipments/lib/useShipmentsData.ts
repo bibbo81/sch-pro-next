@@ -1,36 +1,10 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
-import { createClient } from '@/lib/supabase/client'
+import { useShipmentsQuery, ShipmentRow } from '@/hooks/queries/useShipmentsQuery'
 
-export interface Shipment {
-  id: string
-  tracking_number: string | null
-  shipment_number: string | null
-  status: string
-  recipient_name: string | null
-  total_value: number | null
-  created_at: string | null
-  updated_at: string | null
-  organization_id: string | null
-  user_id: string
-  notes: string | null
-  origin: string | null
-  destination: string | null
-  origin_port: string | null
-  destination_port: string | null
-  carrier_name: string | null
-  eta: string | null
-  shipment_items: Array<{
-    id: string
-    name: string | null
-    sku: string | null
-    quantity: number | null
-    unit_cost: number | null
-    total_cost: number | null
-  }>
-}
+export type { ShipmentRow as Shipment }
 
 type SortField = 'created_at' | 'updated_at' | 'tracking_number' | 'status' | 'total_value'
 type SortDirection = 'asc' | 'desc'
@@ -54,11 +28,16 @@ export interface ShipmentsStats {
 
 export function useShipmentsData() {
   const { user, loading: authLoading } = useAuth()
-  const supabase = createClient()
+  const {
+    shipments,
+    isLoading,
+    isFetching,
+    error,
+    refetch,
+    updateStatus,
+    isUpdating,
+  } = useShipmentsQuery()
 
-  const [shipments, setShipments] = useState<Shipment[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
   const [filters, setFilters] = useState<ShipmentsFilters>({
@@ -69,76 +48,6 @@ export function useShipmentsData() {
     sortField: 'created_at',
     sortDirection: 'desc',
   })
-
-  const loadShipments = useCallback(async () => {
-    if (!user?.id) return
-
-    try {
-      setLoading(true)
-      setError(null)
-
-      const { data: userOrgs, error: orgError } = await supabase
-        .from('organization_members')
-        .select('organization_id')
-        .eq('user_id', user.id)
-
-      if (orgError) throw new Error(`Errore organizzazioni: ${orgError.message}`)
-      if (!userOrgs?.length) {
-        setShipments([])
-        return
-      }
-
-      const orgIds = userOrgs.map((o: { organization_id: string }) => o.organization_id)
-
-      const { data, error: queryError } = await supabase
-        .from('shipments')
-        .select(`
-          *,
-          shipment_items (id, name, sku, quantity, unit_cost, total_cost)
-        `)
-        .in('organization_id', orgIds)
-        .is('discarded_at', null)
-        .order('created_at', { ascending: false })
-
-      if (queryError) throw new Error(`Errore database: ${queryError.message}`)
-
-      const normalized: Shipment[] = (data || []).map((s: any) => ({
-        id: s.id,
-        tracking_number: s.tracking_number || s.tracking_id || null,
-        shipment_number: s.shipment_number || null,
-        status: s.status || 'draft',
-        recipient_name: s.destination || s.destination_country || null,
-        total_value: typeof s.total_value === 'number' ? s.total_value
-          : typeof s.total_cost === 'number' ? s.total_cost
-          : typeof s.total_value === 'string' ? parseFloat(s.total_value) || 0
-          : 0,
-        created_at: s.created_at,
-        updated_at: s.updated_at,
-        organization_id: s.organization_id,
-        user_id: s.user_id,
-        notes: s.booking || s.bl_number || null,
-        origin: s.origin || s.origin_country || s.origin_port || null,
-        destination: s.destination || s.destination_country || null,
-        origin_port: s.origin_port || s.origin || null,
-        destination_port: s.destination_port || s.destination || null,
-        carrier_name: s.carrier || s.carrier_name || s.vessel_name || null,
-        eta: s.eta || s.arrival_date || s.ata || null,
-        shipment_items: s.shipment_items || [],
-      }))
-
-      setShipments(normalized)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Errore nel caricamento')
-    } finally {
-      setLoading(false)
-    }
-  }, [user?.id, supabase])
-
-  useEffect(() => {
-    if (user?.id && !authLoading) {
-      loadShipments()
-    }
-  }, [user?.id, authLoading, loadShipments])
 
   const filteredShipments = useMemo(() => {
     const { searchTerm, statusFilter, carrierFilter, dateRange, sortField, sortDirection } = filters
@@ -161,8 +70,8 @@ export function useShipmentsData() {
     })
 
     filtered.sort((a, b) => {
-      let aVal: any = a[sortField as keyof Shipment]
-      let bVal: any = b[sortField as keyof Shipment]
+      let aVal: any = a[sortField as keyof ShipmentRow]
+      let bVal: any = b[sortField as keyof ShipmentRow]
 
       if (!aVal) aVal = ''
       if (!bVal) bVal = ''
@@ -242,18 +151,9 @@ export function useShipmentsData() {
 
   const bulkUpdateStatus = useCallback(async (newStatus: string) => {
     if (selectedIds.size === 0) return
-    try {
-      const { error } = await supabase
-        .from('shipments')
-        .update({ status: newStatus })
-        .in('id', Array.from(selectedIds))
-      if (error) throw error
-      await loadShipments()
-      setSelectedIds(new Set())
-    } catch {
-      throw new Error('Errore durante l\'aggiornamento')
-    }
-  }, [selectedIds, supabase, loadShipments])
+    await updateStatus({ ids: Array.from(selectedIds), status: newStatus })
+    setSelectedIds(new Set())
+  }, [selectedIds, updateStatus])
 
   const hasActiveFilters = filters.searchTerm !== '' ||
     filters.statusFilter !== 'all' ||
@@ -262,7 +162,7 @@ export function useShipmentsData() {
     filters.dateRange.to !== ''
 
   return {
-    loading: authLoading || loading,
+    loading: authLoading || isLoading,
     error,
     user,
     shipments: filteredShipments,
@@ -272,7 +172,7 @@ export function useShipmentsData() {
     selectedIds,
     availableCarriers,
     hasActiveFilters,
-    refresh: loadShipments,
+    refresh: refetch,
     updateFilter,
     resetFilters,
     toggleSort,

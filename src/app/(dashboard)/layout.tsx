@@ -8,6 +8,7 @@ import { Sidebar } from '@/components/layout/Sidebar'
 import { Header } from '@/components/layout/Header'
 import { BottomNav } from '@/components/layout/BottomNav'
 import { ToastProvider } from '@/components/ui/toast'
+import { QueryProvider } from '@/components/providers/QueryProvider'
 
 function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { loading, user } = useAuth()
@@ -60,6 +61,7 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
+    <QueryProvider>
     <ToastProvider>
       <div className="h-screen flex overflow-hidden relative">
         {/* Gradient mesh background - provides color for glass refraction */}
@@ -105,6 +107,7 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
         </div>
       </div>
     </ToastProvider>
+    </QueryProvider>
   )
 }
 

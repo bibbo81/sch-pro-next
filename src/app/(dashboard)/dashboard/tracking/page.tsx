@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
-import { useTrackings } from '@/hooks/useTrackings'
+import { useTrackingsQuery } from '@/hooks/queries/useTrackingsQuery'
+import { useToast } from '@/components/ui/toast'
 import { useShipsGO } from '@/hooks/useShipsGO'
 import TrackingForm from '@/components/TrackingForm'
 import TrackingList from '@/components/TrackingList'
@@ -27,15 +28,17 @@ import {
 
 export default function TrackingPage() {
   const { user, loading: authLoading } = useAuth()
+  const { toast } = useToast()
 
   const {
     trackings,
-    loading,
+    isLoading: loading,
     error,
     addTracking,
     deleteTracking,
-    loadTrackings
-  } = useTrackings()
+    refetch: loadTrackings,
+    isFetching,
+  } = useTrackingsQuery()
 
   const { trackSingle, trackBatch, loading: shipsGoLoading } = useShipsGO()
 
@@ -127,28 +130,44 @@ export default function TrackingPage() {
   }
 
   const handleTrackingAdd = async (trackingData: any) => {
-    await addTracking(trackingData)
-    setShowForm(false)
+    try {
+      await addTracking(trackingData)
+      setShowForm(false)
+      toast('Tracking aggiunto con successo', 'success')
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Errore nell\'aggiunta del tracking', 'error')
+    }
   }
 
   const handleTrackingBatchAdd = async (trackingsData: any[]) => {
-    for (const trackingData of trackingsData) {
-      await addTracking(trackingData)
+    try {
+      for (const trackingData of trackingsData) {
+        await addTracking(trackingData)
+      }
+      setShowForm(false)
+      toast(`${trackingsData.length} tracking aggiunti con successo`, 'success')
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Errore nell\'aggiunta multipla', 'error')
     }
-    setShowForm(false)
   }
 
   const handleTrackingDelete = async (trackingId: string) => {
     if (!confirm('Sei sicuro di voler eliminare questo tracking?')) return
 
-    await deleteTracking(trackingId)
-    if (selectedTracking?.id === trackingId) {
-      setSelectedTracking(null)
+    try {
+      await deleteTracking(trackingId)
+      if (selectedTracking?.id === trackingId) {
+        setSelectedTracking(null)
+      }
+      toast('Tracking eliminato', 'success')
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Errore nell\'eliminazione', 'error')
     }
   }
 
   const handleRefresh = async () => {
     await loadTrackings()
+    toast('Dati aggiornati', 'info')
   }
 
   const statCards = [

@@ -48,7 +48,7 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: string)
   return (
     <div
       className={cn(
-        "glass animate-slide-in-right",
+        "glass animate-slide-in-bottom md:animate-slide-in-right",
         "flex items-center gap-3 rounded-xl px-4 py-3 pr-3",
         "text-sm text-foreground",
         "border",
@@ -59,7 +59,7 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: string)
       <span className="flex-1">{toast.message}</span>
       <button
         onClick={() => onDismiss(toast.id)}
-        className="rounded-lg p-1 hover:bg-white/10 transition-colors"
+        className="rounded-lg p-1 hover:bg-black/[0.04] dark:hover:bg-white/10 transition-colors"
       >
         <X className="h-3.5 w-3.5 text-muted-foreground" />
       </button>
@@ -85,7 +85,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={{ toast }}>
       {children}
-      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm">
+      <div className="fixed bottom-20 md:bottom-4 left-4 right-4 md:left-auto md:right-4 z-50 flex flex-col gap-2 max-w-sm md:ml-auto">
         {toasts.map(t => (
           <ToastItem key={t.id} toast={t} onDismiss={dismiss} />
         ))}

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { GlassCard, GlassCardContent } from '@/components/ui/glass-card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useRouter } from 'next/navigation'
+import { useToast } from '@/components/ui/toast'
 import { useShipmentsData } from './lib/useShipmentsData'
 import { ShipmentsStatsRow } from './components/ShipmentsStats'
 import { ShipmentsFilters } from './components/ShipmentsFilters'
@@ -13,6 +14,7 @@ import { BulkActions } from './components/BulkActions'
 
 export default function ShipmentsPage() {
   const router = useRouter()
+  const { toast } = useToast()
   const {
     loading,
     error,
@@ -95,6 +97,7 @@ export default function ShipmentsPage() {
     link.download = `spedizioni_${new Date().toISOString().split('T')[0]}.csv`
     link.click()
     URL.revokeObjectURL(link.href)
+    toast('CSV esportato', 'success')
   }
 
   return (
@@ -160,8 +163,9 @@ export default function ShipmentsPage() {
         onUpdateStatus={async (status) => {
           try {
             await bulkUpdateStatus(status)
+            toast(`${selectedIds.size} spedizioni aggiornate`, 'success')
           } catch {
-            // TODO: toast error
+            toast('Errore durante l\'aggiornamento', 'error')
           }
         }}
         onClear={toggleAllSelection}
