@@ -228,4 +228,9 @@
       0 4px 16px hsl(var(--primary) / 0.15),
       0 8px 32px hsl(var(--primary) / 0.1);
   }
+
+  /* Safe area for iPhone notch/home indicator */
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
 }

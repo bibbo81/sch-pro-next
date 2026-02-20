@@ -13,216 +13,132 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ThemeToggle } from '@/components/theme-toggle'
-import { Bell, Search, Settings, LogOut, User, Package, Ship, Activity, MessageSquare } from 'lucide-react'
+import { Search, Settings, LogOut, User, Menu } from 'lucide-react'
 import { useState } from 'react'
-import { usePathname } from 'next/navigation'
-import NotificationBell from '@/components/notifications/NotificationBell'
+import { usePathname, useRouter } from 'next/navigation'
 
-export function Header() {
-  const { user, loading } = useAuth()
+const PAGE_TITLES: Record<string, string> = {
+  '/dashboard': 'Dashboard',
+  '/dashboard/tracking': 'Tracking',
+  '/dashboard/shipments': 'Spedizioni',
+  '/dashboard/products': 'Prodotti',
+  '/dashboard/carriers': 'Spedizionieri',
+  '/dashboard/costs': 'Costi',
+  '/dashboard/analytics': 'Analytics',
+  '/dashboard/custom-dashboards': 'Dashboard Custom',
+  '/dashboard/notifications': 'Notifiche',
+  '/dashboard/users': 'Utenti',
+  '/dashboard/help': 'Help',
+  '/dashboard/support': 'Supporto',
+  '/dashboard/settings': 'Impostazioni',
+}
+
+interface HeaderProps {
+  onMenuClick: () => void
+  onSignOut: () => Promise<void>
+}
+
+export function Header({ onMenuClick, onSignOut }: HeaderProps) {
+  const { user } = useAuth()
   const [searchTerm, setSearchTerm] = useState('')
   const pathname = usePathname()
-  const supabase = createClient()
+  const router = useRouter()
 
-  // Get page title based on pathname
-  const getPageTitle = (path: string): string => {
-    if (path === '/dashboard') return 'Dashboard'
-    if (path === '/dashboard/tracking') return 'Tracking Spedizioni'
-    if (path === '/dashboard/shipments') return 'Gestione Spedizioni'
-    if (path === '/dashboard/products') return 'Gestione Prodotti'
-    if (path === '/dashboard/suppliers') return 'Gestione Fornitori'
-    if (path === '/dashboard/reports') return 'Report & Analytics'
-    if (path === '/dashboard/shipment-details') return 'Dettagli Spedizione'
-    if (path === '/dashboard/costs') return 'Gestione Costi'
-    if (path === '/dashboard/carriers') return 'Gestione Vettori'
-    return 'SCH Pro'
-  }
-
-  const handleSignOut = async (): Promise<void> => {
-    try {
-      console.log('Header: Signing out user:', user?.email)
-      await supabase.auth.signOut()
-      window.location.href = '/login'
-    } catch (error) {
-      console.error('Header: Error signing out:', error)
-      window.location.href = '/login'
-    }
-  }
+  const pageTitle = PAGE_TITLES[pathname] || 'SCH Pro'
 
   const getUserInitials = (): string => {
     if (user?.user_metadata?.name) {
       return user.user_metadata.name
         .split(' ')
-        .map((nameSegment: string) => nameSegment[0])
+        .map((s: string) => s[0])
         .join('')
         .toUpperCase()
+        .slice(0, 2)
     }
     return user?.email?.[0]?.toUpperCase() || '?'
   }
 
-  // Safe function to get breadcrumb
-  const getBreadcrumb = (path: string): string => {
-    const segments = path.split('/').filter(Boolean)
-    const lastSegment = segments[segments.length - 1]
-    
-    if (!lastSegment || lastSegment === 'dashboard') return ''
-    
-    return lastSegment.charAt(0).toUpperCase() + lastSegment.slice(1)
-  }
-
-  if (loading) {
-    return (
-      <header className="bg-background border-b px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div className="h-6 w-32 bg-muted rounded animate-pulse"></div>
-          </div>
-          <div className="flex items-center space-x-4">
-            <div className="w-8 h-8 bg-muted rounded-full animate-pulse"></div>
-          </div>
-        </div>
-      </header>
-    )
-  }
-
-  const userInitials = getUserInitials()
-
   return (
-    <header className="bg-background border-b px-6 py-4">
-      <div className="flex items-center justify-between">
-        {/* Left Section - Page Title */}
-        <div className="flex items-center space-x-4">
-          <h1 className="text-xl font-semibold text-foreground">
-            {getPageTitle(pathname)}
-          </h1>
-          {pathname !== '/dashboard' && (
-            <div className="text-sm text-muted-foreground">
-              / {getBreadcrumb(pathname)}
-            </div>
-          )}
-        </div>
+    <header className="sticky top-0 z-30 h-header shrink-0 flex items-center gap-4 px-4 md:px-6 border-b border-white/5 backdrop-blur-xl bg-background/60">
+      {/* Mobile menu button */}
+      <button
+        onClick={onMenuClick}
+        className="lg:hidden p-2 -ml-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors"
+      >
+        <Menu className="h-5 w-5" />
+      </button>
 
-        {/* Search Bar */}
-        <div className="hidden md:flex flex-1 max-w-lg mx-8">
-          <div className="relative w-full">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-            <input
-              type="text"
-              placeholder="Cerca tracking, spedizioni, prodotti..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && searchTerm.trim()) {
-                  // TODO: Implementa ricerca globale
-                  console.log('Global search:', searchTerm)
-                }
-              }}
-            />
-          </div>
-        </div>
+      {/* Page title */}
+      <h1 className="text-lg font-semibold tracking-tight">{pageTitle}</h1>
 
-        {/* Right Section */}
-        <div className="flex items-center space-x-4">
-          {/* Quick Actions */}
-          <div className="hidden lg:flex items-center space-x-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => window.location.href = '/dashboard/shipments'}
-              title="Nuova Spedizione"
-            >
-              <Ship className="w-4 h-4 mr-1" />
-              <span className="hidden xl:inline">Spedizione</span>
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => window.location.href = '/dashboard/products'}
-              title="Nuovo Prodotto"
-            >
-              <Package className="w-4 h-4 mr-1" />
-              <span className="hidden xl:inline">Prodotto</span>
-            </Button>
-          </div>
-
-          {/* Theme Toggle */}
-          <ThemeToggle />
-
-          {/* Notification Bells */}
-          <NotificationBell type="tracking" icon={<Package className="h-5 w-5" />} />
-          <NotificationBell type="messages" icon={<MessageSquare className="h-5 w-5" />} />
-
-          {/* User Menu */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                <Avatar className="h-10 w-10">
-                  <AvatarImage 
-                    src={user?.user_metadata?.avatar_url || ""} 
-                    alt={user?.user_metadata?.name || user?.email || 'User'} 
-                  />
-                  <AvatarFallback className="bg-blue-600 text-white">
-                    {userInitials}
-                  </AvatarFallback>
-                </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56" align="end" forceMount>
-              <DropdownMenuLabel className="font-normal">
-                <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">
-                    {user?.user_metadata?.name || 'Utente'}
-                  </p>
-                  <p className="text-xs leading-none text-muted-foreground">
-                    {user?.email || 'user@example.com'}
-                  </p>
-                </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem 
-                onClick={() => {
-                  // TODO: Navigate to profile
-                  console.log('Navigate to profile')
-                }}
-              >
-                <User className="mr-2 h-4 w-4" />
-                <span>Profilo</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
-                  // TODO: Navigate to settings
-                  console.log('Navigate to settings')
-                }}
-              >
-                <Settings className="mr-2 h-4 w-4" />
-                <span>Impostazioni</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => window.location.href = '/dashboard/tracking'}
-              >
-                <Activity className="mr-2 h-4 w-4" />
-                <span>Tracking</span>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem 
-                onClick={handleSignOut}
-                className="text-red-600 focus:text-red-600"
-              >
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Logout</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+      {/* Search bar - center */}
+      <div className="hidden md:flex flex-1 max-w-md mx-auto">
+        <div className="relative w-full">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Cerca..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full h-9 pl-9 pr-4 rounded-xl border-0 bg-white/5 text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-white/10 transition-all"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && searchTerm.trim()) {
+                // TODO: global search
+              }
+            }}
+          />
+          <kbd className="absolute right-3 top-1/2 -translate-y-1/2 hidden lg:inline-flex h-5 items-center gap-0.5 rounded border border-white/10 bg-white/5 px-1.5 text-[10px] font-medium text-muted-foreground/50">
+            ⌘K
+          </kbd>
         </div>
       </div>
-      
-      {/* Debug info per development */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="text-xs text-muted-foreground mt-2">
-          Path: {pathname} | User: {user?.email || 'No user'} | Search: "{searchTerm}"
-        </div>
-      )}
+
+      {/* Right section */}
+      <div className="flex items-center gap-2 ml-auto">
+        <ThemeToggle />
+
+        {/* User menu */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="rounded-full">
+              <Avatar className="h-8 w-8">
+                <AvatarImage
+                  src={user?.user_metadata?.avatar_url || ''}
+                  alt={user?.email || 'User'}
+                />
+                <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
+                  {getUserInitials()}
+                </AvatarFallback>
+              </Avatar>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-56 glass" align="end">
+            <DropdownMenuLabel className="font-normal">
+              <div className="flex flex-col space-y-1">
+                <p className="text-sm font-medium">
+                  {user?.user_metadata?.name || 'Utente'}
+                </p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {user?.email}
+                </p>
+              </div>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => router.push('/dashboard/settings')}>
+              <Settings className="mr-2 h-4 w-4" />
+              Impostazioni
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={onSignOut}
+              className="text-destructive focus:text-destructive"
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Logout
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     </header>
   )
 }
