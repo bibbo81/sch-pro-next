@@ -1,39 +1,35 @@
 'use client'
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { GlassCard } from '@/components/ui/glass-card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Eye, Trash2, RefreshCw, Ship } from 'lucide-react'
 
 interface TrackingListProps {
   trackings: any[]
   onSelect: (tracking: any) => void
   selected: any
   onDelete: (id: string) => void
-  onUpdate: () => void // ✅ FIX: Signature corretta senza parametri
+  onUpdate: () => void
 }
 
-// ✅ FIX: Controllo sicuro per getStatusColor
 const getStatusColor = (status?: string) => {
-  if (!status) return 'bg-gray-100 text-gray-800'
-  
-  const colors = {
-    'registered': 'bg-gray-100 text-gray-800',
-    'in_transit': 'bg-blue-100 text-blue-800',
-    'delivered': 'bg-green-100 text-green-800',
-    'delayed': 'bg-yellow-100 text-yellow-800',
-    'exception': 'bg-red-100 text-red-800',
-    'sailing': 'bg-blue-100 text-blue-800',
-    'customs_hold': 'bg-orange-100 text-orange-800',
-    'arrived': 'bg-green-100 text-green-800',
-    'SAILING': 'bg-blue-100 text-blue-800',
-    'IN_TRANSIT': 'bg-blue-100 text-blue-800',
-    'DELIVERED': 'bg-green-100 text-green-800',
-    'ARRIVED': 'bg-green-100 text-green-800'
+  if (!status) return 'bg-muted text-muted-foreground'
+
+  const colors: Record<string, string> = {
+    'registered': 'bg-muted text-muted-foreground',
+    'in_transit': 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
+    'delivered': 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
+    'delayed': 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
+    'exception': 'bg-red-500/10 text-red-600 dark:text-red-400',
+    'sailing': 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
+    'customs_hold': 'bg-orange-500/10 text-orange-600 dark:text-orange-400',
+    'arrived': 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
   }
-  return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800'
+  const normalized = status.toLowerCase()
+  return colors[normalized] || 'bg-muted text-muted-foreground'
 }
 
-// ✅ FIX: Funzione sicura per formattare date
 const formatDate = (dateString?: string) => {
   if (!dateString) return 'Data non disponibile'
   try {
@@ -43,140 +39,132 @@ const formatDate = (dateString?: string) => {
   }
 }
 
-export default function TrackingList({ 
-  trackings, 
-  onSelect, 
-  selected, 
-  onDelete, 
-  onUpdate 
+export default function TrackingList({
+  trackings,
+  onSelect,
+  selected,
+  onDelete,
+  onUpdate
 }: TrackingListProps) {
-  // ✅ FIX: Array safety check
   const safeTrackings = Array.isArray(trackings) ? trackings : []
 
   if (safeTrackings.length === 0) {
     return (
-      <Card>
-        <CardContent className="text-center py-12">
-          <div className="text-6xl mb-4">📦</div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
-            Nessun tracking trovato
-          </h3>
-          <p className="text-gray-500">
-            Aggiungi il tuo primo tracking per iniziare
-          </p>
-        </CardContent>
-      </Card>
+      <GlassCard className="py-12 text-center">
+        <Ship className="h-12 w-12 text-muted-foreground/40 mx-auto mb-3" />
+        <h3 className="text-base font-semibold text-foreground mb-1">
+          Nessun tracking trovato
+        </h3>
+        <p className="text-sm text-muted-foreground">
+          Aggiungi il tuo primo tracking per iniziare
+        </p>
+      </GlassCard>
     )
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <span>📋 Lista Tracking ({safeTrackings.length})</span>
-          <Button 
-            size="sm" 
-            variant="outline"
-            onClick={onUpdate}
-            title="Aggiorna lista tracking"
+    <GlassCard className="p-5">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-sm font-semibold text-foreground">
+          Lista Tracking ({safeTrackings.length})
+        </h3>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={onUpdate}
+          title="Aggiorna lista tracking"
+        >
+          <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+          Aggiorna
+        </Button>
+      </div>
+
+      <div className="space-y-2">
+        {safeTrackings.map((tracking) => (
+          <div
+            key={tracking.id || tracking.tracking_number}
+            className={`p-4 rounded-xl cursor-pointer transition-all duration-200 ease-glass ${
+              selected?.id === tracking.id
+                ? 'bg-primary/10 border border-primary/20 shadow-sm'
+                : 'bg-black/[0.02] dark:bg-white/[0.03] border border-transparent hover:bg-black/[0.04] dark:hover:bg-white/[0.06] hover:border-black/[0.06] dark:hover:border-white/[0.08]'
+            }`}
+            onClick={() => onSelect(tracking)}
           >
-            🔄 Aggiorna
-          </Button>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
-          {safeTrackings.map((tracking) => (
-            <div
-              key={tracking.id || tracking.tracking_number}
-              className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                selected?.id === tracking.id
-                  ? 'border-blue-500 bg-blue-50'
-                  : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-              }`}
-              onClick={() => onSelect(tracking)}
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <h4 className="font-medium text-gray-900">
-                      {tracking.tracking_number || 'Tracking non specificato'}
-                    </h4>
-                    <Badge className={getStatusColor(tracking.status)}>
-                      {tracking.status || 'Stato non definito'}
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-2 flex-wrap">
+                  <h4 className="font-medium text-foreground text-sm truncate">
+                    {tracking.tracking_number || 'Tracking non specificato'}
+                  </h4>
+                  <Badge className={getStatusColor(tracking.status)}>
+                    {tracking.status || 'N/A'}
+                  </Badge>
+
+                  {tracking.is_api_tracked !== undefined && (
+                    <Badge variant={tracking.is_api_tracked ? "default" : "secondary"} className="text-[10px]">
+                      {tracking.is_api_tracked ? 'API' : 'MAN'}
                     </Badge>
-                    
-                    {/* ✅ FIX: Badge per tipo di tracking */}
-                    {tracking.is_api_tracked !== undefined && (
-                      <Badge variant={tracking.is_api_tracked ? "default" : "secondary"}>
-                        {tracking.is_api_tracked ? '🔴 API' : '📝 MAN'}
-                      </Badge>
-                    )}
-                  </div>
-                  
-                  {tracking.carrier_name && (
-                    <p className="text-sm text-gray-600 mb-1">
-                      🚛 {tracking.carrier_name}
-                    </p>
                   )}
-                  
-                  {/* ✅ FIX: Controllo sicuro per porti */}
-                  {(tracking.origin_port || tracking.destination_port || tracking.origin || tracking.destination) && (
-                    <p className="text-sm text-gray-600">
-                      📍 {tracking.origin_port || tracking.origin || '?'} → {tracking.destination_port || tracking.destination || '?'}
-                    </p>
-                  )}
-                  
-                  {/* ✅ FIX: Informazioni aggiuntive */}
-                  {tracking.reference_number && (
-                    <p className="text-xs text-gray-500">
-                      Rif: {tracking.reference_number}
-                    </p>
-                  )}
-                  
-                  <p className="text-xs text-gray-500 mt-2">
-                    Creato: {formatDate(tracking.created_at)}
+                </div>
+
+                {tracking.carrier_name && (
+                  <p className="text-xs text-muted-foreground mb-1">
+                    {tracking.carrier_name}
                   </p>
-                  
+                )}
+
+                {(tracking.origin_port || tracking.destination_port || tracking.origin || tracking.destination) && (
+                  <p className="text-xs text-muted-foreground">
+                    {tracking.origin_port || tracking.origin || '?'} → {tracking.destination_port || tracking.destination || '?'}
+                  </p>
+                )}
+
+                {tracking.reference_number && (
+                  <p className="text-[11px] text-muted-foreground/70 mt-1">
+                    Rif: {tracking.reference_number}
+                  </p>
+                )}
+
+                <p className="text-[11px] text-muted-foreground/60 mt-1.5">
+                  {formatDate(tracking.created_at)}
                   {tracking.updated_at && tracking.updated_at !== tracking.created_at && (
-                    <p className="text-xs text-gray-500">
-                      Aggiornato: {formatDate(tracking.updated_at)}
-                    </p>
+                    <span> · Agg. {formatDate(tracking.updated_at)}</span>
                   )}
-                </div>
-                
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onSelect(tracking)
-                    }}
-                    title="Visualizza dettagli"
-                  >
-                    👁️
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      if (confirm(`Eliminare il tracking ${tracking.tracking_number || tracking.id}?`)) {
-                        onDelete(tracking.id)
-                      }
-                    }}
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                    title="Elimina tracking"
-                  >
-                    🗑️
-                  </Button>
-                </div>
+                </p>
+              </div>
+
+              <div className="flex gap-1.5 shrink-0">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onSelect(tracking)
+                  }}
+                  title="Visualizza dettagli"
+                  className="h-8 w-8 p-0"
+                >
+                  <Eye className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    if (confirm(`Eliminare il tracking ${tracking.tracking_number || tracking.id}?`)) {
+                      onDelete(tracking.id)
+                    }
+                  }}
+                  className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                  title="Elimina tracking"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
               </div>
             </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+          </div>
+        ))}
+      </div>
+    </GlassCard>
   )
 }
