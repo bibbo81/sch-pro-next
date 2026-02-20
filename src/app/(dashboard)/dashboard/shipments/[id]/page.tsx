@@ -5,7 +5,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/components/ui/glass-card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -20,6 +20,8 @@ import {
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/contexts/AuthContext'
+import { formatCurrency, formatNumber, formatPercent, formatDateTime } from '@/lib/formatters'
+import { normalizeStatus, getStatusConfig } from '@/lib/statusMapping'
 import { useShipsGO } from '@/hooks/useShipsGO'
 import ProductModal from '@/components/shipments/ProductModal'
 import {
@@ -57,61 +59,14 @@ const STATUS_COLORS = {
   customs_cleared: 'bg-green-50 dark:bg-green-9500 text-white dark:bg-green-600'
 }
 
-// Utility functions matching the old project
-const formatCurrencyIT = (value: number | null | undefined): string => {
-  if (value === null || value === undefined || isNaN(value)) return '€ 0,00'
-  return new Intl.NumberFormat('it-IT', {
-    style: 'currency',
-    currency: 'EUR'
-  }).format(parseFloat(String(value)))
-}
-
-const formatNumberIT = (value: number | null | undefined): string => {
-  if (value === null || value === undefined || isNaN(value)) return '0'
-  return new Intl.NumberFormat('it-IT', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2
-  }).format(parseFloat(String(value)))
-}
-
-const formatPercentageIT = (value: number | null | undefined): string => {
-  if (value === null || value === undefined || isNaN(value)) return '0,0%'
-  return new Intl.NumberFormat('it-IT', {
-    style: 'percent',
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1
-  }).format(parseFloat(String(value)) / 100)
-}
-
+// Aliases for backward compatibility with existing JSX
+const formatCurrencyIT = formatCurrency
+const formatNumberIT = formatNumber
+const formatPercentageIT = formatPercent
+const formatDate = formatDateTime
 const formatStatus = (status: string): string => {
-  const statusLabels: { [key: string]: string } = {
-    pending: 'In attesa',
-    registered: 'Registrato',
-    in_transit: 'In transito',
-    delivered: 'Consegnato',
-    exception: 'Eccezione',
-    delayed: 'Ritardato',
-    arrived: 'Arrivato',
-    out_for_delivery: 'In consegna',
-    customs_hold: 'Fermo dogana',
-    customs_cleared: 'Sdoganato'
-  }
-  return statusLabels[status] || status
-}
-
-const formatDate = (dateString: string | null | undefined): string => {
-  if (!dateString) return '-'
-  try {
-    return new Date(dateString).toLocaleDateString('it-IT', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  } catch {
-    return dateString
-  }
+  const config = getStatusConfig(normalizeStatus(status))
+  return config.label
 }
 
 interface ShipmentProduct {
@@ -1270,14 +1225,14 @@ export default function ShipmentDetailsPage() {
       {/* DETTAGLI TRACKING SHIPSGO */}
 
       {shipment.tracking && (
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+        <GlassCard className="mb-6">
+          <GlassCardHeader>
+            <GlassCardTitle className="flex items-center gap-2">
               <Ship className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               Dettagli Tracking ShipsGO
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+            </GlassCardTitle>
+          </GlassCardHeader>
+          <GlassCardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {/* Tracking Number */}
               {shipment.tracking.tracking_number && (
@@ -1401,8 +1356,8 @@ export default function ShipmentDetailsPage() {
                 </div>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </GlassCardContent>
+        </GlassCard>
       )}
 
       {/* CONTROLLO PESO/VOLUME CONTAINER E TIPO TRASPORTO */}
@@ -1472,14 +1427,14 @@ export default function ShipmentDetailsPage() {
 
       {/* RIEPILOGO TOTALI */}
       {totals && (
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+        <GlassCard className="mb-6">
+          <GlassCardHeader>
+            <GlassCardTitle className="flex items-center gap-2">
               <Calculator className="h-5 w-5" />
               Riepilogo Spedizione ({totals.productsCount} prodotti)
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+            </GlassCardTitle>
+          </GlassCardHeader>
+          <GlassCardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="text-center p-4 bg-blue-50 dark:bg-blue-950 rounded-lg">
                 <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">Peso Totale</p>
@@ -1524,12 +1479,12 @@ export default function ShipmentDetailsPage() {
                 <p className="text-2xl font-bold text-green-700 dark:text-green-300">€{totals.finalTotal.toFixed(2)}</p>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </GlassCardContent>
+        </GlassCard>
       )}
 
       {/* 🆕 TABS MODERNE PER COSTI, DOCUMENTI E INFO */}
-      <Card className="mb-6">
+      <GlassCard className="mb-6">
         <Tabs defaultValue="costs" className="w-full">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="costs" className="flex items-center gap-2">
@@ -1996,16 +1951,16 @@ export default function ShipmentDetailsPage() {
             </div>
           </TabsContent>
         </Tabs>
-      </Card>
+      </GlassCard>
 
       {/* Advanced Products Table Section - Matching old project design */}
-      <Card className="mb-6">
-        <CardHeader>
+      <GlassCard className="mb-6">
+        <GlassCardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
+            <GlassCardTitle className="flex items-center gap-2">
               <Package className="h-5 w-5" />
               Prodotti ({shipment.products?.length || 0})
-            </CardTitle>
+            </GlassCardTitle>
             <Button
               onClick={() => setShowProductModal(true)}
               className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
@@ -2014,8 +1969,8 @@ export default function ShipmentDetailsPage() {
               Aggiungi Prodotto
             </Button>
           </div>
-        </CardHeader>
-        <CardContent className="p-0">
+        </GlassCardHeader>
+        <GlassCardContent className="p-0">
           {!shipment.products || shipment.products.length === 0 ? (
             <div className="text-center py-8 px-6">
               <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -2174,8 +2129,8 @@ export default function ShipmentDetailsPage() {
               </table>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </GlassCardContent>
+      </GlassCard>
 
 
 
