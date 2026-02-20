@@ -59,11 +59,11 @@ export function Header({ onMenuClick, onSignOut }: HeaderProps) {
   }
 
   return (
-    <header className="sticky top-0 z-30 h-header shrink-0 flex items-center gap-4 px-4 md:px-6 border-b border-white/5 backdrop-blur-xl bg-background/60">
+    <header className="sticky top-0 z-30 h-header shrink-0 flex items-center gap-4 px-4 md:px-6 glass rounded-none border-t-0 border-l-0 border-r-0">
       {/* Mobile menu button */}
       <button
         onClick={onMenuClick}
-        className="lg:hidden p-2 -ml-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors"
+        className="lg:hidden p-2 -ml-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-colors"
       >
         <Menu className="h-5 w-5" />
       </button>
@@ -80,14 +80,14 @@ export function Header({ onMenuClick, onSignOut }: HeaderProps) {
             placeholder="Cerca..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full h-9 pl-9 pr-4 rounded-xl border-0 bg-white/5 text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-white/10 transition-all"
+            className="w-full h-9 pl-9 pr-4 rounded-xl border-0 bg-black/[0.04] dark:bg-white/[0.06] text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-black/[0.07] dark:focus:bg-white/[0.1] transition-all"
             onKeyDown={(e) => {
               if (e.key === 'Enter' && searchTerm.trim()) {
                 // TODO: global search
               }
             }}
           />
-          <kbd className="absolute right-3 top-1/2 -translate-y-1/2 hidden lg:inline-flex h-5 items-center gap-0.5 rounded border border-white/10 bg-white/5 px-1.5 text-[10px] font-medium text-muted-foreground/50">
+          <kbd className="absolute right-3 top-1/2 -translate-y-1/2 hidden lg:inline-flex h-5 items-center gap-0.5 rounded border border-black/[0.08] dark:border-white/[0.1] bg-black/[0.03] dark:bg-white/[0.05] px-1.5 text-[10px] font-medium text-muted-foreground/50">
             ⌘K
           </kbd>
         </div>

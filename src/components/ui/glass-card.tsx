@@ -5,7 +5,7 @@ function GlassCard({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       className={cn(
-        "glass glass-hover rounded-2xl p-6 transition-all duration-300",
+        "glass glass-hover rounded-2xl p-6 overflow-hidden",
         className
       )}
       {...props}

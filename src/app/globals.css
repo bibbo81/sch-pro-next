@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    /* === Liquid Glass Design System === */
+    /* === Apple Liquid Glass Design System === */
 
     /* Core palette - Light */
     --background: 220 20% 97%;
@@ -38,20 +38,18 @@
     --ring: 217 91% 60%;
     --radius: 1rem;
 
-    /* === Glass System === */
-    --glass-bg: rgba(255, 255, 255, 0.6);
-    --glass-bg-hover: rgba(255, 255, 255, 0.75);
-    --glass-bg-active: rgba(255, 255, 255, 0.85);
-    --glass-border: rgba(255, 255, 255, 0.25);
-    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
-    --glass-shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.08);
-    --glass-shadow-hover: 0 16px 48px rgba(0, 0, 0, 0.1);
-
-    /* Blur levels */
-    --blur-sm: 8px;
-    --blur-md: 16px;
-    --blur-lg: 24px;
-    --blur-xl: 40px;
+    /* === Liquid Glass Material - Light === */
+    --glass-bg: rgba(255, 255, 255, 0.15);
+    --glass-bg-hover: rgba(255, 255, 255, 0.25);
+    --glass-bg-active: rgba(255, 255, 255, 0.35);
+    --glass-border: rgba(255, 255, 255, 0.3);
+    --glass-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+    --glass-shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.08);
+    --glass-shadow-hover: 0 8px 40px rgba(0, 0, 0, 0.12);
+    --glass-inner-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.5),
+                          inset 0 0 20px -5px rgba(255, 255, 255, 0.3);
+    --glass-blur: 12px;
+    --glass-saturate: 180%;
 
     /* Sidebar */
     --sidebar-width: 280px;
@@ -87,14 +85,18 @@
     --input: 220 20% 16%;
     --ring: 217 91% 60%;
 
-    /* Glass System - Dark */
-    --glass-bg: rgba(255, 255, 255, 0.04);
-    --glass-bg-hover: rgba(255, 255, 255, 0.07);
-    --glass-bg-active: rgba(255, 255, 255, 0.1);
-    --glass-border: rgba(255, 255, 255, 0.08);
-    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-    --glass-shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.3);
-    --glass-shadow-hover: 0 16px 48px rgba(0, 0, 0, 0.35);
+    /* Liquid Glass Material - Dark */
+    --glass-bg: rgba(255, 255, 255, 0.06);
+    --glass-bg-hover: rgba(255, 255, 255, 0.1);
+    --glass-bg-active: rgba(255, 255, 255, 0.14);
+    --glass-border: rgba(255, 255, 255, 0.12);
+    --glass-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+    --glass-shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.3);
+    --glass-shadow-hover: 0 8px 40px rgba(0, 0, 0, 0.35);
+    --glass-inner-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
+                          inset 0 0 20px -5px rgba(255, 255, 255, 0.05);
+    --glass-blur: 16px;
+    --glass-saturate: 200%;
   }
 }
 
@@ -108,7 +110,6 @@
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 
-  /* Smooth scrolling */
   html {
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
@@ -136,38 +137,62 @@
 }
 
 @layer components {
-  /* Glass utilities */
+  /*
+   * === Apple Liquid Glass Material ===
+   * 3-layer system: base + ::before (inner glow) + backdrop-filter
+   * Based on WWDC 2025 Liquid Glass specs
+   */
   .glass {
+    position: relative;
+    isolation: isolate;
     background: var(--glass-bg);
-    backdrop-filter: blur(var(--blur-xl));
-    -webkit-backdrop-filter: blur(var(--blur-xl));
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate)) brightness(1.05);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate)) brightness(1.05);
     border: 1px solid var(--glass-border);
-    box-shadow: var(--glass-shadow);
+    box-shadow: var(--glass-shadow), var(--glass-inner-shadow);
+  }
+
+  /* Specular highlight - top edge light reflection */
+  .glass::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    border-radius: inherit;
+    background: linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0.2) 0%,
+      rgba(255, 255, 255, 0.05) 40%,
+      transparent 60%
+    );
+    pointer-events: none;
+  }
+
+  .glass > * {
+    position: relative;
+    z-index: 1;
   }
 
   .glass-hover {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.4s cubic-bezier(0.2, 0, 0, 1);
   }
 
   .glass-hover:hover {
     background: var(--glass-bg-hover);
-    box-shadow: var(--glass-shadow-hover);
-    transform: translateY(-1px);
+    box-shadow: var(--glass-shadow-hover), var(--glass-inner-shadow);
+    transform: translateY(-2px);
   }
 
   .glass-active:active {
     background: var(--glass-bg-active);
-    transform: translateY(0) scale(0.995);
+    transform: translateY(0) scale(0.98);
+    transition-duration: 0.15s;
   }
 
   /* Shimmer loading effect */
   @keyframes shimmer {
-    0% {
-      background-position: -200% 0;
-    }
-    100% {
-      background-position: 200% 0;
-    }
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
   }
 
   .shimmer {
@@ -181,27 +206,15 @@
     animation: shimmer 1.8s ease-in-out infinite;
   }
 
-  /* Slide-in animation */
+  /* Animations - spring-like curves per Apple spec (damping 0.7-0.9) */
   @keyframes slide-in-from-right {
-    from {
-      transform: translateX(100%);
-      opacity: 0;
-    }
-    to {
-      transform: translateX(0);
-      opacity: 1;
-    }
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
   }
 
   @keyframes slide-in-from-bottom {
-    from {
-      transform: translateY(16px);
-      opacity: 0;
-    }
-    to {
-      transform: translateY(0);
-      opacity: 1;
-    }
+    from { transform: translateY(16px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
   }
 
   @keyframes fade-in {
@@ -209,23 +222,32 @@
     to { opacity: 1; }
   }
 
+  @keyframes scale-in {
+    from { transform: scale(0.95); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
   .animate-slide-in-right {
-    animation: slide-in-from-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: slide-in-from-right 0.4s cubic-bezier(0.2, 0, 0, 1);
   }
 
   .animate-slide-in-bottom {
-    animation: slide-in-from-bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: slide-in-from-bottom 0.4s cubic-bezier(0.2, 0, 0, 1);
   }
 
   .animate-fade-in {
-    animation: fade-in 0.2s ease-out;
+    animation: fade-in 0.3s cubic-bezier(0.2, 0, 0, 1);
+  }
+
+  .animate-scale-in {
+    animation: scale-in 0.4s cubic-bezier(0.2, 0, 0, 1);
   }
 
   /* Glow effect for primary actions */
   .glow-primary {
     box-shadow:
-      0 0 0 1px hsl(var(--primary) / 0.1),
-      0 4px 16px hsl(var(--primary) / 0.15),
+      0 0 0 1px hsl(var(--primary) / 0.15),
+      0 4px 16px hsl(var(--primary) / 0.2),
       0 8px 32px hsl(var(--primary) / 0.1);
   }
 

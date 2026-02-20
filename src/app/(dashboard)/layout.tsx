@@ -61,7 +61,15 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <ToastProvider>
-      <div className="h-screen bg-background flex overflow-hidden">
+      <div className="h-screen flex overflow-hidden relative">
+        {/* Gradient mesh background - provides color for glass refraction */}
+        <div className="fixed inset-0 -z-10 bg-gradient-to-br from-blue-50 via-background to-purple-50/80 dark:from-slate-950 dark:via-background dark:to-indigo-950/50">
+          <div className="absolute top-[-10%] right-[-5%] w-[600px] h-[600px] bg-blue-400/20 dark:bg-blue-500/10 rounded-full blur-[100px]" />
+          <div className="absolute bottom-[-10%] left-[-5%] w-[500px] h-[500px] bg-purple-400/15 dark:bg-purple-500/10 rounded-full blur-[100px]" />
+          <div className="absolute top-[40%] left-[30%] w-[400px] h-[400px] bg-cyan-300/10 dark:bg-cyan-500/5 rounded-full blur-[80px]" />
+          <div className="absolute top-[20%] right-[20%] w-[300px] h-[300px] bg-pink-300/10 dark:bg-pink-500/5 rounded-full blur-[80px]" />
+        </div>
+
         {/* Sidebar - Desktop: persistent, Mobile: overlay */}
         <Sidebar
           collapsed={sidebarCollapsed}

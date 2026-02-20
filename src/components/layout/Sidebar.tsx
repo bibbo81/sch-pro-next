@@ -67,7 +67,7 @@ export function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onMobileClose
           "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
           active
             ? "glass text-primary"
-            : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+            : "text-muted-foreground hover:text-foreground hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
         )}
         title={collapsed ? item.name : undefined}
       >
@@ -91,7 +91,7 @@ export function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onMobileClose
         </div>
         <button
           onClick={onToggleCollapse}
-          className="hidden lg:flex h-7 w-7 items-center justify-center rounded-lg hover:bg-white/5 text-muted-foreground transition-colors"
+          className="hidden lg:flex h-7 w-7 items-center justify-center rounded-lg hover:bg-black/[0.04] dark:hover:bg-white/[0.06] text-muted-foreground transition-colors"
         >
           {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
         </button>
@@ -121,11 +121,11 @@ export function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onMobileClose
       </nav>
 
       {/* User section */}
-      <div className="shrink-0 border-t border-white/5 p-3 space-y-1">
+      <div className="shrink-0 border-t border-black/[0.06] dark:border-white/[0.08] p-3 space-y-1">
         <Link
           href="/dashboard/settings"
           onClick={onMobileClose}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-colors"
         >
           <Settings className="h-5 w-5 shrink-0" />
           {!collapsed && <span>Impostazioni</span>}
@@ -160,8 +160,7 @@ export function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onMobileClose
       {/* Desktop sidebar */}
       <aside
         className={cn(
-          "hidden lg:flex flex-col shrink-0 border-r border-white/5",
-          "backdrop-blur-2xl bg-background/80",
+          "hidden lg:flex flex-col shrink-0 glass rounded-none border-l-0 border-t-0 border-b-0",
           "transition-all duration-300 ease-glass",
           collapsed ? "w-sidebar-collapsed" : "w-sidebar"
         )}
@@ -173,7 +172,7 @@ export function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onMobileClose
       <aside
         className={cn(
           "fixed inset-y-0 left-0 z-50 w-72 lg:hidden",
-          "backdrop-blur-2xl bg-background/95 border-r border-white/5 shadow-2xl",
+          "glass rounded-none border-l-0 border-t-0 border-b-0 shadow-2xl",
           "transition-transform duration-300 ease-glass",
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         )}
