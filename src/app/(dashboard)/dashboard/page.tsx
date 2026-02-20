@@ -15,7 +15,7 @@ import {
   Building, Calendar, Tag, Info
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
-import { createClient } from '@/utils/supabase/client'
+import { createClient } from '@/lib/supabase/client'
 import { DashboardCharts } from '@/components/dashboard/DashboardCharts'
 
 // Dashboard moderno che replica il vecchio progetto Solarium

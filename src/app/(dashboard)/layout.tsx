@@ -3,7 +3,7 @@
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { createClient } from '@/utils/supabase/client'
+import { createClient } from '@/lib/supabase/client'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { Ship, Menu, LogOut, Package, MessageSquare } from 'lucide-react'
 import NotificationBell from '@/components/notifications/NotificationBell'

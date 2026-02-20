@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { TrackingService } from '@/lib/trackingService'
-import { createClient } from '@/utils/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 
 // ✅ FALLBACK SOLO PER DEVELOPMENT
 const DEVELOPMENT_USER_ID = 'demo-user-123'

@@ -45,7 +45,7 @@ import {
 } from 'lucide-react'
 
 // ✅ IMPORTA IL CLIENT CENTRALIZZATO
-import { createClient } from '@/utils/supabase/client'
+import { createClient } from '@/lib/supabase/client'
 
 // ✅ INIZIALIZZA SUPABASE CLIENT
 const supabase = createClient()

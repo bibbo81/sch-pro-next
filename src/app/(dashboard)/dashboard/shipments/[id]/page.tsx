@@ -18,7 +18,7 @@ import {
   Calendar, MapPin, User, Building, Phone, Mail, FileText, Calculator, Info,
   Download, Upload, Eye, DollarSign, X, Save, Loader2, RefreshCw
 } from 'lucide-react'
-import { createClient } from '@/utils/supabase/client'
+import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/contexts/AuthContext'
 import { useShipsGO } from '@/hooks/useShipsGO'
 import ProductModal from '@/components/shipments/ProductModal'

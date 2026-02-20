@@ -4,6 +4,7 @@ export interface StatusConfig {
   bgColor: string
   icon: string
   priority: number
+  badgeVariant: string
 }
 
 export const STATUS_MAPPING: Record<string, string> = {
@@ -40,70 +41,80 @@ export const STATUS_CONFIG: Record<string, StatusConfig> = {
     color: 'text-gray-700',
     bgColor: 'bg-gray-100',
     icon: '📝',
-    priority: 1
+    priority: 1,
+    badgeVariant: 'registered',
   },
   in_transit: {
     label: 'In Transito',
     color: 'text-blue-700',
     bgColor: 'bg-blue-100',
     icon: '🚛',
-    priority: 2
+    priority: 2,
+    badgeVariant: 'in_transit',
   },
   arrived: {
     label: 'Arrivato',
     color: 'text-purple-700',
     bgColor: 'bg-purple-100',
     icon: '🏢',
-    priority: 3
+    priority: 3,
+    badgeVariant: 'sailing',
   },
   customs_hold: {
     label: 'In Dogana',
     color: 'text-yellow-700',
     bgColor: 'bg-yellow-100',
     icon: '🛃',
-    priority: 4
+    priority: 4,
+    badgeVariant: 'warning',
   },
   customs_cleared: {
     label: 'Sdoganato',
     color: 'text-green-700',
     bgColor: 'bg-green-100',
     icon: '✅',
-    priority: 5
+    priority: 5,
+    badgeVariant: 'success',
   },
   out_for_delivery: {
     label: 'In Consegna',
     color: 'text-orange-700',
     bgColor: 'bg-orange-100',
     icon: '🚚',
-    priority: 6
+    priority: 6,
+    badgeVariant: 'warning',
   },
   delivered: {
     label: 'Consegnato',
     color: 'text-green-700',
     bgColor: 'bg-green-100',
     icon: '✅',
-    priority: 7
+    priority: 7,
+    badgeVariant: 'delivered',
   },
   delayed: {
     label: 'In Ritardo',
     color: 'text-red-700',
     bgColor: 'bg-red-100',
     icon: '⚠️',
-    priority: 8
+    priority: 8,
+    badgeVariant: 'delayed',
   },
   exception: {
     label: 'Eccezione',
     color: 'text-red-700',
     bgColor: 'bg-red-100',
     icon: '❌',
-    priority: 9
+    priority: 9,
+    badgeVariant: 'exception',
   },
   cancelled: {
     label: 'Annullato',
     color: 'text-gray-700',
     bgColor: 'bg-gray-100',
     icon: '🚫',
-    priority: 10
+    priority: 10,
+    badgeVariant: 'pending',
   }
 }
 

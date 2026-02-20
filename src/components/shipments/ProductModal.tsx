@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Search, Package, Plus, Check, X, Loader2, ShoppingCart, CheckSquare, Calculator } from 'lucide-react'
-import { createClient } from '@/utils/supabase/client'
+import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/contexts/AuthContext'
 
 const supabase = createClient()

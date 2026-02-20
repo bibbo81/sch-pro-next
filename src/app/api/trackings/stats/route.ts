@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { TrackingService } from '@/lib/trackingService'
-import { createClient } from '@/utils/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 
 export async function GET() {
   try {
