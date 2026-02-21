@@ -13,7 +13,8 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ThemeToggle } from '@/components/theme-toggle'
-import { Search, Settings, LogOut, User, Menu } from 'lucide-react'
+import { Search, Settings, LogOut, User, Menu, Bell } from 'lucide-react'
+import NotificationBell from '@/components/notifications/NotificationBell'
 import { useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 
@@ -95,6 +96,7 @@ export function Header({ onMenuClick, onSignOut }: HeaderProps) {
 
       {/* Right section */}
       <div className="flex items-center gap-2 ml-auto">
+        <NotificationBell type="tracking" icon={<Bell className="h-5 w-5" />} />
         <ThemeToggle />
 
         {/* User menu */}

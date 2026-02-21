@@ -4,6 +4,8 @@ import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { cn } from '@/lib/utils'
+import OrganizationSwitcher from '@/components/OrganizationSwitcher'
+import SuperAdminButton from '@/components/SuperAdminButton'
 import {
   BarChart3,
   Package,
@@ -97,6 +99,13 @@ export function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onMobileClose
         </button>
       </div>
 
+      {/* Organization Switcher */}
+      {!collapsed && (
+        <div className="px-3 py-2 border-b border-black/[0.06] dark:border-white/[0.08]">
+          <OrganizationSwitcher />
+        </div>
+      )}
+
       {/* Main navigation */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
         {!collapsed && (
@@ -143,6 +152,8 @@ export function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onMobileClose
             </div>
           )}
         </div>
+
+        <SuperAdminButton />
 
         <button
           onClick={onSignOut}
