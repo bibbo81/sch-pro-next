@@ -1,4 +1,6 @@
-import { supabase } from './supabase'
+import { createAdminClient } from '@/lib/supabase/server'
+
+const supabase = createAdminClient()
 
 export interface Tracking {
   id: string

@@ -1,7 +1,7 @@
 // ✅ UNIFIED SERVICE - SOLO CLIENT-SIDE CON API CALLS
 
 import { Shipment, ShipmentProduct, ShipmentDocument, ShipmentCost } from '@/types/shipment'
-import { createClient } from '@/utils/supabase/client'
+import { createClient } from '@/lib/supabase/client'
 
 const API_BASE_URL = '/api/shipments'
 

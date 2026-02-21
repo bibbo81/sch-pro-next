@@ -3,20 +3,19 @@
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { createClient } from '@/utils/supabase/client'
+import { createClient } from '@/lib/supabase/client'
 import { Sidebar } from '@/components/layout/Sidebar'
-import { Ship, Menu, LogOut, Package, MessageSquare } from 'lucide-react'
-import NotificationBell from '@/components/notifications/NotificationBell'
+import { Header } from '@/components/layout/Header'
+import { BottomNav } from '@/components/layout/BottomNav'
+import { ToastProvider } from '@/components/ui/toast'
+import { QueryProvider } from '@/components/providers/QueryProvider'
 
-interface DashboardLayoutProps {
-  children: React.ReactNode
-}
-
-function DashboardLayout({ children }: DashboardLayoutProps) {
+function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { loading, user } = useAuth()
   const router = useRouter()
   const [mounted, setMounted] = useState(false)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [sidebarMobileOpen, setSidebarMobileOpen] = useState(false)
   const supabase = createClient()
 
   useEffect(() => {
@@ -25,37 +24,26 @@ function DashboardLayout({ children }: DashboardLayoutProps) {
 
   useEffect(() => {
     if (mounted && !loading && !user) {
-      console.log('No user in dashboard, redirecting to login...')
       router.replace('/login')
     }
   }, [mounted, loading, user, router])
 
   const handleSignOut = async () => {
     try {
-      console.log('Signing out user:', user?.email)
-      setSidebarOpen(false)
+      setSidebarMobileOpen(false)
       await supabase.auth.signOut()
       router.replace('/login')
-    } catch (error) {
-      console.error('Logout error:', error)
+    } catch {
       window.location.href = '/login'
     }
-  }
-
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen)
-  }
-
-  const closeSidebar = () => {
-    setSidebarOpen(false)
   }
 
   if (!mounted || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground text-lg">Caricamento dashboard...</p>
+          <div className="h-10 w-10 rounded-full border-2 border-primary/30 border-t-primary animate-spin mx-auto mb-4" />
+          <p className="text-sm text-muted-foreground">Caricamento...</p>
         </div>
       </div>
     )
@@ -65,87 +53,61 @@ function DashboardLayout({ children }: DashboardLayoutProps) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground text-lg">Reindirizzamento al login...</p>
+          <div className="h-10 w-10 rounded-full border-2 border-primary/30 border-t-primary animate-spin mx-auto mb-4" />
+          <p className="text-sm text-muted-foreground">Reindirizzamento...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="h-screen bg-background">
-      {/* Main Content Area - Occupa sempre tutto lo spazio disponibile */}
-      <div className="h-full flex flex-col">
-        {/* Header Bar */}
-        <header className="bg-background shadow-sm border-b px-4 py-4 flex items-center justify-between">
-          {/* Left side with menu button */}
-          <div className="flex items-center">
-            <button
-              type="button"
-              className="p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary mr-4"
-              onClick={toggleSidebar}
-            >
-              <span className="sr-only">Toggle sidebar</span>
-              <Menu className="h-6 w-6" />
-            </button>
+    <QueryProvider>
+    <ToastProvider>
+      <div className="h-screen flex overflow-hidden relative">
+        {/* Gradient mesh background - provides color for glass refraction */}
+        <div className="fixed inset-0 -z-10 bg-gradient-to-br from-blue-50 via-background to-purple-50/80 dark:from-slate-950 dark:via-background dark:to-indigo-950/50">
+          <div className="absolute top-[-10%] right-[-5%] w-[600px] h-[600px] bg-blue-400/20 dark:bg-blue-500/10 rounded-full blur-[100px]" />
+          <div className="absolute bottom-[-10%] left-[-5%] w-[500px] h-[500px] bg-purple-400/15 dark:bg-purple-500/10 rounded-full blur-[100px]" />
+          <div className="absolute top-[40%] left-[30%] w-[400px] h-[400px] bg-cyan-300/10 dark:bg-cyan-500/5 rounded-full blur-[80px]" />
+          <div className="absolute top-[20%] right-[20%] w-[300px] h-[300px] bg-pink-300/10 dark:bg-pink-500/5 rounded-full blur-[80px]" />
+        </div>
 
-            {/* Brand */}
-            <div className="flex items-center">
-              <Ship className="h-6 w-6 text-primary mr-2" />
-              <h1 className="text-lg font-semibold text-foreground">SCH Pro</h1>
-            </div>
-          </div>
+        {/* Sidebar - Desktop: persistent, Mobile: overlay */}
+        <Sidebar
+          collapsed={sidebarCollapsed}
+          onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+          mobileOpen={sidebarMobileOpen}
+          onMobileClose={() => setSidebarMobileOpen(false)}
+          onSignOut={handleSignOut}
+        />
 
-          {/* User Info and Notifications */}
-          <div className="flex items-center space-x-3">
-            {/* Notification Bells */}
-            <NotificationBell type="tracking" icon={<Package className="h-5 w-5" />} />
-            <NotificationBell type="messages" icon={<MessageSquare className="h-5 w-5" />} />
+        {/* Mobile backdrop */}
+        {sidebarMobileOpen && (
+          <div
+            className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm lg:hidden"
+            onClick={() => setSidebarMobileOpen(false)}
+          />
+        )}
 
-            <div className="hidden sm:block">
-              <p className="text-sm font-medium text-foreground">{user.email}</p>
-              <p className="text-xs text-muted-foreground">Online</p>
-            </div>
-            <div className="h-8 w-8 bg-primary rounded-full flex items-center justify-center">
-              <span className="text-sm font-medium text-primary-foreground">
-                {user.email?.charAt(0).toUpperCase()}
-              </span>
-            </div>
-            <button
-              onClick={handleSignOut}
-              className="text-muted-foreground hover:text-destructive p-1 transition-colors"
-              title="Disconnetti"
-            >
-              <LogOut className="h-5 w-5" />
-            </button>
-          </div>
-        </header>
-
-        {/* Main Content - Prende tutto lo spazio disponibile */}
-        <main className="flex-1 overflow-y-auto bg-background">
-          <div className="p-6">
-            {children}
-          </div>
-        </main>
-      </div>
-
-      {/* Sidebar Overlay - Solo quando aperta, completamente sopra il contenuto */}
-      {sidebarOpen && (
-        <>
-          <Sidebar 
-            isOpen={sidebarOpen} 
-            onClose={closeSidebar} 
+        {/* Main content area */}
+        <div className="flex-1 flex flex-col min-w-0">
+          <Header
+            onMenuClick={() => setSidebarMobileOpen(true)}
             onSignOut={handleSignOut}
           />
-          
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 z-40 bg-black bg-opacity-50"
-            onClick={closeSidebar}
-          />
-        </>
-      )}
-    </div>
+
+          <main className="flex-1 overflow-y-auto">
+            <div className="p-4 md:p-6 lg:p-8 pb-20 md:pb-8">
+              {children}
+            </div>
+          </main>
+
+          {/* Mobile bottom navigation */}
+          <BottomNav />
+        </div>
+      </div>
+    </ToastProvider>
+    </QueryProvider>
   )
 }
 

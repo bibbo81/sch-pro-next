@@ -2,7 +2,10 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { createClient } from '@/utils/supabase/client'
+import { createClient } from '@/lib/supabase/client'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Ship, Loader2, ArrowRight, AlertCircle, CheckCircle2 } from 'lucide-react'
 
 function LoginForm() {
   const [email, setEmail] = useState('')
@@ -17,63 +20,43 @@ function LoginForm() {
   const searchParams = useSearchParams()
 
   useEffect(() => {
-    // Check if this is an invited user
     const invited = searchParams.get('invited')
     const existing = searchParams.get('existing')
 
     const checkInvitedUser = async () => {
-      // Check for URL errors (expired links, etc.)
       const urlError = searchParams.get('error')
       const errorDescription = searchParams.get('error_description')
 
       if (urlError === 'access_denied' && errorDescription?.includes('expired')) {
-        console.log('⚠️ Invitation link has expired')
-        setError('Il link di invito è scaduto. Inserisci email e password manualmente.')
-        setIsInvited(true) // Still show invitation form for manual login
-        // Don't return here - let the user enter email manually
-      }
-
-      // First, check URL parameters
-      if (invited === 'true') {
-        console.log('🎯 Detected invitation via URL parameter')
+        setError('Il link di invito e\u0300 scaduto. Inserisci email e password manualmente.')
         setIsInvited(true)
       }
 
-      // Also check if user is authenticated from email verification
+      if (invited === 'true') {
+        setIsInvited(true)
+      }
+
       const { data: { user } } = await supabase.auth.getUser()
-      console.log('🔍 Current user state:', user)
 
       if (user) {
-        console.log('✅ User authenticated:', user.email)
         setEmail(user.email || '')
 
-        // Check if this user was just created (sign-up flow)
         const createdAt = new Date(user.created_at)
-        const now = new Date()
-        const hoursSinceCreation = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60)
+        const hoursSinceCreation = (Date.now() - createdAt.getTime()) / (1000 * 60 * 60)
 
-        console.log('⏰ User created', hoursSinceCreation.toFixed(1), 'hours ago')
-
-        // If user was created recently (< 1 hour) and has no password confirmation, it's likely an invitation
         if (hoursSinceCreation < 1 && !user.email_confirmed_at) {
-          console.log('🎉 Detected fresh invitation user!')
           setIsInvited(true)
           setIsSettingPassword(true)
           return
         }
 
-        // If user is authenticated and email confirmed, redirect to dashboard
         if (user.email_confirmed_at) {
-          console.log('📍 Redirecting authenticated user to dashboard')
           setSuccess(true)
-          setTimeout(() => {
-            window.location.href = '/dashboard'
-          }, 1000)
+          setTimeout(() => { window.location.href = '/dashboard' }, 1000)
           return
         }
       }
 
-      // Handle explicit invitation flows
       if (invited === 'true') {
         if (user && existing !== 'true') {
           setIsSettingPassword(true)
@@ -91,23 +74,14 @@ function LoginForm() {
     setError(null)
 
     try {
-      // For new invited users, update password
-      const { error } = await supabase.auth.updateUser({
-        password: password
-      })
-
+      const { error } = await supabase.auth.updateUser({ password })
       if (error) {
-        console.error('Password setup error:', error)
         setError(error.message)
       } else {
-        console.log('Password set successfully')
         setSuccess(true)
-        setTimeout(() => {
-          window.location.href = '/dashboard'
-        }, 1000)
+        setTimeout(() => { window.location.href = '/dashboard' }, 1000)
       }
-    } catch (err: any) {
-      console.error('Password setup catch error:', err)
+    } catch {
       setError('Errore nell\'impostazione della password')
     } finally {
       setLoading(false)
@@ -120,224 +94,219 @@ function LoginForm() {
     setError(null)
 
     try {
-      console.log('Attempting login with:', email)
-      
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) {
-        console.error('Login error:', error)
         setError(error.message)
       } else if (data.user) {
-        console.log('Login successful:', data.user.email)
         setSuccess(true)
-        
-        // Aspetta un attimo per permettere al context di aggiornare
-        setTimeout(() => {
-          console.log('Redirecting to dashboard...')
-          window.location.href = '/dashboard'
-        }, 1000)
+        setTimeout(() => { window.location.href = '/dashboard' }, 1000)
       }
-    } catch (err: any) {
-      console.error('Login catch error:', err)
+    } catch {
       setError('Errore di connessione')
     } finally {
       setLoading(false)
     }
   }
 
+  const handleResetPassword = async (targetEmail?: string) => {
+    const emailToReset = targetEmail || prompt('Inserisci la tua email per il reset password:', email || '')
+    if (!emailToReset) return
+
+    setLoading(true)
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(emailToReset, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      })
+      if (error) throw error
+      alert(`Email di reset password inviata a ${emailToReset}.`)
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Success redirect state
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-4"></div>
-          <h2 className="text-xl font-semibold text-green-600 mb-2">Login Riuscito! ✅</h2>
-          <p className="text-muted-foreground">Reindirizzamento alla dashboard...</p>
-          <a
-            href="/dashboard"
-            className="mt-4 inline-block bg-primary text-primary-foreground px-4 py-2 rounded hover:bg-primary/90"
-          >
-            Vai alla Dashboard
-          </a>
+      <div className="text-center animate-fade-in">
+        <div className="inline-flex p-4 rounded-full bg-green-500/10 mb-4">
+          <CheckCircle2 className="h-8 w-8 text-green-500" />
         </div>
+        <h2 className="text-xl font-semibold mb-2">Accesso riuscito</h2>
+        <p className="text-sm text-muted-foreground mb-4">Reindirizzamento alla dashboard...</p>
+        <a
+          href="/dashboard"
+          className="text-sm text-primary hover:underline"
+        >
+          Vai alla Dashboard
+        </a>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="max-w-md w-full space-y-8 p-8">
-        <div className="text-center">
-          <h2 className="text-3xl font-extrabold text-foreground">SCH Pro</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {isSettingPassword
-              ? 'Completa la tua registrazione impostando una password'
-              : isInvited
-                ? 'Benvenuto! Accedi con le tue credenziali'
-                : 'Accedi al tuo account'
-            }
-          </p>
-          {isInvited && (
-            <div className={`mt-4 p-3 border rounded-md ${error ? 'bg-orange-50 border-orange-200' : 'bg-blue-50 border-blue-200'}`}>
-              <p className={`text-sm ${error ? 'text-orange-800' : 'text-blue-800'}`}>
-                {error ? '⚠️ Link scaduto! ' : '🎉 Sei stato invitato a SCH Pro! '}
-                {isSettingPassword
-                  ? 'Imposta una password per completare la registrazione.'
-                  : error
-                    ? 'Inserisci manualmente email e password se le hai già impostate.'
-                    : 'Benvenuto nella piattaforma.'
-                }
-              </p>
-            </div>
-          )}
+    <div className="animate-fade-in">
+      {/* Logo & title */}
+      <div className="text-center mb-8">
+        <div className="inline-flex p-3 rounded-2xl bg-primary/10 mb-4">
+          <Ship className="h-8 w-8 text-primary" />
         </div>
+        <h1 className="text-2xl font-bold tracking-tight">SCH Pro</h1>
+        <p className="text-sm text-muted-foreground mt-2">
+          {isSettingPassword
+            ? 'Completa la registrazione impostando una password'
+            : isInvited
+              ? 'Benvenuto! Accedi con le tue credenziali'
+              : 'Accedi al tuo account'
+          }
+        </p>
+      </div>
 
-        <form className="mt-8 space-y-6" onSubmit={isSettingPassword ? handlePasswordSetup : handleLogin}>
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-foreground">
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                required
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-input placeholder-muted-foreground text-foreground bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm"
-                placeholder={error ? "Inserisci l'email a cui è arrivato l'invito" : "Inserisci la tua email"}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={loading}
-                readOnly={false}
-              />
-            </div>
+      {/* Invitation banner */}
+      {isInvited && (
+        <div className={`mb-6 p-3 rounded-xl text-sm ${
+          error
+            ? 'bg-orange-500/10 text-orange-700 dark:text-orange-300 border border-orange-500/20'
+            : 'bg-primary/10 text-primary border border-primary/20'
+        }`}>
+          {error
+            ? 'Link scaduto - inserisci email e password manualmente.'
+            : isSettingPassword
+              ? 'Imposta una password per completare la registrazione.'
+              : 'Sei stato invitato a SCH Pro.'
+          }
+        </div>
+      )}
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-foreground">
-                {isSettingPassword ? 'Imposta la tua password' : 'Password'}
-              </label>
-              <input
-                id="password"
-                type="password"
-                required
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-input placeholder-muted-foreground text-foreground bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm"
-                placeholder={isSettingPassword ? 'Crea una password sicura' : 'Inserisci la tua password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={loading}
-                minLength={isSettingPassword ? 6 : undefined}
-              />
-              {isSettingPassword && (
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Minimo 6 caratteri
-                </p>
-              )}
-            </div>
-          </div>
-
-          {error && (
-            <div className="bg-destructive/15 border border-destructive/50 text-destructive px-4 py-3 rounded text-sm">
-              ❌ {error}
-            </div>
-          )}
-
-          <button
-            type="submit"
+      {/* Form */}
+      <form onSubmit={isSettingPassword ? handlePasswordSetup : handleLogin} className="space-y-4">
+        <div className="space-y-2">
+          <label htmlFor="email" className="text-sm font-medium">
+            Email
+          </label>
+          <Input
+            id="email"
+            type="email"
+            required
+            placeholder="nome@azienda.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             disabled={loading}
-            className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50"
-          >
-            {loading ? (
-              <span className="flex items-center">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground mr-2"></div>
-                {isSettingPassword ? 'Impostazione password...' : 'Accesso in corso...'}
-              </span>
-            ) : (
-              isSettingPassword ? 'Completa Registrazione' : 'Accedi'
-            )}
-          </button>
-        </form>
-
-        {/* Password Reset Link - Always visible */}
-        <div className="mt-4 text-center">
-          <button
-            onClick={async () => {
-              const emailToReset = prompt('Inserisci la tua email per il reset password:', email || '')
-              if (!emailToReset) return
-
-              setLoading(true)
-              try {
-                const { error } = await supabase.auth.resetPasswordForEmail(emailToReset, {
-                  redirectTo: `${window.location.origin}/reset-password`,
-                })
-                if (error) throw error
-                alert(`Email di reset password inviata a ${emailToReset}. Controlla la tua casella di posta.`)
-              } catch (error: any) {
-                alert(`Errore: ${error.message}`)
-              } finally {
-                setLoading(false)
-              }
-            }}
-            className="text-primary hover:underline text-sm"
-          >
-            Password dimenticata?
-          </button>
+            autoComplete="email"
+          />
         </div>
 
-        {/* Password Reset Link for expired invitations */}
-        {isInvited && error && (
-          <div className="mt-6 text-center">
-            <p className="text-sm text-muted-foreground mb-2">
-              Non hai mai impostato una password?
-            </p>
-            <button
-              onClick={async () => {
-                if (!email) {
-                  setError('Inserisci prima la tua email nel campo sopra')
-                  return
-                }
-                setLoading(true)
-                try {
-                  const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                    redirectTo: `${window.location.origin}/reset-password`,
-                  })
-                  if (error) throw error
-                  setError(null)
-                  setSuccess(true)
-                  alert(`Email di reset password inviata a ${email}. Controlla la tua casella di posta.`)
-                } catch (error: any) {
-                  setError(error.message)
-                } finally {
-                  setLoading(false)
-                }
-              }}
-              className="text-primary hover:underline font-medium text-sm"
-            >
-              Richiedi reset password →
-            </button>
+        <div className="space-y-2">
+          <label htmlFor="password" className="text-sm font-medium">
+            {isSettingPassword ? 'Nuova password' : 'Password'}
+          </label>
+          <Input
+            id="password"
+            type="password"
+            required
+            placeholder={isSettingPassword ? 'Crea una password sicura' : 'La tua password'}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            disabled={loading}
+            minLength={isSettingPassword ? 6 : undefined}
+            autoComplete={isSettingPassword ? 'new-password' : 'current-password'}
+          />
+          {isSettingPassword && (
+            <p className="text-xs text-muted-foreground">Minimo 6 caratteri</p>
+          )}
+        </div>
+
+        {/* Error message */}
+        {error && !isInvited && (
+          <div className="flex items-start gap-2 p-3 rounded-xl bg-destructive/10 text-destructive text-sm">
+            <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+            <span>{error}</span>
           </div>
         )}
 
-        {/* Debug info */}
-        <div className="mt-8 p-4 bg-muted rounded text-xs text-muted-foreground">
-          <h3 className="font-semibold mb-2 text-foreground">Debug Info:</h3>
-          <p>• Middleware: Disabilitato</p>
-          <p>• Login page: Attiva</p>
-          <p>• Redirect: Manual override</p>
-        </div>
+        <Button
+          type="submit"
+          variant="primary"
+          className="w-full gap-2"
+          disabled={loading}
+        >
+          {loading ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              {isSettingPassword ? 'Impostazione...' : 'Accesso...'}
+            </>
+          ) : (
+            <>
+              {isSettingPassword ? 'Completa Registrazione' : 'Accedi'}
+              <ArrowRight className="h-4 w-4" />
+            </>
+          )}
+        </Button>
+      </form>
+
+      {/* Password reset link */}
+      <div className="mt-6 text-center">
+        <button
+          onClick={() => handleResetPassword()}
+          className="text-sm text-muted-foreground hover:text-primary transition-colors"
+        >
+          Password dimenticata?
+        </button>
       </div>
+
+      {/* Extra reset for expired invitations */}
+      {isInvited && error && (
+        <div className="mt-4 text-center border-t border-border/50 pt-4">
+          <p className="text-xs text-muted-foreground mb-2">
+            Non hai mai impostato una password?
+          </p>
+          <button
+            onClick={() => {
+              if (!email) {
+                setError('Inserisci prima la tua email')
+                return
+              }
+              handleResetPassword(email)
+            }}
+            className="text-sm text-primary font-medium hover:underline"
+          >
+            Richiedi reset password
+          </button>
+        </div>
+      )}
     </div>
   )
 }
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
+      {/* Animated gradient background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-background to-purple-50 dark:from-blue-950/30 dark:via-background dark:to-purple-950/30" />
+
+      {/* Decorative blurred circles */}
+      <div className="absolute top-1/4 -left-32 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse" />
+      <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-cyan-500/5 rounded-full blur-3xl" />
+
+      {/* Glass card */}
+      <div className="relative z-10 w-full max-w-sm mx-4 p-8 rounded-3xl glass shadow-2xl">
+        <Suspense
+          fallback={
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          }
+        >
+          <LoginForm />
+        </Suspense>
       </div>
-    }>
-      <LoginForm />
-    </Suspense>
+
+      {/* Footer */}
+      <p className="absolute bottom-6 text-xs text-muted-foreground/50">
+        SCH Pro &copy; {new Date().getFullYear()}
+      </p>
+    </div>
   )
 }

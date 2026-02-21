@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { createClient } from '@/utils/supabase/client'
+import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/contexts/AuthContext'
 import { Database } from '@/types/database.types'
 
@@ -9,7 +9,6 @@ type TrackingUpdate = Database['public']['Tables']['trackings']['Update']
 
 export function useTrackings() {
   const { user } = useAuth()
-  console.log('🔍 useTrackings: Loading organization trackings for user:', user?.id)
   const [trackings, setTrackings] = useState<Tracking[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -22,48 +21,34 @@ export function useTrackings() {
   // ✅ LOAD TRACKINGS per organizzazione
   const loadTrackings = useCallback(async (forceReload = false) => {
     if (!user?.id) {
-      console.log('🔍 useTrackings: No user found')
       setTrackings([])
       setError('User not authenticated')
       loadedRef.current = false
       return
     }
 
-    if (loading && !forceReload) {
-      console.log('🔍 useTrackings: Already loading, skipping...')
-      return
-    }
+    if (loading && !forceReload) return
 
-    if (loadedRef.current && currentUserRef.current === user.id && !forceReload) {
-      console.log('🔍 useTrackings: Already loaded for this user, skipping...')
-      return
-    }
+    if (loadedRef.current && currentUserRef.current === user.id && !forceReload) return
 
     setLoading(true)
     setError(null)
 
     try {
-      console.log('🔍 useTrackings: Loading organization trackings for user:', user.id)
-      
-      // ✅ QUERY SENZA FILTRI - RLS gestisce l'accesso per organizzazione
+      // RLS gestisce l'accesso per organizzazione
       const { data, error: supabaseError } = await supabase
         .from('trackings')
         .select('*')
         .is('deleted_at', null)
         .order('created_at', { ascending: false })
 
-      if (supabaseError) {
-        console.error('🔍 useTrackings: Supabase error:', supabaseError)
-        throw supabaseError
-      }
+      if (supabaseError) throw supabaseError
 
-      console.log('🔍 useTrackings: Loaded organization trackings:', data?.length || 0, 'items')
       setTrackings(data || [])
       setError(null)
       loadedRef.current = true
       currentUserRef.current = user.id
     } catch (err: any) {
-      console.error('🔍 useTrackings: Error loading trackings:', err)
       setError(err?.message || 'Errore nel caricamento dei tracking')
       setTrackings([])
       loadedRef.current = false
@@ -94,10 +79,7 @@ export function useTrackings() {
       throw new Error('User not authenticated')
     }
 
-    console.log('🔍 useTrackings: Adding tracking:', trackingData.tracking_number)
-
     try {
-      // ✅ OTTIENI ORGANIZATION_ID dell'utente
       const { data: membershipData, error: membershipError } = await supabase
         .from('organization_members')
         .select('organization_id')
@@ -172,16 +154,11 @@ export function useTrackings() {
         .insert([insertData])
         .select()
 
-      if (supabaseError) {
-        console.error('🔍 useTrackings: Error adding tracking:', supabaseError)
-        throw supabaseError
-      }
+      if (supabaseError) throw supabaseError
 
-      console.log('🔍 useTrackings: Tracking added successfully:', data?.[0]?.id)
       await loadTrackings(true)
       return data?.[0]
     } catch (err: any) {
-      console.error('🔍 useTrackings: Error in addTracking:', err)
       throw err
     }
   }, [user?.id, supabase, loadTrackings])
@@ -190,8 +167,6 @@ export function useTrackings() {
     if (!user?.id) {
       throw new Error('User not authenticated')
     }
-
-    console.log('🔍 useTrackings: Deleting tracking:', trackingId)
 
     try {
       const updateData: TrackingUpdate = {
@@ -205,15 +180,10 @@ export function useTrackings() {
         .eq('id', trackingId)
         // ✅ RLS policy gestisce l'accesso
 
-      if (supabaseError) {
-        console.error('🔍 useTrackings: Error deleting tracking:', supabaseError)
-        throw supabaseError
-      }
+      if (supabaseError) throw supabaseError
 
-      console.log('🔍 useTrackings: Tracking deleted successfully')
       await loadTrackings(true)
     } catch (err: any) {
-      console.error('🔍 useTrackings: Error in deleteTracking:', err)
       throw err
     }
   }, [user?.id, supabase, loadTrackings])
@@ -257,7 +227,6 @@ export function useTrackings() {
       await loadTrackings(true)
       return data?.[0]
     } catch (err: any) {
-      console.error('🔍 useTrackings: Error in updateTracking:', err)
       throw err
     }
   }, [user?.id, supabase, loadTrackings])
